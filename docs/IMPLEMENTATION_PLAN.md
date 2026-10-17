@@ -84,7 +84,8 @@ Aturan umum untuk setiap tahap:
 - [x] Frontend (irisan 4): halaman sekolah Anggota (ubah peran, tangguhkan, aktifkan, akhiri, dengan alasan), Undangan (buat, kirim ulang, cabut, status pengiriman), dan Audit (filter, rincian sebelum/sesudah, paginasi); navigasi menurut izin; parameter `page` masuk kontrak OpenAPI.
 - [x] Frontend (irisan 5): setup 2FA (`/account/two-factor`): konfirmasi password, QR + kunci manual, konfirmasi TOTP, kode pemulihan, matikan 2FA; Super Admin tanpa 2FA diarahkan ke sana; tautan "Keamanan" di header. Teruji nyata dengan TOTP sungguhan (aktivasi langsung membuka `/platform`, tanpa login ulang).
 - [x] E2E Playwright (`apps/web/e2e/tahap1.spec.ts`, `pnpm e2e`): Super Admin login + 2FA → buat sekolah → undang admin → admin menerima undangan lewat Mailpit → login → undang Wali Kelas → Wali Kelas hanya melihat menu sesuai izin, ditolak API di halaman audit, dan tidak bisa membuka sekolah lain → admin melihat jejak audit. Lulus di stack lokal (Chrome terpasang).
-- [ ] E2E di CI (butuh stack penuh + seed + Chromium) dan penutupan Tahap 1.
+- [x] E2E di CI: job `e2e` (PostgreSQL, Redis, Mailpit, API, worker, migrasi + DemoSeeder, lalu Playwright di image resmi `playwright:v1.63.0-noble`; trace diunggah bila gagal). Versi image harus sama dengan `@playwright/test`.
+- [ ] Penutupan Tahap 1: CI hijau di PR #1, merge ke `main`.
 
 ---
 
