@@ -86,7 +86,9 @@ services:
         HOST_GID: ${HOST_GID:-1000}
     image: sentra/php-dev:8.5
     working_dir: /var/www/api
-    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+    # Server bawaan PHP langsung (bukan `artisan serve`): artisan serve tidak meneruskan DB_HOST dkk. ke worker,
+    # sehingga Laravel jatuh ke 127.0.0.1 dan gagal terhubung ke PostgreSQL di container lain.
+    command: ["sh", "-c", "cd public && exec php -S 0.0.0.0:8000 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php"]
     ports:
       - "127.0.0.1:${FORWARD_API_PORT:-8000}:8000"
     volumes:
