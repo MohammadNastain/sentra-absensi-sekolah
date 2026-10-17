@@ -41,8 +41,8 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
   const value = useMemo(() => {
     if (!profile) return null;
     const granted = new Set<string>(profile.my_permissions);
-    return { code, profile, setProfile, can: (permission: PermissionCode) => granted.has(permission) };
-  }, [code, profile]);
+    return { code, profile, meId: me?.id ?? null, setProfile, can: (permission: PermissionCode) => granted.has(permission) };
+  }, [code, profile, me]);
 
   if (blocked) {
     return (
@@ -71,6 +71,15 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
 
   const base = `/schools/${code}`;
   const nav: NavItem[] = [{ href: base, label: "Ringkasan", active: pathname === base }];
+  if (value.can("school.members.view")) {
+    nav.push({ href: `${base}/members`, label: "Anggota", active: pathname.startsWith(`${base}/members`) });
+  }
+  if (value.can("school.members.manage")) {
+    nav.push({ href: `${base}/invitations`, label: "Undangan", active: pathname.startsWith(`${base}/invitations`) });
+  }
+  if (value.can("school.audit.view")) {
+    nav.push({ href: `${base}/audit`, label: "Audit", active: pathname.startsWith(`${base}/audit`) });
+  }
 
   return (
     <SchoolProvider value={value}>

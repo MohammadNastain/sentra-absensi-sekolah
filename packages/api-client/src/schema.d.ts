@@ -969,6 +969,8 @@ export interface components {
     };
     parameters: {
         Token: string;
+        /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+        Page: number;
         /** @description Kode sekolah (slug), bukan UUID. */
         SchoolCode: string;
         MembershipId: string;
@@ -1552,7 +1554,10 @@ export interface operations {
     };
     listSchools: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1823,6 +1828,8 @@ export interface operations {
         parameters: {
             query?: {
                 status?: components["schemas"]["MembershipStatus"];
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
             };
             header?: never;
             path: {
@@ -2015,6 +2022,8 @@ export interface operations {
         parameters: {
             query?: {
                 status?: components["schemas"]["InvitationStatus"];
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
             };
             header?: never;
             path: {
@@ -2143,6 +2152,8 @@ export interface operations {
                 action?: string;
                 entity_type?: string;
                 entity_id?: string;
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
             };
             header?: never;
             path: {

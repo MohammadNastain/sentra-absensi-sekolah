@@ -81,7 +81,8 @@ Aturan umum untuk setiap tahap:
 - [x] Frontend (irisan 1): proxy `/api` + `/sanctum` ke Laravel (cookie same-origin), halaman login, tantangan 2FA, lupa password, reset password; teruji manual end-to-end terhadap API sungguhan. Service `api` di compose diganti ke server bawaan PHP (`artisan serve` tidak meneruskan `DB_HOST` ke worker).
 - [x] Frontend (irisan 2): halaman terima undangan (`/invitations/[token]`, akun baru atau akun lama), pemilih sekolah + undangan tertunda (`/schools`), `/no-access`, logout, `?next=` aman di login. Service `queue` ditambahkan ke compose (tanpa worker, email undangan tidak pernah terkirim di dev). Teruji nyata: undang → Mailpit → buat akun → login.
 - [x] Frontend (irisan 3): area Super Admin (`/platform`: daftar, buat, detail, ubah profil, tangguhkan/aktifkan, undang Admin Sekolah pertama) dan kerangka sekolah (`/schools/[code]`: layout dengan izin, ringkasan, ubah profil). `DemoSeeder` menambah `superadmin@demo.test` dengan 2FA aktif (kunci TOTP tetap `JBSWY3DPEHPK3PXP`, hanya dev). Teruji nyata dengan kode TOTP sungguhan.
-- [ ] Frontend (irisan berikut): anggota, undangan, dan audit sekolah; setup 2FA (UI) untuk Super Admin; lalu E2E Playwright.
+- [x] Frontend (irisan 4): halaman sekolah Anggota (ubah peran, tangguhkan, aktifkan, akhiri, dengan alasan), Undangan (buat, kirim ulang, cabut, status pengiriman), dan Audit (filter, rincian sebelum/sesudah, paginasi); navigasi menurut izin; parameter `page` masuk kontrak OpenAPI.
+- [ ] Frontend (sisa): setup 2FA (UI) untuk Super Admin; lalu E2E Playwright.
 
 ---
 

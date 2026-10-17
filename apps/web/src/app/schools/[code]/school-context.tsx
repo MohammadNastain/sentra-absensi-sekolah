@@ -10,6 +10,8 @@ export interface SchoolContextValue {
   /** Kode sekolah dari URL (slug). */
   code: string;
   profile: SchoolProfile;
+  /** ID user yang sedang login (null selagi dimuat). */
+  meId: string | null;
   setProfile: (profile: SchoolProfile) => void;
   can: (permission: PermissionCode) => boolean;
 }
