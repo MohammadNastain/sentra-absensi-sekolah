@@ -86,6 +86,25 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  web:
+    name: Web & klien API (OpenAPI, tipe, typecheck)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install, bangkitkan klien dari OpenAPI, typecheck
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo node:24-slim sh -c '
+            corepack enable &&
+            pnpm install --frozen-lockfile &&
+            pnpm --filter @sentra/api-client generate &&
+            pnpm --filter @sentra/api-client typecheck &&
+            pnpm --filter @sentra/web typecheck'
+
+      - name: Skema klien yang di-commit harus sama dengan hasil generate
+        run: git diff --exit-code -- packages/api-client/src/schema.d.ts
+
   repo-hygiene:
     name: Pemeriksaan repo (shell, YAML, secret)
     runs-on: ubuntu-24.04

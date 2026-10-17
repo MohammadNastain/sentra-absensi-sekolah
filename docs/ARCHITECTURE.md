@@ -80,7 +80,7 @@ Prinsip yang mengikat seluruh desain [PRD 6.3]:
 | QR (generate) | Library QR PHP standar (mis. `chillerlan/php-qrcode` atau `bacon/bacon-qr-code`), dipilih di Tahap 3 | Isi QR berupa token acak, bukan data pribadi [PRD 4.2]. |
 | Impor/ekspor spreadsheet | Library streaming (mis. OpenSpout) | Hemat memori untuk file besar; dievaluasi di Tahap 2. |
 | PDF | Dievaluasi di Tahap 5 (dompdf vs renderer berbasis Chromium) | Trade-off: kesederhanaan vs fidelitas layout. |
-| Kontrak API | OpenAPI 3.1 dibangkitkan dari kode Laravel, tipe TypeScript dibangkitkan untuk frontend | Satu sumber kontrak, mencegah drift. |
+| Kontrak API | OpenAPI 3.1 ditulis tangan (`apps/api/openapi.yaml`) dan dijaga test drift terhadap daftar rute; tipe TypeScript dibangkitkan dari berkas itu | Satu sumber kontrak, mencegah drift. Dipilih daripada generator berbasis inferensi (mis. Scramble) karena respons dibangun sebagai array eksplisit sehingga skemanya tidak dapat disimpulkan dengan akurat; dapat ditinjau ulang bila bentuk respons dipindah ke API Resource. |
 | Monorepo JS | pnpm workspaces | Berbagi tipe API dan komponen UI antara dashboard dan terminal. |
 
 ---

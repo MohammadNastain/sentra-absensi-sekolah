@@ -75,8 +75,10 @@ Aturan umum untuk setiap tahap:
 - [x] Auth Fortify: login, logout, 2FA, lupa/reset/ganti password, rate limit; audit event auth; `AuditLogger` + redaksi allowlist.
 - [x] Endpoint: `auth/me`, `me/schools`, `schools/{school}` (profil), `platform/schools` (daftar).
 - [x] Test (67 lulus): A01–A06, A08, T01–T04, T08 (meta), T09 (matriks), T11, T13, + test DB sebelumnya.
-- [ ] Endpoint platform (buat/ubah/suspend sekolah, undang admin pertama), undangan & anggota (I01–I05, R01–R03), audit-log API, U01/U03, A07, T05–T07, T12, M03–M04.
-- [ ] OpenAPI + klien TS, frontend Tahap 1, E2E Playwright.
+- [x] Endpoint platform (buat/ubah/suspend/aktifkan sekolah, undang admin pertama), undangan & anggota (I01–I05, R01–R03), audit-log API, `TenantAwareJob`, DemoSeeder.
+- [x] Test API lengkap (270 lulus): ditambah U01, U03, A07, T05–T07, T12, M03 (snapshot skema `database/schema-snapshot.txt`), M04, matriks otorisasi untuk seluruh rute. Pint + Larastan level 8 bersih; CI hijau di PR #1.
+- [x] OpenAPI 3.1 (`apps/api/openapi.yaml`, ditulis tangan; test drift `OpenApiContractTest` menjamin setiap rute terdokumentasi dan sebaliknya) + paket `packages/api-client` (tipe dari `openapi-typescript` 7.13.0, klien `openapi-fetch` 0.17.0 dengan cookie + CSRF). Job CI `web` membangkitkan ulang skema dan menggagalkan build bila `schema.d.ts` tidak sinkron.
+- [ ] Frontend Tahap 1, E2E Playwright.
 
 ---
 

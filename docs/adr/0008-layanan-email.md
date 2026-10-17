@@ -13,7 +13,7 @@
 2. Bila `MAIL_MAILER` adalah `log`/`array` (tidak benar-benar mengirim) di luar environment `local`/`testing`:
    - readiness check `/health/ready` gagal;
    - endpoint undangan & lupa-password mengembalikan **503 `EMAIL_NOT_CONFIGURED`** tanpa membuat klaim pengiriman.
-3. Pengiriman berjalan lewat antrean dengan retry terbatas. Kegagalan akhir menandai `failed` dan admin dapat mengirim ulang.
+3. Pengiriman berjalan lewat antrean **tanpa retry otomatis** (`tries = 1`): token mentah hanya ada di payload job (terenkripsi), jadi mengulang diam-diam memperbesar jendela paparannya. Kegagalan menandai `failed` dan admin mengirim ulang, yang menerbitkan token baru dan mematikan token lama.
 4. Isi email tidak memuat data siswa. Tautan berisi token acak; DB hanya menyimpan hash-nya.
 
 ## Kebutuhan layanan email production (untuk dipilih nanti)
