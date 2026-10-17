@@ -7,6 +7,7 @@ export type MySchool = Schemas["MySchool"];
 export type Destination =
   | { kind: "login" }
   | { kind: "two-factor" }
+  | { kind: "two-factor-setup" }
   | { kind: "platform" }
   | { kind: "school"; code: string }
   | { kind: "schools" }
@@ -18,6 +19,8 @@ export function destinationPath(destination: Destination): string {
       return "/login";
     case "two-factor":
       return "/two-factor";
+    case "two-factor-setup":
+      return "/account/two-factor";
     case "platform":
       return "/platform";
     case "school":
@@ -30,7 +33,8 @@ export function destinationPath(destination: Destination): string {
 }
 
 /**
- * Menentukan halaman tujuan sesudah sesi terbentuk. Super Admin wajib lulus 2FA sebelum ke /platform
+ * Menentukan halaman tujuan sesudah sesi terbentuk. Super Admin wajib mengaktifkan 2FA lalu lulus tantangannya
+ * sebelum ke /platform
  * (API menolak 403 TWO_FACTOR_REQUIRED bila belum); user biasa diarahkan menurut sekolah yang dapat diakses.
  */
 export async function resolveDestination(): Promise<Destination> {
@@ -38,6 +42,7 @@ export async function resolveDestination(): Promise<Destination> {
   if (me.response.status === 401 || !me.data) return { kind: "login" };
 
   if (me.data.data.is_platform_admin) {
+    if (!me.data.data.two_factor_enabled) return { kind: "two-factor-setup" };
     return me.data.data.two_factor_passed ? { kind: "platform" } : { kind: "two-factor" };
   }
 

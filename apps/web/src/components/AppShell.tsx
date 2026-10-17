@@ -34,6 +34,12 @@ export function AppShell({
             {userLabel ? (
               <span className="hidden text-sm text-zinc-600 sm:inline dark:text-zinc-400">{userLabel}</span>
             ) : null}
+            <Link
+              href="/account/two-factor"
+              className="rounded-lg px-2 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            >
+              Keamanan
+            </Link>
             <LogoutButton />
           </div>
         </div>

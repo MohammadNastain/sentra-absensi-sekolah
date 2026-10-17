@@ -13,7 +13,8 @@ export function redirectFor(error: unknown): string | null {
     case "UNAUTHENTICATED":
       return "/login";
     case "TWO_FACTOR_REQUIRED":
-      return "/two-factor";
+      // Beranda memilih antara setup 2FA (belum aktif) dan tantangan 2FA (sudah aktif, belum lulus).
+      return "/";
     case "PLATFORM_ADMIN_REQUIRED":
       return "/";
     default:

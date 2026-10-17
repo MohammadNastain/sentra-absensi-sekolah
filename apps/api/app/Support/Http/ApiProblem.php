@@ -39,7 +39,7 @@ class ApiProblem extends HttpException
             403,
             'TWO_FACTOR_REQUIRED',
             'Verifikasi dua langkah wajib untuk fitur ini.',
-            'Aktifkan dan konfirmasi 2FA, lalu masuk ulang dengan kode autentikator.',
+            'Aktifkan dan konfirmasi 2FA di pengaturan keamanan akun, atau masuk dengan kode autentikator.',
         );
     }
 

@@ -82,7 +82,8 @@ Aturan umum untuk setiap tahap:
 - [x] Frontend (irisan 2): halaman terima undangan (`/invitations/[token]`, akun baru atau akun lama), pemilih sekolah + undangan tertunda (`/schools`), `/no-access`, logout, `?next=` aman di login. Service `queue` ditambahkan ke compose (tanpa worker, email undangan tidak pernah terkirim di dev). Teruji nyata: undang → Mailpit → buat akun → login.
 - [x] Frontend (irisan 3): area Super Admin (`/platform`: daftar, buat, detail, ubah profil, tangguhkan/aktifkan, undang Admin Sekolah pertama) dan kerangka sekolah (`/schools/[code]`: layout dengan izin, ringkasan, ubah profil). `DemoSeeder` menambah `superadmin@demo.test` dengan 2FA aktif (kunci TOTP tetap `JBSWY3DPEHPK3PXP`, hanya dev). Teruji nyata dengan kode TOTP sungguhan.
 - [x] Frontend (irisan 4): halaman sekolah Anggota (ubah peran, tangguhkan, aktifkan, akhiri, dengan alasan), Undangan (buat, kirim ulang, cabut, status pengiriman), dan Audit (filter, rincian sebelum/sesudah, paginasi); navigasi menurut izin; parameter `page` masuk kontrak OpenAPI.
-- [ ] Frontend (sisa): setup 2FA (UI) untuk Super Admin; lalu E2E Playwright.
+- [x] Frontend (irisan 5): setup 2FA (`/account/two-factor`): konfirmasi password, QR + kunci manual, konfirmasi TOTP, kode pemulihan, matikan 2FA; Super Admin tanpa 2FA diarahkan ke sana; tautan "Keamanan" di header. Teruji nyata dengan TOTP sungguhan (aktivasi langsung membuka `/platform`, tanpa login ulang).
+- [ ] E2E Playwright (skenario di TAHAP_1_FONDASI) dan penutupan Tahap 1.
 
 ---
 
