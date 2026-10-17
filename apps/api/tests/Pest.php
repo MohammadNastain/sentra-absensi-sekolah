@@ -1,11 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\InteractsWithTenancy;
 use Tests\Concerns\RefreshPostgresDatabase;
 use Tests\TestCase;
 
 pest()->extend(TestCase::class)
-    ->use(RefreshPostgresDatabase::class)
+    ->use(RefreshPostgresDatabase::class, InteractsWithTenancy::class)
     ->in('Database', 'Feature');
 
 pest()->extend(TestCase::class)

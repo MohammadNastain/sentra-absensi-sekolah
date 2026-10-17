@@ -138,6 +138,8 @@ Sentra_absensi_sekolah/
 └── .github/workflows/             # CI
 ```
 
+**Implementasi (17 Okt 2026):** model Eloquent ditempatkan di `app/Models` (konvensi Laravel; factory, Fortify, dan auth bekerja tanpa konfigurasi tambahan). `Domain/*` berisi enum, action, konteks tenant, audit, dan aturan domain.
+
 Logika bisnis ditempatkan di kelas **Action/Service** dalam `Domain/*` (mis. `RecordScanAction`), bukan di controller. Tujuannya agar bisa diuji secara unit dengan `Clock` yang diinjeksi.
 
 ---

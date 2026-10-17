@@ -70,7 +70,13 @@ Aturan umum untuk setiap tahap:
 - [x] `DatabaseContext` (set/reset `app.school_id`, `app.user_id`, `app.platform`).
 - [x] Test DB (32 lulus, sebagai sentra_app): T10, U02, U04, I05, FK komposit, REVOKE, constraint.
 - [x] Job CI `api` (belum pernah berjalan, karena belum ada remote).
-- [ ] Middleware tenant, auth Fortify/Sanctum + 2FA, endpoint §6, audit logger, matriks otorisasi, OpenAPI + klien TS, frontend.
+- [x] Model, enum `Role`/`Permission`, `TenantContext`, problem+json (RFC 9457) + request ID.
+- [x] Pipeline middleware: `ResetDatabaseContext` (global), `EnsureUserActive` (+ sesi absolut 12 jam), `ResolveSchoolMembership`, `RequireSchoolPermission`, `EnsurePlatformAdmin` (+2FA).
+- [x] Auth Fortify: login, logout, 2FA, lupa/reset/ganti password, rate limit; audit event auth; `AuditLogger` + redaksi allowlist.
+- [x] Endpoint: `auth/me`, `me/schools`, `schools/{school}` (profil), `platform/schools` (daftar).
+- [x] Test (67 lulus): A01–A06, A08, T01–T04, T08 (meta), T09 (matriks), T11, T13, + test DB sebelumnya.
+- [ ] Endpoint platform (buat/ubah/suspend sekolah, undang admin pertama), undangan & anggota (I01–I05, R01–R03), audit-log API, U01/U03, A07, T05–T07, T12, M03–M04.
+- [ ] OpenAPI + klien TS, frontend Tahap 1, E2E Playwright.
 
 ---
 

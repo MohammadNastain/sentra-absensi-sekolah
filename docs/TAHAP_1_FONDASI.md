@@ -150,6 +150,13 @@ Semua respons error mengikuti RFC 9457 dengan `code` stabil. Kolom "Izin" meruju
 
 Rate limit: login 5/menit per (email+IP) dan 20/menit per IP; forgot-password 3/15 menit per email; endpoint undangan publik 10/menit per IP; 2FA challenge 5/menit per sesi.
 
+**Catatan implementasi (17 Okt 2026):**
+- Semua rute `/api/v1/*` memakai grup middleware `web` (sesi cookie + CSRF di setiap request), tidak bergantung pada deteksi origin "stateful" Sanctum. Laravel 13 memakai `PreventRequestForgery` (cek `Sec-Fetch-Site`, lalu token).
+- Rute 2FA tambahan dari Fortify: `GET /auth/two-factor/qr-code`, `/secret-key`, `GET/POST /auth/two-factor/recovery-codes`, `POST /auth/confirm-password`, `GET /auth/confirmed-password-status`. Endpoint 2FA mensyaratkan konfirmasi password (respons 423 bila belum).
+- Konfirmasi 2FA (kode TOTP valid) dihitung sebagai tantangan 2FA yang lulus untuk sesi tersebut.
+- Rute disk `local` bawaan Laravel 13 (`GET/PUT storage/{path}`) dimatikan; ditemukan oleh meta-test T08.
+- `{school}` di path adalah **kode sekolah** (`schools.code`), bukan UUID.
+
 ---
 
 ## 7. Frontend (apps/web) Tahap 1
