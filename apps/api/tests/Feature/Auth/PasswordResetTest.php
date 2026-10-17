@@ -84,7 +84,7 @@ it('reset password menolak password lemah dan konfirmasi berbeda', function (arr
     $this->postJson('/api/v1/auth/reset-password', resetPayload($token, $override))->assertUnprocessable();
 })->with([
     'terlalu pendek' => [['password' => 'pendek1', 'password_confirmation' => 'pendek1']],
-    'konfirmasi beda' => [['password_confirmation' => 'beda-sekali-123']],
+    'konfirmasi beda' => [['password_confirmation' => 'beda-sekali-123']], // gitleaks:allow (password fiktif untuk test)
 ]);
 
 it('ganti password: password lama harus benar dan password baru memenuhi aturan', function () {
