@@ -80,7 +80,8 @@ Aturan umum untuk setiap tahap:
 - [x] OpenAPI 3.1 (`apps/api/openapi.yaml`, ditulis tangan; test drift `OpenApiContractTest` menjamin setiap rute terdokumentasi dan sebaliknya) + paket `packages/api-client` (tipe dari `openapi-typescript` 7.13.0, klien `openapi-fetch` 0.17.0 dengan cookie + CSRF). Job CI `web` membangkitkan ulang skema dan menggagalkan build bila `schema.d.ts` tidak sinkron.
 - [x] Frontend (irisan 1): proxy `/api` + `/sanctum` ke Laravel (cookie same-origin), halaman login, tantangan 2FA, lupa password, reset password; teruji manual end-to-end terhadap API sungguhan. Service `api` di compose diganti ke server bawaan PHP (`artisan serve` tidak meneruskan `DB_HOST` ke worker).
 - [x] Frontend (irisan 2): halaman terima undangan (`/invitations/[token]`, akun baru atau akun lama), pemilih sekolah + undangan tertunda (`/schools`), `/no-access`, logout, `?next=` aman di login. Service `queue` ditambahkan ke compose (tanpa worker, email undangan tidak pernah terkirim di dev). Teruji nyata: undang → Mailpit → buat akun → login.
-- [ ] Frontend (irisan berikut): Super Admin (sekolah + undang admin), anggota/undangan/audit sekolah, setup 2FA; lalu E2E Playwright.
+- [x] Frontend (irisan 3): area Super Admin (`/platform`: daftar, buat, detail, ubah profil, tangguhkan/aktifkan, undang Admin Sekolah pertama) dan kerangka sekolah (`/schools/[code]`: layout dengan izin, ringkasan, ubah profil). `DemoSeeder` menambah `superadmin@demo.test` dengan 2FA aktif (kunci TOTP tetap `JBSWY3DPEHPK3PXP`, hanya dev). Teruji nyata dengan kode TOTP sungguhan.
+- [ ] Frontend (irisan berikut): anggota, undangan, dan audit sekolah; setup 2FA (UI) untuk Super Admin; lalu E2E Playwright.
 
 ---
 

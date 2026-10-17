@@ -6,20 +6,9 @@ import { useEffect, useState } from "react";
 import { FormAlert } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt } from "@/lib/errors";
+import { roleLabel } from "@/lib/school-options";
 
 type MyInvitation = Schemas["MyInvitation"];
-
-const ROLE_LABELS: Record<string, string> = {
-  school_admin: "Admin Sekolah",
-  principal: "Kepala Sekolah",
-  homeroom_teacher: "Wali Kelas",
-  duty_officer: "Petugas Piket",
-  terminal_operator: "Operator Terminal",
-};
-
-export function roleLabel(role: string): string {
-  return ROLE_LABELS[role] ?? role;
-}
 
 /** Undangan tertunda untuk email akun yang sedang login: terima atau tolak tanpa membuka email. */
 export function PendingInvitations() {

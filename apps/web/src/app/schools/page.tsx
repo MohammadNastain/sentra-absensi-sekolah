@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
-import { PendingInvitations, roleLabel } from "@/components/PendingInvitations";
+import { PendingInvitations } from "@/components/PendingInvitations";
 import { api } from "@/lib/api";
+import { roleLabel } from "@/lib/school-options";
 import type { MySchool } from "@/lib/session";
 
 /** Pemilih sekolah untuk user yang tergabung di lebih dari satu sekolah. */

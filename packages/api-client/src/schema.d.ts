@@ -751,10 +751,10 @@ export interface components {
             timezone: components["schemas"]["Timezone"];
             address?: string | null;
             /**
-             * @default active
+             * @description Opsional; bila dikosongkan sekolah dibuat dengan status `active`.
              * @enum {string}
              */
-            status: "trial" | "active";
+            status?: "trial" | "active";
         };
         /** @description Semua field opsional. `code` dan `status` ditolak (422). */
         SchoolUpdate: {

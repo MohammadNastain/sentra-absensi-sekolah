@@ -20,11 +20,18 @@ class DemoSeeder extends Seeder
 {
     public const PASSWORD = 'demo-password-123';
 
+    /** Kunci TOTP tetap untuk Super Admin demo: daftarkan ke aplikasi authenticator (input manual). */
+    public const SUPER_ADMIN_TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
+
+    public const SUPER_ADMIN_RECOVERY_CODE = 'demo-recovery-code';
+
     public function run(DatabaseContext $context): void
     {
         if (app()->environment('production')) {
             throw new RuntimeException('DemoSeeder tidak boleh dijalankan di production.');
         }
+
+        $this->seedSuperAdmin();
 
         $context->runAsPlatform(function () use ($context) {
             $school = School::query()->firstOrCreate(
@@ -49,5 +56,21 @@ class DemoSeeder extends Seeder
                 ]);
             });
         });
+    }
+
+    /** Super Admin demo (superadmin@demo.test) dengan 2FA aktif; dibutuhkan untuk menguji area /platform. */
+    private function seedSuperAdmin(): void
+    {
+        $user = User::query()->firstOrCreate(
+            ['email' => 'superadmin@demo.test'],
+            ['name' => 'Super Admin Demo', 'password' => Hash::make(self::PASSWORD), 'email_verified_at' => now()],
+        );
+
+        DB::table('users')->where('id', $user->id)->update([
+            'two_factor_secret' => encrypt(self::SUPER_ADMIN_TOTP_SECRET),
+            'two_factor_recovery_codes' => encrypt(json_encode([self::SUPER_ADMIN_RECOVERY_CODE])),
+            'two_factor_confirmed_at' => now(),
+        ]);
+        DB::table('platform_admins')->insertOrIgnore(['user_id' => $user->id]);
     }
 }

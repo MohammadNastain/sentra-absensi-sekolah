@@ -91,6 +91,125 @@ export function FormAlert({ tone = "error", children }: { tone?: "error" | "succ
   );
 }
 
+export function SelectField({
+  label,
+  name,
+  error,
+  children,
+  ...select
+}: {
+  label: string;
+  name: string;
+  error?: string;
+  children: ReactNode;
+} & Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "name">) {
+  return (
+    <div>
+      <label htmlFor={name} className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
+        {label}
+      </label>
+      <select
+        id={name}
+        name={name}
+        aria-invalid={error ? true : undefined}
+        className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+        {...select}
+      >
+        {children}
+      </select>
+      {error ? <p className="mt-1 text-sm text-red-700 dark:text-red-400">{error}</p> : null}
+    </div>
+  );
+}
+
+export function TextAreaField({
+  label,
+  name,
+  error,
+  hint,
+  ...area
+}: {
+  label: string;
+  name: string;
+  error?: string;
+  hint?: string;
+} & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "name">) {
+  return (
+    <div>
+      <label htmlFor={name} className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
+        {label}
+      </label>
+      <textarea
+        id={name}
+        name={name}
+        rows={3}
+        aria-invalid={error ? true : undefined}
+        className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+        {...area}
+      />
+      {error ? (
+        <p className="mt-1 text-sm text-red-700 dark:text-red-400">{error}</p>
+      ) : hint ? (
+        <p className="mt-1 text-sm text-zinc-500">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+const BADGE_TONES: Record<string, string> = {
+  active: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  trial: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300",
+  suspended: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  terminated: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+};
+
+const BADGE_LABELS: Record<string, string> = {
+  active: "Aktif",
+  trial: "Uji coba",
+  suspended: "Ditangguhkan",
+  terminated: "Diakhiri",
+};
+
+export function StatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${BADGE_TONES[status] ?? BADGE_TONES.terminated}`}
+    >
+      {BADGE_LABELS[status] ?? status}
+    </span>
+  );
+}
+
+export function PrimaryButton({
+  pending,
+  children,
+  ...button
+}: { pending?: boolean; children: ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      {...button}
+      disabled={pending || button.disabled}
+      className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? "Memproses…" : children}
+    </button>
+  );
+}
+
+export function SecondaryButton({
+  children,
+  ...button
+}: { children: ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      {...button}
+      className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+    >
+      {children}
+    </button>
+  );
+}
+
 export function TextLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link href={href} className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">

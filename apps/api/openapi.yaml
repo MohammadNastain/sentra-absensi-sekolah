@@ -1087,7 +1087,7 @@ components:
         status:
           type: string
           enum: [trial, active]
-          default: active
+          description: "Opsional; bila dikosongkan sekolah dibuat dengan status `active`."
     SchoolUpdate:
       type: object
       description: "Semua field opsional. `code` dan `status` ditolak (422)."
