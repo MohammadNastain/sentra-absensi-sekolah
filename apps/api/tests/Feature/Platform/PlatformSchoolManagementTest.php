@@ -1,7 +1,10 @@
 <?php
 
+use App\Domain\Identity\Role;
+use App\Mail\InvitationMail;
 use App\Models\School;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -22,7 +25,7 @@ function newSchoolPayload(array $overrides = []): array
     ];
 }
 
-function platformAudits(): Illuminate\Support\Collection
+function platformAudits(): Collection
 {
     return test()->dbContext()->runAsPlatform(
         fn () => DB::table('audit_logs')->whereNull('school_id')->orderBy('created_at')->orderBy('id')->get(),
@@ -110,7 +113,7 @@ it('menangguhkan (alasan wajib) dan mengaktifkan kembali sekolah', function () {
 it('sekolah yang ditangguhkan langsung menolak seluruh anggotanya', function () {
     $school = School::factory()->create(['code' => 'sekolah-a']);
     $member = User::factory()->create();
-    $this->addMember($school, $member, [App\Domain\Identity\Role::SchoolAdmin]);
+    $this->addMember($school, $member, [Role::SchoolAdmin]);
 
     $this->postJson('/api/v1/platform/schools/sekolah-a/suspend', ['reason' => 'Pelanggaran kebijakan'])->assertOk();
 
@@ -130,7 +133,7 @@ it('mengundang Admin Sekolah pertama dengan peran school_admin yang tidak bisa d
         ->assertJsonMissingPath('data.token')
         ->assertJsonMissingPath('data.token_hash');
 
-    Mail::assertSent(App\Mail\InvitationMail::class, fn ($mail) => $mail->hasTo('kepala@contoh.test'));
+    Mail::assertSent(InvitationMail::class, fn ($mail) => $mail->hasTo('kepala@contoh.test'));
     expect($school->fresh())->not->toBeNull();
 });
 

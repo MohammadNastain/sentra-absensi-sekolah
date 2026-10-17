@@ -1,0 +1,53 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Domain\Identity\Role;
+use App\Domain\Tenancy\DatabaseContext;
+use App\Models\School;
+use App\Models\SchoolMembership;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use RuntimeException;
+
+/**
+ * Data demo untuk pengembangan lokal. Menolak berjalan di production (M04):
+ * akun demo memakai password yang diketahui publik.
+ */
+class DemoSeeder extends Seeder
+{
+    public const PASSWORD = 'demo-password-123';
+
+    public function run(DatabaseContext $context): void
+    {
+        if (app()->environment('production')) {
+            throw new RuntimeException('DemoSeeder tidak boleh dijalankan di production.');
+        }
+
+        $context->runAsPlatform(function () use ($context) {
+            $school = School::query()->firstOrCreate(
+                ['code' => 'demo-smpn-1'],
+                ['name' => 'SMP Negeri 1 Demo', 'npsn' => '99999991', 'education_levels' => ['SMP'], 'timezone' => 'Asia/Jakarta', 'status' => 'active'],
+            );
+
+            $user = User::query()->firstOrCreate(
+                ['email' => 'admin@demo.test'],
+                ['name' => 'Admin Demo', 'password' => Hash::make(self::PASSWORD), 'email_verified_at' => now()],
+            );
+
+            $context->runInSchool($school->id, function () use ($school, $user) {
+                $membership = SchoolMembership::query()->firstOrCreate(
+                    ['school_id' => $school->id, 'user_id' => $user->id],
+                    ['status' => SchoolMembership::STATUS_ACTIVE],
+                );
+                DB::table('membership_roles')->insertOrIgnore([
+                    'school_id' => $school->id,
+                    'membership_id' => $membership->id,
+                    'role_code' => Role::SchoolAdmin->value,
+                ]);
+            });
+        });
+    }
+}

@@ -3,6 +3,8 @@
 use App\Models\User;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 
@@ -104,10 +106,10 @@ it('cek password bocor dipakai bila diaktifkan, dan hanya mengirim awalan 5 kara
     $sha1 = strtoupper(sha1($password));
     $requested = [];
 
-    Illuminate\Support\Facades\Http::fake(function (Illuminate\Http\Client\Request $request) use (&$requested, $sha1) {
+    Http::fake(function (Request $request) use (&$requested, $sha1) {
         $requested[] = $request->url();
 
-        return Illuminate\Support\Facades\Http::response(substr($sha1, 5).':9999\r\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1', 200);
+        return Http::response(substr($sha1, 5).':9999\r\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1', 200);
     });
     $token = Password::createToken($this->user);
 

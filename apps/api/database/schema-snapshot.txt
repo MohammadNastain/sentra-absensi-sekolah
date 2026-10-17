@@ -1,0 +1,231 @@
+column audit_logs.action text nullable=NO
+column audit_logs.actor_device_id uuid nullable=YES
+column audit_logs.actor_type text nullable=NO
+column audit_logs.actor_user_id uuid nullable=YES
+column audit_logs.after_value jsonb nullable=YES
+column audit_logs.before_value jsonb nullable=YES
+column audit_logs.created_at timestamp with time zone nullable=NO
+column audit_logs.entity_id uuid nullable=YES
+column audit_logs.entity_type text nullable=YES
+column audit_logs.id uuid nullable=NO
+column audit_logs.ip_address inet nullable=YES
+column audit_logs.reason text nullable=YES
+column audit_logs.request_id text nullable=YES
+column audit_logs.school_id uuid nullable=YES
+column audit_logs.user_agent text nullable=YES
+column failed_jobs.connection text nullable=NO
+column failed_jobs.exception text nullable=NO
+column failed_jobs.failed_at timestamp with time zone nullable=NO
+column failed_jobs.id bigint nullable=NO
+column failed_jobs.payload text nullable=NO
+column failed_jobs.queue text nullable=NO
+column failed_jobs.uuid text nullable=NO
+column membership_invitations.accepted_at timestamp with time zone nullable=YES
+column membership_invitations.accepted_user_id uuid nullable=YES
+column membership_invitations.created_at timestamp with time zone nullable=NO
+column membership_invitations.delivery_error text nullable=YES
+column membership_invitations.delivery_status text nullable=NO
+column membership_invitations.email USER-DEFINED nullable=NO
+column membership_invitations.expires_at timestamp with time zone nullable=NO
+column membership_invitations.id uuid nullable=NO
+column membership_invitations.invited_by_user_id uuid nullable=NO
+column membership_invitations.revoked_at timestamp with time zone nullable=YES
+column membership_invitations.role_codes ARRAY nullable=NO
+column membership_invitations.school_id uuid nullable=NO
+column membership_invitations.token_hash bytea nullable=NO
+column membership_invitations.updated_at timestamp with time zone nullable=NO
+column membership_roles.granted_at timestamp with time zone nullable=NO
+column membership_roles.granted_by_user_id uuid nullable=YES
+column membership_roles.membership_id uuid nullable=NO
+column membership_roles.role_code text nullable=NO
+column membership_roles.school_id uuid nullable=NO
+column password_reset_tokens.created_at timestamp with time zone nullable=YES
+column password_reset_tokens.email USER-DEFINED nullable=NO
+column password_reset_tokens.token text nullable=NO
+column platform_admins.created_at timestamp with time zone nullable=NO
+column platform_admins.created_by_user_id uuid nullable=YES
+column platform_admins.user_id uuid nullable=NO
+column roles.code text nullable=NO
+column roles.name text nullable=NO
+column school_memberships.created_at timestamp with time zone nullable=NO
+column school_memberships.ended_at timestamp with time zone nullable=YES
+column school_memberships.id uuid nullable=NO
+column school_memberships.joined_at timestamp with time zone nullable=NO
+column school_memberships.school_id uuid nullable=NO
+column school_memberships.status text nullable=NO
+column school_memberships.status_reason text nullable=YES
+column school_memberships.updated_at timestamp with time zone nullable=NO
+column school_memberships.user_id uuid nullable=NO
+column schools.address text nullable=YES
+column schools.code USER-DEFINED nullable=NO
+column schools.created_at timestamp with time zone nullable=NO
+column schools.education_levels ARRAY nullable=NO
+column schools.id uuid nullable=NO
+column schools.name text nullable=NO
+column schools.npsn text nullable=YES
+column schools.status text nullable=NO
+column schools.timezone text nullable=NO
+column schools.updated_at timestamp with time zone nullable=NO
+column users.created_at timestamp with time zone nullable=NO
+column users.email USER-DEFINED nullable=NO
+column users.email_verified_at timestamp with time zone nullable=YES
+column users.id uuid nullable=NO
+column users.last_login_at timestamp with time zone nullable=YES
+column users.name text nullable=NO
+column users.password text nullable=NO
+column users.remember_token text nullable=YES
+column users.status text nullable=NO
+column users.two_factor_confirmed_at timestamp with time zone nullable=YES
+column users.two_factor_recovery_codes text nullable=YES
+column users.two_factor_secret text nullable=YES
+column users.updated_at timestamp with time zone nullable=NO
+index CREATE INDEX audit_logs_school_created_index ON public.audit_logs USING btree (school_id, created_at DESC)
+index CREATE INDEX audit_logs_school_entity_index ON public.audit_logs USING btree (school_id, entity_type, entity_id)
+index CREATE INDEX membership_invitations_email_index ON public.membership_invitations USING btree (email)
+index CREATE INDEX membership_roles_school_role_index ON public.membership_roles USING btree (school_id, role_code)
+index CREATE INDEX school_memberships_user_id_index ON public.school_memberships USING btree (user_id)
+index CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)
+index CREATE UNIQUE INDEX failed_jobs_pkey ON public.failed_jobs USING btree (id)
+index CREATE UNIQUE INDEX failed_jobs_uuid_key ON public.failed_jobs USING btree (uuid)
+index CREATE UNIQUE INDEX membership_invitations_pending_unique ON public.membership_invitations USING btree (school_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL))
+index CREATE UNIQUE INDEX membership_invitations_pkey ON public.membership_invitations USING btree (id)
+index CREATE UNIQUE INDEX membership_invitations_school_id_id_unique ON public.membership_invitations USING btree (school_id, id)
+index CREATE UNIQUE INDEX membership_invitations_token_hash_unique ON public.membership_invitations USING btree (token_hash)
+index CREATE UNIQUE INDEX membership_roles_pkey ON public.membership_roles USING btree (membership_id, role_code)
+index CREATE UNIQUE INDEX password_reset_tokens_pkey ON public.password_reset_tokens USING btree (email)
+index CREATE UNIQUE INDEX platform_admins_pkey ON public.platform_admins USING btree (user_id)
+index CREATE UNIQUE INDEX roles_pkey ON public.roles USING btree (code)
+index CREATE UNIQUE INDEX school_memberships_pkey ON public.school_memberships USING btree (id)
+index CREATE UNIQUE INDEX school_memberships_school_id_id_unique ON public.school_memberships USING btree (school_id, id)
+index CREATE UNIQUE INDEX school_memberships_school_user_unique ON public.school_memberships USING btree (school_id, user_id)
+index CREATE UNIQUE INDEX schools_code_unique ON public.schools USING btree (code)
+index CREATE UNIQUE INDEX schools_npsn_unique ON public.schools USING btree (npsn)
+index CREATE UNIQUE INDEX schools_pkey ON public.schools USING btree (id)
+index CREATE UNIQUE INDEX users_email_unique ON public.users USING btree (email)
+index CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)
+constraint audit_logs audit_logs_action_format CHECK ((action ~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$'::text))
+constraint audit_logs audit_logs_action_not_null NOT NULL action
+constraint audit_logs audit_logs_actor_device_check CHECK (((actor_type <> 'device'::text) OR (actor_device_id IS NOT NULL)))
+constraint audit_logs audit_logs_actor_type_check CHECK ((actor_type = ANY (ARRAY['user'::text, 'device'::text, 'system'::text])))
+constraint audit_logs audit_logs_actor_type_not_null NOT NULL actor_type
+constraint audit_logs audit_logs_actor_user_check CHECK (((actor_type <> 'user'::text) OR (actor_user_id IS NOT NULL)))
+constraint audit_logs audit_logs_actor_user_id_fkey FOREIGN KEY (actor_user_id) REFERENCES users(id)
+constraint audit_logs audit_logs_created_at_not_null NOT NULL created_at
+constraint audit_logs audit_logs_id_not_null NOT NULL id
+constraint audit_logs audit_logs_pkey PRIMARY KEY (id)
+constraint audit_logs audit_logs_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint failed_jobs failed_jobs_connection_not_null NOT NULL connection
+constraint failed_jobs failed_jobs_exception_not_null NOT NULL exception
+constraint failed_jobs failed_jobs_failed_at_not_null NOT NULL failed_at
+constraint failed_jobs failed_jobs_id_not_null NOT NULL id
+constraint failed_jobs failed_jobs_payload_not_null NOT NULL payload
+constraint failed_jobs failed_jobs_pkey PRIMARY KEY (id)
+constraint failed_jobs failed_jobs_queue_not_null NOT NULL queue
+constraint failed_jobs failed_jobs_uuid_key UNIQUE (uuid)
+constraint failed_jobs failed_jobs_uuid_not_null NOT NULL uuid
+constraint membership_invitations membership_invitations_accepted_check CHECK (((accepted_at IS NULL) = (accepted_user_id IS NULL)))
+constraint membership_invitations membership_invitations_accepted_user_id_fkey FOREIGN KEY (accepted_user_id) REFERENCES users(id)
+constraint membership_invitations membership_invitations_created_at_not_null NOT NULL created_at
+constraint membership_invitations membership_invitations_delivery_status_check CHECK ((delivery_status = ANY (ARRAY['queued'::text, 'handed_off'::text, 'failed'::text])))
+constraint membership_invitations membership_invitations_delivery_status_not_null NOT NULL delivery_status
+constraint membership_invitations membership_invitations_email_not_null NOT NULL email
+constraint membership_invitations membership_invitations_expires_at_not_null NOT NULL expires_at
+constraint membership_invitations membership_invitations_final_state_check CHECK (((accepted_at IS NULL) OR (revoked_at IS NULL)))
+constraint membership_invitations membership_invitations_id_not_null NOT NULL id
+constraint membership_invitations membership_invitations_invited_by_user_id_fkey FOREIGN KEY (invited_by_user_id) REFERENCES users(id)
+constraint membership_invitations membership_invitations_invited_by_user_id_not_null NOT NULL invited_by_user_id
+constraint membership_invitations membership_invitations_pkey PRIMARY KEY (id)
+constraint membership_invitations membership_invitations_role_codes_check CHECK (((cardinality(role_codes) >= 1) AND (role_codes <@ ARRAY['school_admin'::text, 'principal'::text, 'homeroom_teacher'::text, 'duty_officer'::text, 'terminal_operator'::text])))
+constraint membership_invitations membership_invitations_role_codes_not_null NOT NULL role_codes
+constraint membership_invitations membership_invitations_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint membership_invitations membership_invitations_school_id_id_unique UNIQUE (school_id, id)
+constraint membership_invitations membership_invitations_school_id_not_null NOT NULL school_id
+constraint membership_invitations membership_invitations_token_hash_length CHECK ((octet_length(token_hash) = 32))
+constraint membership_invitations membership_invitations_token_hash_not_null NOT NULL token_hash
+constraint membership_invitations membership_invitations_token_hash_unique UNIQUE (token_hash)
+constraint membership_invitations membership_invitations_updated_at_not_null NOT NULL updated_at
+constraint membership_roles membership_roles_granted_at_not_null NOT NULL granted_at
+constraint membership_roles membership_roles_granted_by_user_id_fkey FOREIGN KEY (granted_by_user_id) REFERENCES users(id)
+constraint membership_roles membership_roles_membership_fk FOREIGN KEY (school_id, membership_id) REFERENCES school_memberships(school_id, id) ON DELETE CASCADE
+constraint membership_roles membership_roles_membership_id_not_null NOT NULL membership_id
+constraint membership_roles membership_roles_pkey PRIMARY KEY (membership_id, role_code)
+constraint membership_roles membership_roles_role_code_fkey FOREIGN KEY (role_code) REFERENCES roles(code)
+constraint membership_roles membership_roles_role_code_not_null NOT NULL role_code
+constraint membership_roles membership_roles_school_id_not_null NOT NULL school_id
+constraint password_reset_tokens password_reset_tokens_email_not_null NOT NULL email
+constraint password_reset_tokens password_reset_tokens_pkey PRIMARY KEY (email)
+constraint password_reset_tokens password_reset_tokens_token_not_null NOT NULL token
+constraint platform_admins platform_admins_created_at_not_null NOT NULL created_at
+constraint platform_admins platform_admins_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+constraint platform_admins platform_admins_pkey PRIMARY KEY (user_id)
+constraint platform_admins platform_admins_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
+constraint platform_admins platform_admins_user_id_not_null NOT NULL user_id
+constraint roles roles_code_not_null NOT NULL code
+constraint roles roles_name_not_null NOT NULL name
+constraint roles roles_pkey PRIMARY KEY (code)
+constraint school_memberships school_memberships_created_at_not_null NOT NULL created_at
+constraint school_memberships school_memberships_ended_at_check CHECK (((status = 'ended'::text) = (ended_at IS NOT NULL)))
+constraint school_memberships school_memberships_id_not_null NOT NULL id
+constraint school_memberships school_memberships_joined_at_not_null NOT NULL joined_at
+constraint school_memberships school_memberships_pkey PRIMARY KEY (id)
+constraint school_memberships school_memberships_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint school_memberships school_memberships_school_id_id_unique UNIQUE (school_id, id)
+constraint school_memberships school_memberships_school_id_not_null NOT NULL school_id
+constraint school_memberships school_memberships_school_user_unique UNIQUE (school_id, user_id)
+constraint school_memberships school_memberships_status_check CHECK ((status = ANY (ARRAY['active'::text, 'suspended'::text, 'ended'::text])))
+constraint school_memberships school_memberships_status_not_null NOT NULL status
+constraint school_memberships school_memberships_updated_at_not_null NOT NULL updated_at
+constraint school_memberships school_memberships_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
+constraint school_memberships school_memberships_user_id_not_null NOT NULL user_id
+constraint schools schools_code_format CHECK ((code ~ '^[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?$'::citext))
+constraint schools schools_code_not_null NOT NULL code
+constraint schools schools_code_unique UNIQUE (code)
+constraint schools schools_created_at_not_null NOT NULL created_at
+constraint schools schools_education_levels_check CHECK (((cardinality(education_levels) >= 1) AND (education_levels <@ ARRAY['SD'::text, 'MI'::text, 'SMP'::text, 'MTs'::text, 'SMA'::text, 'SMK'::text, 'MA'::text, 'lainnya'::text])))
+constraint schools schools_education_levels_not_null NOT NULL education_levels
+constraint schools schools_id_not_null NOT NULL id
+constraint schools schools_name_not_blank CHECK ((btrim(name) <> ''::text))
+constraint schools schools_name_not_null NOT NULL name
+constraint schools schools_npsn_format CHECK (((npsn IS NULL) OR (npsn ~ '^[0-9]{8}$'::text)))
+constraint schools schools_npsn_unique UNIQUE (npsn)
+constraint schools schools_pkey PRIMARY KEY (id)
+constraint schools schools_status_check CHECK ((status = ANY (ARRAY['trial'::text, 'active'::text, 'suspended'::text, 'terminated'::text])))
+constraint schools schools_status_not_null NOT NULL status
+constraint schools schools_timezone_check CHECK ((timezone = ANY (ARRAY['Asia/Jakarta'::text, 'Asia/Makassar'::text, 'Asia/Jayapura'::text])))
+constraint schools schools_timezone_not_null NOT NULL timezone
+constraint schools schools_updated_at_not_null NOT NULL updated_at
+constraint users users_created_at_not_null NOT NULL created_at
+constraint users users_email_not_null NOT NULL email
+constraint users users_email_unique UNIQUE (email)
+constraint users users_id_not_null NOT NULL id
+constraint users users_name_not_blank CHECK ((btrim(name) <> ''::text))
+constraint users users_name_not_null NOT NULL name
+constraint users users_password_not_null NOT NULL password
+constraint users users_pkey PRIMARY KEY (id)
+constraint users users_status_check CHECK ((status = ANY (ARRAY['active'::text, 'disabled'::text])))
+constraint users users_status_not_null NOT NULL status
+constraint users users_two_factor_confirmed_requires_secret CHECK (((two_factor_confirmed_at IS NULL) OR (two_factor_secret IS NOT NULL)))
+constraint users users_updated_at_not_null NOT NULL updated_at
+policy audit_logs audit_insert INSERT  ((school_id IS NULL) OR (school_id = app_school_id()))
+policy audit_logs audit_read SELECT (((school_id IS NOT NULL) AND (school_id = app_school_id())) OR ((school_id IS NULL) AND app_is_platform())) 
+policy membership_invitations own_invitations_read SELECT (email = ( SELECT u.email
+   FROM users u
+  WHERE (u.id = app_user_id()))) 
+policy membership_invitations tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy membership_invitations token_lookup_owner_read SELECT true 
+policy membership_roles own_membership_roles_read SELECT (EXISTS ( SELECT 1
+   FROM school_memberships m
+  WHERE ((m.id = membership_roles.membership_id) AND (m.user_id = app_user_id())))) 
+policy membership_roles tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy school_memberships own_memberships_read SELECT (user_id = app_user_id()) 
+policy school_memberships tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+rls audit_logs enabled=true forced=true
+rls failed_jobs enabled=false forced=false
+rls membership_invitations enabled=true forced=true
+rls membership_roles enabled=true forced=true
+rls password_reset_tokens enabled=false forced=false
+rls platform_admins enabled=false forced=false
+rls roles enabled=false forced=false
+rls school_memberships enabled=true forced=true
+rls schools enabled=false forced=false
+rls users enabled=false forced=false

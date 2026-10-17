@@ -3,10 +3,10 @@
 namespace Tests\Concerns;
 
 use App\Domain\Identity\Role;
+use App\Mail\InvitationMail;
 use App\Models\School;
 use App\Models\SchoolMembership;
 use App\Models\User;
-use App\Mail\InvitationMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 

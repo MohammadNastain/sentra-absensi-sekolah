@@ -6,6 +6,7 @@ use App\Models\MembershipInvitation;
 use App\Models\School;
 use App\Models\SchoolMembership;
 use App\Models\User;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -34,7 +35,7 @@ function guestRequest()
     return test()->asGuest();
 }
 
-function invTable(): Illuminate\Database\Query\Builder
+function invTable(): Builder
 {
     test()->useSchool(test()->school);
 
