@@ -79,7 +79,8 @@ Aturan umum untuk setiap tahap:
 - [x] Test API lengkap (270 lulus): ditambah U01, U03, A07, T05–T07, T12, M03 (snapshot skema `database/schema-snapshot.txt`), M04, matriks otorisasi untuk seluruh rute. Pint + Larastan level 8 bersih; CI hijau di PR #1.
 - [x] OpenAPI 3.1 (`apps/api/openapi.yaml`, ditulis tangan; test drift `OpenApiContractTest` menjamin setiap rute terdokumentasi dan sebaliknya) + paket `packages/api-client` (tipe dari `openapi-typescript` 7.13.0, klien `openapi-fetch` 0.17.0 dengan cookie + CSRF). Job CI `web` membangkitkan ulang skema dan menggagalkan build bila `schema.d.ts` tidak sinkron.
 - [x] Frontend (irisan 1): proxy `/api` + `/sanctum` ke Laravel (cookie same-origin), halaman login, tantangan 2FA, lupa password, reset password; teruji manual end-to-end terhadap API sungguhan. Service `api` di compose diganti ke server bawaan PHP (`artisan serve` tidak meneruskan `DB_HOST` ke worker).
-- [ ] Frontend (irisan berikut): terima undangan, pemilih sekolah, Super Admin (sekolah + undang admin), anggota/undangan/audit sekolah, setup 2FA; lalu E2E Playwright.
+- [x] Frontend (irisan 2): halaman terima undangan (`/invitations/[token]`, akun baru atau akun lama), pemilih sekolah + undangan tertunda (`/schools`), `/no-access`, logout, `?next=` aman di login. Service `queue` ditambahkan ke compose (tanpa worker, email undangan tidak pernah terkirim di dev). Teruji nyata: undang → Mailpit → buat akun → login.
+- [ ] Frontend (irisan berikut): Super Admin (sekolah + undang admin), anggota/undangan/audit sekolah, setup 2FA; lalu E2E Playwright.
 
 ---
 

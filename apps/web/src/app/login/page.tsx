@@ -5,6 +5,7 @@ import { Suspense, useState } from "react";
 import { AuthShell, FormAlert, SubmitButton, TextField, TextLink } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, type FormFailure } from "@/lib/errors";
+import { safeNext } from "@/lib/navigation";
 import { destinationPath, resolveDestination } from "@/lib/session";
 
 function LoginForm() {
@@ -38,7 +39,8 @@ function LoginForm() {
       router.replace("/two-factor");
       return;
     }
-    router.replace(destinationPath(await resolveDestination()));
+    const next = safeNext(params.get("next"));
+    router.replace(next ?? destinationPath(await resolveDestination()));
   }
 
   return (
@@ -50,6 +52,9 @@ function LoginForm() {
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         {params.get("reset") === "1" ? (
           <FormAlert tone="success">Password berhasil diubah. Silakan masuk.</FormAlert>
+        ) : null}
+        {params.get("invited") === "1" ? (
+          <FormAlert tone="success">Akun Anda sudah dibuat. Silakan masuk untuk mulai.</FormAlert>
         ) : null}
         {failure ? <FormAlert>{failure.message}</FormAlert> : null}
         <TextField label="Email" name="email" type="email" autoComplete="username" required autoFocus />
