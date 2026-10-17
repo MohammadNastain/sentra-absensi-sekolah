@@ -1,0 +1,13 @@
+{
+  "name": "sentra-absensi-sekolah",
+  "private": true,
+  "description": "Monorepo Sentra Absensi Sekolah — lihat README.md",
+  "packageManager": "pnpm@12.8.2",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "env:init": "node scripts/init-env.mjs",
+    "env:verify": "bash scripts/verify-dev-env.sh"
+  }
+}

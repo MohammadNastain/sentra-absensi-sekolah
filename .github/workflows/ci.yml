@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dev-environment:
+    name: Lingkungan Docker (PostgreSQL, Redis, image PHP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Buat .env dengan secret acak sekali pakai
+        run: |
+          node scripts/init-env.mjs
+          echo "HOST_UID=$(id -u)" >> .env
+          echo "HOST_GID=$(id -g)" >> .env
+
+      - name: Verifikasi lingkungan
+        run: bash scripts/verify-dev-env.sh
+
+      - name: Log container bila gagal
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Bersihkan
+        if: always()
+        run: docker compose down -v
+
+  api:
+    name: API Laravel (lint, analisis, test PostgreSQL, migrasi)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Buat .env dengan secret acak sekali pakai
+        run: |
+          node scripts/init-env.mjs
+          echo "HOST_UID=$(id -u)" >> .env
+          echo "HOST_GID=$(id -g)" >> .env
+
+      - name: Jalankan PostgreSQL, Redis, Mailpit & build image PHP
+        run: |
+          docker compose up -d --wait postgres redis mailpit
+          docker compose --profile api build api
+
+      - name: Composer install & .env API
+        run: |
+          docker compose run --rm --no-deps api composer install --no-interaction --no-progress
+          docker compose run --rm --no-deps api sh -c "cp .env.example .env && php artisan key:generate --no-interaction"
+
+      - name: Composer audit
+        run: docker compose run --rm --no-deps api composer audit
+
+      - name: Pint
+        run: docker compose run --rm --no-deps api composer lint
+
+      - name: Larastan
+        run: docker compose run --rm --no-deps api composer analyse
+
+      - name: Test (Pest, PostgreSQL)
+        run: docker compose run --rm api php artisan test
+
+      - name: Migrasi fresh → rollback → migrate (M01, M02)
+        run: |
+          docker compose run --rm api php artisan migrate:fresh --database=pgsql_owner --force
+          docker compose run --rm api php artisan migrate:rollback --database=pgsql_owner --force
+          docker compose run --rm api php artisan migrate --database=pgsql_owner --force
+
+      - name: Log container bila gagal
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Bersihkan
+        if: always()
+        run: docker compose down -v
+
+  repo-hygiene:
+    name: Pemeriksaan repo (shell, YAML, secret)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Shellcheck
+        run: shellcheck scripts/*.sh infra/docker/postgres/initdb/*.sh
+
+      - name: Pindai secret (gitleaks, isi working tree)
+        run: |
+          docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            dir /repo --redact --verbose --exit-code 1

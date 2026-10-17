@@ -1,0 +1,11 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+# tests/ tidak dianalisis: PHPStan tidak dapat menginferensi $this di closure Pest.
+# Test diverifikasi dengan dijalankan (composer test).
+parameters:
+    level: 8
+    paths:
+        - app
+        - database
+        - routes

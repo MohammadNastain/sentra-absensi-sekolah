@@ -1,0 +1,9 @@
+packages:
+  - "apps/web"
+  - "apps/terminal"
+  - "packages/*"
+
+# Hanya paket yang disetujui eksplisit yang boleh menjalankan skrip build saat instalasi.
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
