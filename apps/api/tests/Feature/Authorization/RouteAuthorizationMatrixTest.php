@@ -68,8 +68,9 @@ it('T08: middleware setiap rute sesuai deklarasi aksesnya', function () {
                 ->toBeTrue("{$key} harus rute sekolah dengan izin {$access->value}"),
         };
 
-        // Setiap rute ber-{school} wajib melewati validasi keanggotaan.
-        if (str_contains($route->uri(), '{school}')) {
+        // Setiap rute sekolah (/schools/{school}) wajib melewati validasi keanggotaan. Rute platform
+        // (/platform/schools/{school}) justru tanpa keanggotaan: Super Admin bukan anggota (D-21).
+        if (str_contains($route->uri(), 'schools/{school}') && ! $isPlatform) {
             expect($isSchool)->toBeTrue("{$key} memuat {school} tanpa ResolveSchoolMembership");
         }
     }
@@ -86,11 +87,31 @@ function schoolRoutes(): array
         ->all();
 }
 
+const SAMPLE_UUID = '00000000-0000-7000-8000-000000000001';
+
+function concreteUri(string $uri): string
+{
+    $uri = str_replace('{school}', 'sekolah-a', $uri);
+
+    return (string) preg_replace('/\{[a-z]+\}/', SAMPLE_UUID, $uri);
+}
+
+/**
+ * @return array<string, array{0: string}>
+ */
+function routesWithAccess(string $access): array
+{
+    return collect(RouteMatrix::routes())
+        ->filter(fn ($declared) => $declared === $access)
+        ->mapWithKeys(fn ($declared, string $key) => [$key => [$key]])
+        ->all();
+}
+
 it('T09: rute sekolah tanpa login → 401', function (string $key) {
     [$method, $uri] = explode(' ', $key, 2);
     School::factory()->create(['code' => 'sekolah-a']);
 
-    $this->json($method, '/'.str_replace('{school}', 'sekolah-a', $uri))->assertUnauthorized();
+    $this->json($method, '/'.concreteUri($uri))->assertUnauthorized();
 })->with(fn () => array_map(fn ($row) => $row[0], schoolRoutes()));
 
 it('T09: setiap peran mendapat akses sesuai izinnya pada setiap rute sekolah', function (string $key, Permission $permission, Role $role) {
@@ -99,12 +120,43 @@ it('T09: setiap peran mendapat akses sesuai izinnya pada setiap rute sekolah', f
     $user = User::factory()->create();
     $this->addMember($school, $user, [$role]);
 
-    $response = $this->actingAs($user)->json($method, '/'.str_replace('{school}', 'sekolah-a', $uri));
+    $response = $this->actingAs($user)->json($method, '/'.concreteUri($uri));
 
     if (in_array($permission, $role->permissions(), true)) {
-        // Diizinkan: tidak boleh ditolak otorisasi (validasi body boleh 422).
-        expect($response->status())->not->toBeIn([401, 403, 404], "{$role->value} seharusnya diizinkan pada {$key}");
+        // Diizinkan: tidak boleh ditolak otorisasi. 404 hanya wajar bila ada ID anak yang memang tidak ada.
+        expect($response->status())->not->toBeIn([401, 403], "{$role->value} seharusnya diizinkan pada {$key}");
+        if (! preg_match('/\{(?!school\})[a-z]+\}/', $uri)) {
+            expect($response->status())->not->toBe(404, "{$key} tidak boleh 404 bagi {$role->value}");
+        }
     } else {
         $response->assertForbidden()->assertJsonPath('code', 'PERMISSION_DENIED');
     }
 })->with(fn () => array_values(schoolRoutes()))->with(Role::cases());
+
+it('T09: rute yang butuh login → 401 tanpa login', function (string $key) {
+    [$method, $uri] = explode(' ', $key, 2);
+
+    $this->json($method, '/'.concreteUri($uri))->assertUnauthorized();
+})->with(fn () => array_map(fn ($row) => $row[0], routesWithAccess('authenticated')));
+
+it('T09: rute platform → 401 tanpa login, 403 bagi user biasa', function (string $key) {
+    [$method, $uri] = explode(' ', $key, 2);
+    School::factory()->create(['code' => 'sekolah-a']);
+
+    $this->json($method, '/'.concreteUri($uri))->assertUnauthorized();
+
+    $this->actingAs(User::factory()->withConfirmedTwoFactor()->create())
+        ->json($method, '/'.concreteUri($uri))
+        ->assertForbidden()
+        ->assertJsonPath('code', 'PLATFORM_ADMIN_REQUIRED');
+})->with(fn () => array_map(fn ($row) => $row[0], routesWithAccess('platform')));
+
+it('T09: rute platform bagi Super Admin tanpa lulus 2FA → 403 TWO_FACTOR_REQUIRED', function (string $key) {
+    [$method, $uri] = explode(' ', $key, 2);
+    School::factory()->create(['code' => 'sekolah-a']);
+    $admin = $this->makePlatformAdmin(User::factory()->withConfirmedTwoFactor()->create());
+
+    $this->actingAs($admin)->json($method, '/'.concreteUri($uri))
+        ->assertForbidden()
+        ->assertJsonPath('code', 'TWO_FACTOR_REQUIRED');
+})->with(fn () => array_map(fn ($row) => $row[0], routesWithAccess('platform')));

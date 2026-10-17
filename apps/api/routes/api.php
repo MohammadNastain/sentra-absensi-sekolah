@@ -1,10 +1,17 @@
 <?php
 
 use App\Domain\Identity\Permission;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\MeController;
+use App\Http\Controllers\Invitation\PublicInvitationController;
+use App\Http\Controllers\Me\MyInvitationController;
 use App\Http\Controllers\Me\MySchoolsController;
 use App\Http\Controllers\Platform\PlatformSchoolController;
+use App\Http\Controllers\School\AuditLogController;
+use App\Http\Controllers\School\InvitationController;
+use App\Http\Controllers\School\MemberController;
 use App\Http\Controllers\School\SchoolProfileController;
+use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\RejectRememberMe;
 use App\Http\Middleware\RequireSchoolPermission;
@@ -16,7 +23,6 @@ use Laravel\Fortify\Http\Controllers\ConfirmedPasswordStatusController;
 use Laravel\Fortify\Http\Controllers\ConfirmedTwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\NewPasswordController;
 use Laravel\Fortify\Http\Controllers\PasswordController;
-use Laravel\Fortify\Http\Controllers\PasswordResetLinkController;
 use Laravel\Fortify\Http\Controllers\RecoveryCodeController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
@@ -25,7 +31,7 @@ use Laravel\Fortify\Http\Controllers\TwoFactorSecretKeyController;
 
 /*
 | Semua rute berprefiks /api/v1 dan memakai grup middleware `web` (sesi cookie + CSRF), lihat
-| bootstrap/app.php. Setiap rute WAJIB terdaftar di tests/Authorization/RouteMatrix.php (T08).
+| bootstrap/app.php. Setiap rute WAJIB terdaftar di tests/Feature/Authorization/RouteMatrix.php (T08).
 */
 
 // --- Autentikasi (Fortify headless, TAHAP_1_FONDASI §6) ---
@@ -34,8 +40,8 @@ Route::prefix('auth')->group(function () {
         ->middleware([RejectRememberMe::class, 'throttle:login'])->name('login');
     Route::post('two-factor-challenge', [TwoFactorAuthenticatedSessionController::class, 'store'])
         ->middleware('throttle:two-factor')->name('two-factor.login');
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
-        ->middleware('throttle:password-reset')->name('password.email');
+    Route::post('forgot-password', ForgotPasswordController::class)
+        ->middleware([EnsureEmailTransportReady::ALIAS, 'throttle:password-reset'])->name('password.email');
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->middleware('throttle:password-reset')->name('password.update');
 
@@ -58,18 +64,61 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// --- Undangan lewat token (publik; pembatasan laju per IP) ---
+Route::middleware('throttle:invitation-public')->prefix('invitations')->group(function () {
+    Route::get('{token}', [PublicInvitationController::class, 'show'])->name('invitations.show');
+    Route::post('{token}/accept', [PublicInvitationController::class, 'accept'])->name('invitations.accept');
+});
+
 // --- Milik user yang login (lintas sekolah, konteks RLS app.user_id) ---
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('me/schools', MySchoolsController::class)->name('me.schools');
+Route::middleware('auth:sanctum')->prefix('me')->name('me.')->group(function () {
+    Route::get('schools', MySchoolsController::class)->name('schools');
+    Route::get('invitations', [MyInvitationController::class, 'index'])->name('invitations.index');
+    Route::post('invitations/{invitation}/accept', [MyInvitationController::class, 'accept'])->whereUuid('invitation')->name('invitations.accept');
+    Route::post('invitations/{invitation}/decline', [MyInvitationController::class, 'decline'])->whereUuid('invitation')->name('invitations.decline');
 });
 
 // --- Platform (Super Admin + 2FA) ---
 Route::middleware(['auth:sanctum', EnsurePlatformAdmin::class])->prefix('platform')->name('platform.')->group(function () {
     Route::get('schools', [PlatformSchoolController::class, 'index'])->name('schools.index');
+    Route::post('schools', [PlatformSchoolController::class, 'store'])->name('schools.store');
+    Route::get('schools/{school}', [PlatformSchoolController::class, 'show'])->name('schools.show');
+    Route::patch('schools/{school}', [PlatformSchoolController::class, 'update'])->name('schools.update');
+    Route::post('schools/{school}/suspend', [PlatformSchoolController::class, 'suspend'])->name('schools.suspend');
+    Route::post('schools/{school}/activate', [PlatformSchoolController::class, 'activate'])->name('schools.activate');
+    Route::post('schools/{school}/invitations', [PlatformSchoolController::class, 'inviteAdmin'])
+        ->middleware(EnsureEmailTransportReady::ALIAS)->name('schools.invitations.store');
 });
 
 // --- Sekolah (keanggotaan divalidasi setiap request, D-34) ---
 Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('schools/{school}')->name('schools.')->group(function () {
     Route::get('/', [SchoolProfileController::class, 'show'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolProfileView))->name('show');
+    Route::patch('/', [SchoolProfileController::class, 'update'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolProfileUpdate))->name('update');
+
+    Route::get('members', [MemberController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersView))->name('members.index');
+    Route::get('members/{membership}', [MemberController::class, 'show'])->whereUuid('membership')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersView))->name('members.show');
+    Route::put('members/{membership}/roles', [MemberController::class, 'updateRoles'])->whereUuid('membership')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersManage))->name('members.roles');
+    Route::post('members/{membership}/suspend', [MemberController::class, 'suspend'])->whereUuid('membership')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersManage))->name('members.suspend');
+    Route::post('members/{membership}/reactivate', [MemberController::class, 'reactivate'])->whereUuid('membership')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersManage))->name('members.reactivate');
+    Route::post('members/{membership}/end', [MemberController::class, 'end'])->whereUuid('membership')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersManage))->name('members.end');
+
+    Route::get('invitations', [InvitationController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersManage))->name('invitations.index');
+    Route::post('invitations', [InvitationController::class, 'store'])
+        ->middleware([EnsureEmailTransportReady::ALIAS, RequireSchoolPermission::using(Permission::SchoolMembersManage)])->name('invitations.store');
+    Route::post('invitations/{invitation}/resend', [InvitationController::class, 'resend'])->whereUuid('invitation')
+        ->middleware([EnsureEmailTransportReady::ALIAS, RequireSchoolPermission::using(Permission::SchoolMembersManage)])->name('invitations.resend');
+    Route::post('invitations/{invitation}/revoke', [InvitationController::class, 'revoke'])->whereUuid('invitation')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersManage))->name('invitations.revoke');
+
+    Route::get('audit-logs', [AuditLogController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAuditView))->name('audit-logs.index');
 });

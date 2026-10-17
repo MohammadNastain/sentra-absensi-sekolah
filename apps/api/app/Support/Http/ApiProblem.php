@@ -47,4 +47,59 @@ class ApiProblem extends HttpException
     {
         return new self(403, 'PERMISSION_DENIED', 'Anda tidak memiliki izin untuk tindakan ini.');
     }
+
+    public static function emailNotConfigured(): self
+    {
+        return new self(
+            503,
+            'EMAIL_NOT_CONFIGURED',
+            'Layanan email belum dikonfigurasi.',
+            'Undangan dan reset password membutuhkan layanan email. Hubungi administrator platform.',
+        );
+    }
+
+    public static function invitationUnavailable(): self
+    {
+        return new self(410, 'INVITATION_UNAVAILABLE', 'Undangan tidak berlaku. Minta admin sekolah mengirim undangan baru.');
+    }
+
+    public static function loginRequired(): self
+    {
+        return new self(401, 'LOGIN_REQUIRED', 'Email ini sudah terdaftar. Masuk dengan akun tersebut untuk menerima undangan.');
+    }
+
+    public static function invitationEmailMismatch(): self
+    {
+        return new self(403, 'INVITATION_EMAIL_MISMATCH', 'Undangan ini ditujukan untuk akun dengan email yang berbeda.');
+    }
+
+    public static function invitationAlreadyPending(): self
+    {
+        return new self(409, 'INVITATION_ALREADY_PENDING', 'Masih ada undangan yang belum diterima untuk email ini.', 'Kirim ulang atau cabut undangan yang ada.');
+    }
+
+    public static function alreadyMember(): self
+    {
+        return new self(409, 'ALREADY_MEMBER', 'Akun ini sudah menjadi anggota sekolah.');
+    }
+
+    public static function lastSchoolAdmin(): self
+    {
+        return new self(
+            409,
+            'LAST_SCHOOL_ADMIN',
+            'Admin sekolah aktif terakhir tidak dapat dicabut perannya, ditangguhkan, atau diakhiri.',
+            'Tambahkan admin sekolah lain terlebih dahulu.',
+        );
+    }
+
+    public static function cannotChangeOwnRoles(): self
+    {
+        return new self(403, 'CANNOT_CHANGE_OWN_ROLES', 'Anda tidak dapat mengubah peran Anda sendiri.');
+    }
+
+    public static function invalidStateTransition(string $detail): self
+    {
+        return new self(409, 'INVALID_STATE_TRANSITION', 'Perubahan status tidak diizinkan.', $detail);
+    }
 }

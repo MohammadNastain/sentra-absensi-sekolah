@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequireSchoolPermission;
 use App\Http\Middleware\ResetDatabaseContext;
@@ -27,7 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(RequestId::class);
         $middleware->append(ResetDatabaseContext::class);
         $middleware->appendToGroup('web', EnsureUserActive::class);
-        $middleware->alias([RequireSchoolPermission::ALIAS => RequireSchoolPermission::class]);
+        $middleware->alias([
+            RequireSchoolPermission::ALIAS => RequireSchoolPermission::class,
+            EnsureEmailTransportReady::ALIAS => EnsureEmailTransportReady::class,
+        ]);
         // Tanpa halaman login di API: tamu selalu mendapat 401 problem+json.
         $middleware->redirectGuestsTo(fn () => null);
         $middleware->redirectUsersTo(fn () => null);

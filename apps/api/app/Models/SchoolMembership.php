@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Identity\Role;
+use App\Models\Concerns\BelongsToSchool;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -26,7 +27,7 @@ use Illuminate\Support\Carbon;
  */
 class SchoolMembership extends Model
 {
-    use HasUuids;
+    use BelongsToSchool, HasUuids;
 
     public const STATUS_ACTIVE = 'active';
 

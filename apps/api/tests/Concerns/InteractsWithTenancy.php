@@ -6,7 +6,9 @@ use App\Domain\Identity\Role;
 use App\Models\School;
 use App\Models\SchoolMembership;
 use App\Models\User;
+use App\Mail\InvitationMail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 trait InteractsWithTenancy
 {
@@ -53,5 +55,45 @@ trait InteractsWithTenancy
             'auth.login_at' => now()->getTimestamp(),
             'auth.two_factor_passed_user_id' => $user->id,
         ]);
+    }
+
+    /**
+     * Mengambil token mentah dari email undangan terakhir (Mail::fake() harus aktif). Token tidak pernah
+     * ada di respons API maupun basis data; satu-satunya jalurnya adalah tautan email.
+     */
+    protected function lastInvitationToken(): string
+    {
+        $mail = Mail::sent(InvitationMail::class)->last();
+        expect($mail)->not->toBeNull('Tidak ada email undangan terkirim');
+
+        return basename((string) parse_url($mail->url, PHP_URL_PATH));
+    }
+
+    /**
+     * Mengarahkan konteks RLS sesi test ke sekolah tertentu sebelum membaca/menulis tabel tenant
+     * secara langsung. Konteks di-reset di setiap request HTTP, jadi panggil lagi setelahnya.
+     */
+    public function useSchool(School|string $school): void
+    {
+        $this->dbContext()->setSchool($school instanceof School ? $school->id : $school);
+    }
+
+    /**
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public function inSchool(School|string $school, callable $callback): mixed
+    {
+        return $this->dbContext()->runInSchool($school instanceof School ? $school->id : $school, $callback);
+    }
+
+    public function asGuest(): static
+    {
+        $this->app['auth']->forgetGuards();
+        $this->flushSession();
+
+        return $this;
     }
 }

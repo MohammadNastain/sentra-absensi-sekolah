@@ -43,14 +43,39 @@ final class RouteMatrix
             'GET api/v1/auth/two-factor/recovery-codes' => 'authenticated',
             'POST api/v1/auth/two-factor/recovery-codes' => 'authenticated',
 
+            // Undangan lewat token (publik, dibatasi laju)
+            'GET api/v1/invitations/{token}' => 'public',
+            'POST api/v1/invitations/{token}/accept' => 'public',
+
             // Milik user
             'GET api/v1/me/schools' => 'authenticated',
+            'GET api/v1/me/invitations' => 'authenticated',
+            'POST api/v1/me/invitations/{invitation}/accept' => 'authenticated',
+            'POST api/v1/me/invitations/{invitation}/decline' => 'authenticated',
 
             // Platform
             'GET api/v1/platform/schools' => 'platform',
+            'POST api/v1/platform/schools' => 'platform',
+            'GET api/v1/platform/schools/{school}' => 'platform',
+            'PATCH api/v1/platform/schools/{school}' => 'platform',
+            'POST api/v1/platform/schools/{school}/suspend' => 'platform',
+            'POST api/v1/platform/schools/{school}/activate' => 'platform',
+            'POST api/v1/platform/schools/{school}/invitations' => 'platform',
 
             // Sekolah
             'GET api/v1/schools/{school}' => Permission::SchoolProfileView,
+            'PATCH api/v1/schools/{school}' => Permission::SchoolProfileUpdate,
+            'GET api/v1/schools/{school}/members' => Permission::SchoolMembersView,
+            'GET api/v1/schools/{school}/members/{membership}' => Permission::SchoolMembersView,
+            'PUT api/v1/schools/{school}/members/{membership}/roles' => Permission::SchoolMembersManage,
+            'POST api/v1/schools/{school}/members/{membership}/suspend' => Permission::SchoolMembersManage,
+            'POST api/v1/schools/{school}/members/{membership}/reactivate' => Permission::SchoolMembersManage,
+            'POST api/v1/schools/{school}/members/{membership}/end' => Permission::SchoolMembersManage,
+            'GET api/v1/schools/{school}/invitations' => Permission::SchoolMembersManage,
+            'POST api/v1/schools/{school}/invitations' => Permission::SchoolMembersManage,
+            'POST api/v1/schools/{school}/invitations/{invitation}/resend' => Permission::SchoolMembersManage,
+            'POST api/v1/schools/{school}/invitations/{invitation}/revoke' => Permission::SchoolMembersManage,
+            'GET api/v1/schools/{school}/audit-logs' => Permission::SchoolAuditView,
         ];
     }
 }

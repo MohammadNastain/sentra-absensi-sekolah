@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
  *   platform, padahal RETURNING mensyaratkan baris lolos policy SELECT.
  * - school_id diisi pemanggil sesuai konteks; RLS menolak school_id yang berbeda dari konteks.
  */
-final class AuditLogger
+class AuditLogger
 {
     public function __construct(private readonly AuditRedactor $redactor) {}
 
