@@ -117,8 +117,10 @@ services:
 
   # Worker antrean (Redis): tanpa ini email undangan/reset tidak pernah terkirim di dev.
   # tries=1: pengiriman undangan sengaja tanpa retry otomatis (ADR 0008).
+  # --max-time membuat worker keluar tiap jam (mencegah kebocoran memori); `restart` menyalakannya lagi.
   queue:
     profiles: ["api"]
+    restart: unless-stopped
     extends:
       service: api
     ports: !reset []
