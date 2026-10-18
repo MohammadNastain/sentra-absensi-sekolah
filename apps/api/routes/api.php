@@ -180,6 +180,8 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsView))->name('credentials.index');
     Route::post('students/{student}/credentials/qr', [CredentialController::class, 'issueForStudent'])->whereUuid('student')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.issue');
+    Route::post('students/{student}/credentials/rfid', [CredentialController::class, 'registerRfid'])->whereUuid('student')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.register-rfid');
     Route::post('classes/{schoolClass}/credentials/qr', [CredentialController::class, 'issueForClass'])->whereUuid('schoolClass')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.issue-class');
     Route::post('credentials/{credential}/block', [CredentialController::class, 'block'])->whereUuid('credential')
@@ -235,6 +237,16 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleView))->name('schedules.show');
     Route::patch('schedules/{schedule}', [ScheduleController::class, 'update'])->whereUuid('schedule')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleManage))->name('schedules.update');
+    Route::get('attendance/assist/students', [AttendanceController::class, 'assistStudents'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceAssist))->name('attendance.assist.students');
+    Route::post('attendance/assisted', [AttendanceController::class, 'assisted'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceAssist))->name('attendance.assisted');
+    Route::get('attendance/review-queue', [AttendanceController::class, 'reviewQueue'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.review-queue');
+    Route::post('attendance/review-queue/{event}/resolve', [AttendanceController::class, 'resolveReview'])->whereUuid('event')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.review-queue.resolve');
+    Route::get('attendance/assist-report', [AttendanceController::class, 'assistReport'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.assist-report');
     Route::get('attendance/today', [AttendanceController::class, 'today'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('attendance.today');
     Route::get('calendar', [CalendarController::class, 'show'])

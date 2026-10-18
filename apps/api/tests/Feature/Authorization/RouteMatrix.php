@@ -80,6 +80,10 @@ final class RouteMatrix
             'GET api/v1/terminal/config' => 'device',
             'POST api/v1/terminal/heartbeat' => 'device',
             'POST api/v1/terminal/scans' => 'device',
+            'POST api/v1/terminal/assist/session' => 'device',
+            'DELETE api/v1/terminal/assist/session' => 'device',
+            'GET api/v1/terminal/assist/students' => 'device',
+            'POST api/v1/terminal/assist/attendance' => 'device',
             'GET api/v1/terminal/recent' => 'device',
 
             // Perangkat (Tahap 3B)
@@ -92,6 +96,7 @@ final class RouteMatrix
 
             // Kredensial (Tahap 3A)
             'GET api/v1/schools/{school}/students/{student}/credentials' => Permission::SchoolCredentialsView,
+            'POST api/v1/schools/{school}/students/{student}/credentials/rfid' => Permission::SchoolCredentialsManage,
             'POST api/v1/schools/{school}/students/{student}/credentials/qr' => Permission::SchoolCredentialsManage,
             'POST api/v1/schools/{school}/classes/{schoolClass}/credentials/qr' => Permission::SchoolCredentialsManage,
             'POST api/v1/schools/{school}/credentials/{credential}/block' => Permission::SchoolCredentialsManage,
@@ -134,6 +139,11 @@ final class RouteMatrix
             'PATCH api/v1/schools/{school}/schedules/{schedule}' => Permission::SchoolScheduleManage,
             'GET api/v1/schools/{school}/calendar' => Permission::SchoolScheduleView,
             'GET api/v1/schools/{school}/attendance/today' => Permission::SchoolAttendanceView,
+            'GET api/v1/schools/{school}/attendance/assist/students' => Permission::SchoolAttendanceAssist,
+            'POST api/v1/schools/{school}/attendance/assisted' => Permission::SchoolAttendanceAssist,
+            'GET api/v1/schools/{school}/attendance/review-queue' => Permission::SchoolAttendanceReview,
+            'POST api/v1/schools/{school}/attendance/review-queue/{event}/resolve' => Permission::SchoolAttendanceReview,
+            'GET api/v1/schools/{school}/attendance/assist-report' => Permission::SchoolAttendanceReview,
             'GET api/v1/schools/{school}/classes' => Permission::SchoolAcademicView,
             'POST api/v1/schools/{school}/classes' => Permission::SchoolAcademicManage,
             'GET api/v1/schools/{school}/classes/{schoolClass}' => Permission::SchoolAcademicView,

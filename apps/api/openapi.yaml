@@ -1813,6 +1813,31 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
+  /schools/{school}/students/{student}/credentials/rfid:
+    post:
+      tags: [school]
+      operationId: registerStudentRfid
+      summary: "Daftarkan kartu RFID siswa (kartu RFID lama dicabut)"
+      description: "Izin: school.credentials.manage. UID dinormalisasi profil generic (heksadesimal 6-20 karakter; spasi, titik dua, strip, huruf kecil diabaikan). 409 CREDENTIAL_IN_USE bila UID masih dipakai kredensial lain di sekolah ini (pesan menyebut pemiliknya)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RfidRegistration" }
+      responses:
+        "201":
+          description: "Kartu terdaftar."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CredentialEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
   /schools/{school}/classes/{schoolClass}/credentials/qr:
     post:
       tags: [school]
@@ -2150,6 +2175,215 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
 
+  /terminal/assist/session:
+    post:
+      tags: [terminal]
+      operationId: startAssistSession
+      summary: "Buka sesi bantuan petugas di terminal"
+      description: "Login petugas (Admin/Petugas Piket) dengan email dan password, plus kode verifikasi bila akun memakai 2FA. Sesi terikat ke perangkat ini, idle 10 menit, maksimum 30 menit; token hanya dikembalikan sekali dan disimpan terminal di memori. Semua kegagalan 401 ASSIST_LOGIN_FAILED; 5 percobaan per menit per perangkat."
+      security:
+        - deviceCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssistLoginRequest" }
+      responses:
+        "200":
+          description: "Sesi dibuka."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AssistSessionEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+    delete:
+      tags: [terminal]
+      operationId: endAssistSession
+      summary: "Akhiri sesi bantuan"
+      description: "Mengakhiri sesi bantuan saat ini."
+      security:
+        - deviceCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalHeader"
+        - $ref: "#/components/parameters/AssistSessionHeader"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AssistEndedEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /terminal/assist/students:
+    get:
+      tags: [terminal]
+      operationId: searchAssistStudents
+      summary: "Cari siswa (minimal) untuk mode bantuan"
+      description: "Butuh sesi bantuan. Maksimum 10 siswa aktif dengan penempatan berjalan; minimal 2 karakter nama atau nomor induk."
+      security:
+        - deviceCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalHeader"
+        - $ref: "#/components/parameters/AssistSessionHeader"
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 100 }
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AssistStudentsEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /terminal/assist/attendance:
+    post:
+      tags: [terminal]
+      operationId: recordAssistedAttendanceTerminal
+      summary: "Catat kehadiran lewat mode bantuan (terminal)"
+      description: "Butuh sesi bantuan. Pipeline sama dengan scan (metode assisted_manual); waktu = waktu server. Verifikasi visual wajib; alasan dari enum, catatan wajib untuk other. Pulang awal (early_leave atau event_type check_out) boleh sebelum jendela pulang dibuka asal sudah ada catatan masuk. Selalu diaudit."
+      security:
+        - deviceCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalHeader"
+        - $ref: "#/components/parameters/AssistSessionHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssistedAttendanceRequest" }
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TerminalScanEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/assist/students:
+    get:
+      tags: [school]
+      operationId: searchAssistStudentsDashboard
+      summary: "Cari siswa (minimal) untuk mode bantuan dari dashboard"
+      description: "Izin: school.attendance.assist. Hasil minimal; tidak memerlukan izin melihat data siswa."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 100 }
+      responses:
+        "200":
+          description: "Siswa yang cocok."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AssistStudentsEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/assisted:
+    post:
+      tags: [school]
+      operationId: recordAssistedAttendance
+      summary: "Catat kehadiran lewat mode bantuan (dashboard)"
+      description: "Izin: school.attendance.assist. Aturan, hasil, dan audit sama dengan terminal; tanpa perangkat."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssistedAttendanceRequest" }
+      responses:
+        "200":
+          description: "Hasil pencatatan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TerminalScanEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+  /schools/{school}/attendance/review-queue:
+    get:
+      tags: [school]
+      operationId: listReviewQueue
+      summary: "Antrean tinjauan (scan pulang tanpa catatan masuk)"
+      description: "Izin: school.attendance.review. Event needs_review yang belum diselesaikan."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Antrean."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReviewQueueEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/attendance/review-queue/{event}/resolve:
+    post:
+      tags: [school]
+      operationId: resolveReviewEvent
+      summary: "Selesaikan satu item antrean tinjauan"
+      description: "Izin: school.attendance.review. accept = catat pulang pada absensi harian (sumber manual_adjustment); reject = abaikan. Alasan minimal 10 karakter, menulis attendance_adjustments dan audit. Event tidak diubah."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: event
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResolveReviewRequest" }
+      responses:
+        "200":
+          description: "Terselesaikan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResolveReviewEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/assist-report:
+    get:
+      tags: [school]
+      operationId: getAssistReport
+      summary: "Laporan anomali mode bantuan"
+      description: "Izin: school.attendance.review. Jumlah pencatatan bantuan per petugas, siswa, dan alasan pada rentang tanggal."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        "200":
+          description: "Laporan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AssistReportEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
 components:
   securitySchemes:
     sessionCookie:
@@ -2234,6 +2468,12 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    AssistSessionHeader:
+      name: X-Assist-Session
+      in: header
+      required: true
+      description: "Token sesi bantuan dari /terminal/assist/session."
+      schema: { type: string }
     TerminalHeader:
       name: X-Sentra-Terminal
       in: header
@@ -2331,7 +2571,7 @@ components:
       enum: [school_admin, principal, homeroom_teacher, duty_officer, terminal_operator]
     Permission:
       type: string
-      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view]
+      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review]
     SchoolStatus:
       type: string
       enum: [trial, active, suspended, terminated]
@@ -2902,17 +3142,23 @@ components:
       enum: [active, blocked, revoked]
     Credential:
       type: object
-      required: [id, student_id, credential_type, status, status_reason, issued_at, blocked_at, revoked_at, replaces_credential_id]
+      required: [id, student_id, credential_type, value_hint, status, status_reason, issued_at, blocked_at, revoked_at, replaces_credential_id]
       properties:
         id: { type: string, format: uuid }
         student_id: { type: string, format: uuid }
         credential_type: { type: string, enum: [qr, rfid] }
+        value_hint: { type: [string, "null"], description: "Empat karakter terakhir UID RFID; null untuk QR." }
         status: { $ref: "#/components/schemas/CredentialStatus" }
         status_reason: { type: [string, "null"] }
         issued_at: { type: string, format: date-time }
         blocked_at: { type: [string, "null"], format: date-time }
         revoked_at: { type: [string, "null"], format: date-time }
         replaces_credential_id: { type: [string, "null"], format: uuid }
+    RfidRegistration:
+      type: object
+      required: [uid]
+      properties:
+        uid: { type: string, maxLength: 64, description: "UID seperti yang dikeluarkan pembaca (tap di kolom isian)." }
     CredentialEnvelope:
       type: object
       required: [data]
@@ -3152,6 +3398,133 @@ components:
               properties:
                 active: { type: integer }
                 offline: { type: integer }
+    AssistLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, maxLength: 255 }
+        password: { type: string, maxLength: 255 }
+        code: { type: [string, "null"], maxLength: 20, description: "Kode 2FA, wajib bila akun memakai 2FA." }
+    AssistSessionEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [token, officer_name, expires_at, idle_seconds]
+          properties:
+            token: { type: string }
+            officer_name: { type: string }
+            expires_at: { type: string, format: date-time }
+            idle_seconds: { type: integer }
+    AssistEndedEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [ended]
+          properties:
+            ended: { type: boolean }
+    AssistStudent:
+      type: object
+      required: [id, full_name, student_number, class_name]
+      properties:
+        id: { type: string, format: uuid }
+        full_name: { type: string }
+        student_number: { type: string }
+        class_name: { type: string }
+    AssistStudentsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/AssistStudent" }
+    AssistReason:
+      type: string
+      enum: [card_forgotten, card_damaged, early_leave, other]
+    AssistedAttendanceRequest:
+      type: object
+      required: [student_id, reason_code, verified, idempotency_key]
+      properties:
+        student_id: { type: string, format: uuid }
+        reason_code: { $ref: "#/components/schemas/AssistReason" }
+        note: { type: [string, "null"], maxLength: 500, description: "Wajib untuk reason_code other." }
+        verified: { type: boolean, enum: [true], description: "Petugas mengonfirmasi verifikasi visual." }
+        event_type: { type: [string, "null"], enum: [check_in, check_out, null], description: "Kosong = otomatis (check_out bila early_leave)." }
+        idempotency_key: { type: string, format: uuid }
+    ReviewQueueItem:
+      type: object
+      required: [event_id, attendance_date, student_name, class_name, event_type, reason_code, recorded_at_local]
+      properties:
+        event_id: { type: string, format: uuid }
+        attendance_date: { type: string, format: date }
+        student_name: { type: string }
+        class_name: { type: [string, "null"] }
+        event_type: { type: [string, "null"] }
+        reason_code: { type: [string, "null"] }
+        recorded_at_local: { type: string }
+    ReviewQueueEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/ReviewQueueItem" }
+    ResolveReviewRequest:
+      type: object
+      required: [decision, reason]
+      properties:
+        decision: { type: string, enum: [accept, reject] }
+        reason: { type: string, minLength: 10, maxLength: 500 }
+    ResolveReviewEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [event_id, decision, adjustment_id]
+          properties:
+            event_id: { type: string, format: uuid }
+            decision: { type: string, enum: [accept, reject] }
+            adjustment_id: { type: string, format: uuid }
+    AssistReportEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [from, to, total, by_officer, by_student, by_reason]
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+            total: { type: integer }
+            by_officer:
+              type: array
+              items:
+                type: object
+                required: [officer_name, total, check_outs]
+                properties:
+                  officer_name: { type: string }
+                  total: { type: integer }
+                  check_outs: { type: integer }
+            by_student:
+              type: array
+              items:
+                type: object
+                required: [student_name, total]
+                properties:
+                  student_name: { type: string }
+                  total: { type: integer }
+            by_reason:
+              type: array
+              items:
+                type: object
+                required: [reason_code, total]
+                properties:
+                  reason_code: { type: string }
+                  total: { type: integer }
 
 security:
   - sessionCookie: []

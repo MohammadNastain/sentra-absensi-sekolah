@@ -3,7 +3,7 @@
 import type { Schemas } from "@sentra/api-client";
 import { useCallback, useEffect, useState } from "react";
 import { CardSheet, type CardData } from "@/components/QrCard";
-import { FormAlert, PrimaryButton, SecondaryButton, TextAreaField } from "@/components/ui";
+import { FormAlert, PrimaryButton, SecondaryButton, TextAreaField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
@@ -15,7 +15,7 @@ const STATUS_LABEL: Record<Schemas["CredentialStatus"], string> = { active: "Akt
 
 type Pending = { kind: "block" | "revoke"; credential: Credential } | { kind: "unblock"; credential: Credential };
 
-/** Kartu QR satu siswa: riwayat, terbit/terbit ulang, blokir, cabut. Token mentah hanya tampil sekali setelah terbit. */
+/** Kartu satu siswa (QR dan RFID): riwayat, terbit/daftar, blokir, cabut. Token QR hanya tampil sekali setelah terbit. */
 export function CredentialsPanel({
   studentId,
   studentName,
@@ -72,7 +72,8 @@ export function CredentialsPanel({
     void load();
   }
 
-  const active = rows?.find((r) => r.status === "active" || r.status === "blocked");
+  const active = rows?.find((r) => r.credential_type === "qr" && (r.status === "active" || r.status === "blocked"));
+  const activeRfid = rows?.find((r) => r.credential_type === "rfid" && (r.status === "active" || r.status === "blocked"));
 
   if (card) {
     return (
@@ -114,7 +115,7 @@ export function CredentialsPanel({
       {error ? <FormAlert>{error}</FormAlert> : null}
       {failure ? <FormAlert>{failure.message}</FormAlert> : null}
       {rows === null && !error ? <p role="status">Memuat…</p> : null}
-      {rows && rows.length === 0 ? <p className="text-zinc-600 dark:text-zinc-400">Belum ada kartu QR.</p> : null}
+      {rows && rows.length === 0 ? <p className="text-zinc-600 dark:text-zinc-400">Belum ada kartu.</p> : null}
       {rows && rows.length > 0 ? (
         <ul className="divide-y divide-zinc-100 rounded-lg border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
           {rows.map((row) => (
@@ -122,6 +123,7 @@ export function CredentialsPanel({
               <div>
                 <p className="font-medium">
                   {STATUS_LABEL[row.status]} · diterbitkan {formatDateTime(row.issued_at, profile.timezone)}
+                  {row.credential_type === "rfid" ? ` · RFID ${row.value_hint ?? ""}` : ""}
                 </p>
                 {row.status_reason ? <p className="text-zinc-600 dark:text-zinc-400">Alasan: {row.status_reason}</p> : null}
               </div>
@@ -149,6 +151,7 @@ export function CredentialsPanel({
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         {active ? "Menerbitkan kartu baru mencabut kartu yang sekarang." : "Siswa belum memiliki kartu aktif."}
       </p>
+      <RfidForm studentId={studentId} code={code} replacing={activeRfid !== undefined} onDone={() => void load()} />
       <div className="flex justify-end gap-2">
         <SecondaryButton type="button" onClick={onClose}>
           Tutup
@@ -201,6 +204,53 @@ function ReasonForm({ action, code, onCancel, onDone }: { action: Pending; code:
         </SecondaryButton>
         <PrimaryButton type="submit" pending={pending}>
           Simpan
+        </PrimaryButton>
+      </div>
+    </form>
+  );
+}
+
+/** Pembaca RFID keyboard-wedge "mengetik" UID lalu Enter ke kolom ini; admin juga bisa mengetik manual. */
+function RfidForm({ studentId, code, replacing, onDone }: { studentId: string; code: string; replacing: boolean; onDone: () => void }) {
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState<FormFailure | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const uid = String(new FormData(form).get("uid") ?? "").trim();
+    if (!uid) return;
+    setPending(true);
+    setFailure(null);
+    setSaved(false);
+    const outcome = await attempt(async () => {
+      await api.ensureCsrfCookie();
+      return api.POST("/schools/{school}/students/{student}/credentials/rfid", {
+        params: { path: { school: code, student: studentId } },
+        body: { uid },
+      });
+    });
+    setPending(false);
+    if (!outcome.ok) return setFailure(outcome.failure);
+    form.reset();
+    setSaved(true);
+    onDone();
+  }
+
+  return (
+    <form onSubmit={submit} noValidate className="space-y-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+      <p className="text-sm font-medium">Kartu RFID</p>
+      {failure ? <FormAlert>{failure.message}</FormAlert> : null}
+      {saved ? <FormAlert tone="success">Kartu RFID terdaftar.</FormAlert> : null}
+      <TextField label="UID kartu" name="uid" autoComplete="off" spellCheck={false} error={failure?.fields.uid} />
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Tempelkan kartu ke pembaca saat kolom ini terfokus (pembaca mengisi UID dan menekan Enter).{" "}
+        {replacing ? "Mendaftarkan kartu baru mencabut kartu RFID yang sekarang." : ""}
+      </p>
+      <div className="flex justify-end">
+        <PrimaryButton type="submit" pending={pending}>
+          Daftarkan kartu RFID
         </PrimaryButton>
       </div>
     </form>

@@ -42,6 +42,14 @@ final class CredentialController extends Controller
         return $this->noStore(response()->json(['data' => ['credential' => self::present($issued['credential']), 'token' => $issued['token']]], 201));
     }
 
+    public function registerRfid(Request $request, School $school, string $student): JsonResponse
+    {
+        $validated = $request->validate(['uid' => ['required', 'string', 'max:64']]);
+        $credential = $this->credentials->registerRfid($this->tenant->school(), $this->actor($request), $student, $validated['uid']);
+
+        return response()->json(['data' => self::present($credential)], 201);
+    }
+
     public function issueForClass(Request $request, School $school, string $schoolClass): JsonResponse
     {
         $validated = $request->validate(['mode' => ['sometimes', 'string', 'in:missing,all']]);
@@ -94,6 +102,7 @@ final class CredentialController extends Controller
             'id' => $c->id,
             'student_id' => $c->student_id,
             'credential_type' => $c->credential_type,
+            'value_hint' => $c->value_hint,
             'status' => $c->status,
             'status_reason' => $c->status_reason,
             'issued_at' => $c->issued_at->toIso8601String(),

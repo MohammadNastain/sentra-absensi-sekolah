@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { terminalApi, type TerminalConfig, type TerminalFailure, type TerminalRecent, type TerminalScan } from "@/lib/terminal-api";
+import { AssistScreen } from "./assist-screen";
 import { CameraScanner } from "./camera-scanner";
 
 type Phase = "loading" | "pairing" | "ready" | "revoked" | "unavailable";
@@ -133,6 +134,7 @@ function ScanScreen({ config, onFailure }: { config: TerminalConfig; onFailure: 
   const [display, setDisplay] = useState<Display>({ kind: "idle" });
   const [recent, setRecent] = useState<TerminalRecent>([]);
   const [cameraOn, setCameraOn] = useState(false);
+  const [assistOpen, setAssistOpen] = useState(false);
   const [online, setOnline] = useState(true);
   const [now, setNow] = useState(() => Date.now());
   const [offset, setOffset] = useState(() => new Date(config.server_time).getTime() - Date.now());
@@ -175,7 +177,7 @@ function ScanScreen({ config, onFailure }: { config: TerminalConfig; onFailure: 
   const submit = useCallback(
     async (raw: string) => {
       const value = raw.trim();
-      if (!value || busy.current) return;
+      if (!value || busy.current || assistOpen) return;
       busy.current = true;
       setDisplay({ kind: "processing" });
 
@@ -202,7 +204,7 @@ function ScanScreen({ config, onFailure }: { config: TerminalConfig; onFailure: 
       setDisplay({ kind: "idle" });
       onFailure(result.failure);
     },
-    [onFailure, refreshRecent, showFor],
+    [onFailure, refreshRecent, showFor, assistOpen],
   );
 
   // Pemindai keyboard-wedge: karakter datang cepat dan diakhiri Enter. Ketikan lambat (manusia) diabaikan.
@@ -241,6 +243,10 @@ function ScanScreen({ config, onFailure }: { config: TerminalConfig; onFailure: 
 
   const tone = display.kind === "result" ? (TONES[display.scan.result] ?? TONES.rejected) : display.kind === "error" ? TONES.rejected : "bg-zinc-800 text-white";
 
+  if (assistOpen) {
+    return <AssistScreen onClose={() => setAssistOpen(false)} onFailure={onFailure} onRecorded={() => void refreshRecent()} />;
+  }
+
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950 text-white">
       <header className="flex flex-wrap items-center justify-between gap-2 px-6 py-4">
@@ -265,6 +271,9 @@ function ScanScreen({ config, onFailure }: { config: TerminalConfig; onFailure: 
           <div className="flex flex-wrap items-center gap-3">
             <button type="button" onClick={() => setCameraOn((v) => !v)} className="rounded-lg bg-zinc-700 px-4 py-2 font-medium hover:bg-zinc-600">
               {cameraOn ? "Matikan kamera" : "Pakai kamera"}
+            </button>
+            <button type="button" onClick={() => setAssistOpen(true)} className="rounded-lg bg-zinc-700 px-4 py-2 font-medium hover:bg-zinc-600">
+              Mode bantuan
             </button>
             <form
               className="flex flex-1 gap-2"

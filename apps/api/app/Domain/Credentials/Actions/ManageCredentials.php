@@ -6,6 +6,7 @@ use App\Domain\Academic\ConstraintViolations;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Credentials\CredentialHasher;
 use App\Domain\Credentials\QrToken;
+use App\Domain\Credentials\RfidUid;
 use App\Domain\Tenancy\DatabaseContext;
 use App\Models\ClassEnrollment;
 use App\Models\School;
@@ -47,6 +48,58 @@ final class ManageCredentials
             }
 
             return $this->issueFor($school, $actor, $student);
+        });
+    }
+
+    /**
+     * Mendaftarkan kartu RFID: satu RFID aktif per siswa (yang lama dicabut, rantai `replaces_credential_id`).
+     * UID yang masih dipakai kredensial lain (aktif/diblokir) ditolak dengan menyebut pemiliknya, supaya admin
+     * bisa mencabut kartu itu lebih dulu. UID tidak rahasia, jadi tidak ada token sekali-tampil.
+     */
+    public function registerRfid(School $school, User $actor, string $studentId, string $rawUid): StudentCredential
+    {
+        $uid = RfidUid::normalize($rawUid) ?? throw ApiProblem::invalidStateTransition('Format UID tidak dikenali. Gunakan 6–20 karakter heksadesimal.');
+
+        return $this->run($school, function () use ($school, $actor, $studentId, $uid) {
+            $student = $this->lockStudent($school, $studentId);
+            if ($student->status !== Student::STATUS_ACTIVE) {
+                throw ApiProblem::invalidStateTransition('Kartu hanya dapat didaftarkan untuk siswa aktif.');
+            }
+
+            $version = $this->hasher->currentVersion();
+            $hex = $this->hasher->hashHex(RfidUid::hashKey($uid), $version);
+
+            $owner = DB::selectOne(
+                "SELECT c.student_id, s.full_name FROM student_credentials c JOIN students s ON s.school_id = c.school_id AND s.id = c.student_id
+                 WHERE c.school_id = ? AND c.credential_type = 'rfid' AND c.value_hash = decode(?, 'hex') AND c.status <> 'revoked'",
+                [$school->id, $hex],
+            );
+            if ($owner !== null) {
+                $same = (string) $owner->student_id === $student->id;
+                throw ApiProblem::credentialInUse($same
+                    ? 'Kartu ini sudah terdaftar untuk siswa yang sama.'
+                    : 'Kartu ini sedang dipakai oleh '.$owner->full_name.'. Cabut kartu tersebut lebih dulu.');
+            }
+
+            $previous = StudentCredential::query()
+                ->where('school_id', $school->id)->where('student_id', $student->id)
+                ->where('credential_type', StudentCredential::TYPE_RFID)->where('status', '<>', StudentCredential::STATUS_REVOKED)
+                ->orderByDesc('issued_at')->lockForUpdate()->get();
+            foreach ($previous as $old) {
+                $before = $this->snapshot($old);
+                $old->forceFill(['status' => StudentCredential::STATUS_REVOKED, 'status_reason' => 'Diganti kartu baru', 'revoked_at' => now()])->save();
+                $this->audit->record('school.credential.revoked', $school->id, 'student_credential', $old->id, $before, $this->snapshot($old), 'Diganti kartu baru', $actor);
+            }
+
+            $row = DB::selectOne(
+                "INSERT INTO student_credentials (school_id, student_id, credential_type, value_hash, hash_key_version, value_hint, reader_profile, status, replaces_credential_id, created_by_user_id)
+                 VALUES (?, ?, 'rfid', decode(?, 'hex'), ?, ?, ?, 'active', ?, ?) RETURNING id",
+                [$school->id, $student->id, $hex, $version, RfidUid::hint($uid), RfidUid::PROFILE, $previous->first()?->id, $actor->id],
+            );
+            $credential = StudentCredential::query()->findOrFail((string) ($row->id ?? ''));
+            $this->audit->record('school.credential.issued', $school->id, 'student_credential', $credential->id, null, $this->snapshot($credential), null, $actor);
+
+            return $credential;
         });
     }
 

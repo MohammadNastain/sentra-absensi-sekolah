@@ -66,7 +66,7 @@ it('T04: peran di sekolah A tidak berlaku di sekolah B', function () {
     $this->getJson('/api/v1/schools/sekolah-b')
         ->assertOk()
         ->assertJsonPath('data.my_roles', ['duty_officer'])
-        ->assertJsonPath('data.my_permissions', ['school.attendance.view', 'school.profile.view']);
+        ->assertJsonPath('data.my_permissions', ['school.attendance.assist', 'school.attendance.review', 'school.attendance.view', 'school.profile.view']);
 });
 
 it('T11: konteks DB di-reset setelah setiap request, termasuk antar sekolah berbeda', function () {

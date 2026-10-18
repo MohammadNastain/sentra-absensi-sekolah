@@ -2,15 +2,22 @@
 
 namespace App\Http\Controllers\School;
 
+use App\Domain\Attendance\AssistedAttendance;
+use App\Domain\Attendance\ReviewQueue;
 use App\Domain\Scheduling\ScheduleResolver;
 use App\Domain\Tenancy\ClassScope;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AssistedAttendanceRequest;
+use App\Http\Requests\ReasonRequest;
 use App\Models\Device;
 use App\Models\School;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Ringkasan absensi hari ini untuk dashboard. Angka diturunkan dari proyeksi `daily_attendance` dan penempatan
@@ -25,6 +32,8 @@ final class AttendanceController extends Controller
         private readonly TenantContext $tenant,
         private readonly ScheduleResolver $resolver,
         private readonly ClassScope $scope,
+        private readonly AssistedAttendance $assisted,
+        private readonly ReviewQueue $review,
     ) {}
 
     public function today(School $school): JsonResponse
@@ -98,5 +107,51 @@ final class AttendanceController extends Controller
             ], $recent),
             'devices' => ['active' => $devices->count(), 'offline' => $offline],
         ]])->header('Cache-Control', 'no-store, private');
+    }
+
+    /** Pencarian minimal untuk mode bantuan dari dashboard petugas (tanpa izin melihat data siswa). */
+    public function assistStudents(Request $request, School $school): JsonResponse
+    {
+        $validated = $request->validate(['q' => ['required', 'string', 'max:100']]);
+
+        return response()->json(['data' => $this->assisted->search($this->tenant->school(), $validated['q'])])
+            ->header('Cache-Control', 'no-store, private');
+    }
+
+    /** Pencatatan bantuan dari dashboard: akun petugas yang sudah login, aturan dan audit sama dengan di terminal. */
+    public function assisted(AssistedAttendanceRequest $request, School $school): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        /** @var array{student_id: string, reason_code: string, note?: string|null, event_type?: string|null, idempotency_key: string} $data */
+        $data = $request->validated();
+
+        return response()->json(['data' => $this->assisted->record($this->tenant->school(), null, $actor, $data)])
+            ->header('Cache-Control', 'no-store, private');
+    }
+
+    public function reviewQueue(School $school): JsonResponse
+    {
+        return response()->json(['data' => $this->review->pending($this->tenant->school())])->header('Cache-Control', 'no-store, private');
+    }
+
+    public function resolveReview(ReasonRequest $request, School $school, string $event): JsonResponse
+    {
+        $decision = $request->validate(['decision' => ['required', 'in:accept,reject']])['decision'];
+        /** @var User $actor */
+        $actor = $request->user();
+        $reason = $request->reason();
+        if (mb_strlen($reason) < 10) {
+            throw ValidationException::withMessages(['reason' => 'Alasan minimal 10 karakter.']);
+        }
+
+        return response()->json(['data' => $this->review->resolve($this->tenant->school(), $actor, $event, $decision, $reason)]);
+    }
+
+    public function assistReport(Request $request, School $school): JsonResponse
+    {
+        $v = $request->validate(['from' => ['required', 'date_format:Y-m-d'], 'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from']]);
+
+        return response()->json(['data' => $this->review->assistReport($this->tenant->school(), $v['from'], $v['to'])])->header('Cache-Control', 'no-store, private');
     }
 }
