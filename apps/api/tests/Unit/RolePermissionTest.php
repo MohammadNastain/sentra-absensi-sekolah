@@ -12,10 +12,10 @@ it('memetakan izin per peran persis sesuai spesifikasi', function (Role $role, a
 
     expect($actual)->toBe($expected);
 })->with([
-    'admin' => [Role::SchoolAdmin, ['school.profile.view', 'school.profile.update', 'school.members.view', 'school.members.manage', 'school.audit.view', 'school.academic.view', 'school.academic.manage', 'school.students.view', 'school.students.manage', 'school.schedule.view', 'school.schedule.manage']],
-    'kepala sekolah' => [Role::Principal, ['school.profile.view', 'school.members.view', 'school.audit.view', 'school.academic.view', 'school.students.view', 'school.schedule.view']],
-    'wali kelas' => [Role::HomeroomTeacher, ['school.profile.view', 'school.academic.view', 'school.students.view', 'school.schedule.view']],
-    'petugas piket' => [Role::DutyOfficer, ['school.profile.view']],
+    'admin' => [Role::SchoolAdmin, ['school.profile.view', 'school.profile.update', 'school.members.view', 'school.members.manage', 'school.audit.view', 'school.academic.view', 'school.academic.manage', 'school.students.view', 'school.students.manage', 'school.schedule.view', 'school.schedule.manage', 'school.credentials.view', 'school.credentials.manage', 'school.devices.view', 'school.devices.manage', 'school.attendance.view']],
+    'kepala sekolah' => [Role::Principal, ['school.profile.view', 'school.members.view', 'school.audit.view', 'school.academic.view', 'school.students.view', 'school.schedule.view', 'school.attendance.view']],
+    'wali kelas' => [Role::HomeroomTeacher, ['school.profile.view', 'school.academic.view', 'school.students.view', 'school.schedule.view', 'school.attendance.view']],
+    'petugas piket' => [Role::DutyOfficer, ['school.profile.view', 'school.attendance.view']],
     'operator terminal' => [Role::TerminalOperator, ['school.profile.view']],
 ]);
 
@@ -23,7 +23,7 @@ it('menggabungkan izin beberapa peran tanpa duplikat dan terurut', function () {
     $granted = Permission::grantedTo([Role::Principal, Role::SchoolAdmin, Role::HomeroomTeacher]);
 
     expect(array_map(fn (Permission $p) => $p->value, $granted))->toBe([
-        'school.academic.manage', 'school.academic.view', 'school.audit.view', 'school.members.manage',
+        'school.academic.manage', 'school.academic.view', 'school.attendance.view', 'school.audit.view', 'school.credentials.manage', 'school.credentials.view', 'school.devices.manage', 'school.devices.view', 'school.members.manage',
         'school.members.view', 'school.profile.update', 'school.profile.view', 'school.schedule.manage', 'school.schedule.view', 'school.students.manage', 'school.students.view',
     ]);
 });

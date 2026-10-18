@@ -118,6 +118,31 @@ class ApiProblem extends HttpException
         return new self(409, 'ENROLLMENT_CONFLICT', 'Penempatan kelas bentrok.', $detail);
     }
 
+    public static function deviceLimitReached(int $limit): self
+    {
+        return new self(409, 'DEVICE_LIMIT_REACHED', 'Batas jumlah perangkat tercapai.', "Sekolah ini boleh memiliki maksimum {$limit} perangkat (belum dicabut). Cabut perangkat lama atau hubungi administrator platform.");
+    }
+
+    public static function pairingCodeInvalid(): self
+    {
+        return new self(422, 'PAIRING_CODE_INVALID', 'Kode pairing tidak valid atau sudah kedaluwarsa.', 'Minta admin sekolah membuat kode baru.');
+    }
+
+    public static function deviceUnpaired(): self
+    {
+        return new self(401, 'DEVICE_UNPAIRED', 'Terminal belum dipasangkan.', 'Masukkan kode pairing dari admin sekolah.');
+    }
+
+    public static function deviceRevoked(): self
+    {
+        return new self(403, 'DEVICE_REVOKED', 'Perangkat ini telah dicabut.', 'Hubungi admin sekolah untuk memasangkan perangkat baru.');
+    }
+
+    public static function terminalRequestRejected(): self
+    {
+        return new self(400, 'TERMINAL_REQUEST_REJECTED', 'Permintaan terminal tidak valid.');
+    }
+
     public static function resetThrottled(): self
     {
         return new self(429, 'RESET_THROTTLED', 'Tautan reset baru saja dikirim.', 'Tunggu sebentar sebelum meminta tautan reset lagi untuk anggota ini.');

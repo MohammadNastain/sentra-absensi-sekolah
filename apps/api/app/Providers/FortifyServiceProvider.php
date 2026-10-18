@@ -51,9 +51,12 @@ class FortifyServiceProvider extends ServiceProvider
     {
         $email = fn (Request $request): string => Str::lower((string) $request->input('email'));
 
+        // Bawaan 5/menit per akun+IP. E2E CI login puluhan kali sebagai akun demo yang sama, jadi bisa dinaikkan lewat env.
+        $perAccount = max(1, (int) config('sentra.login_attempts_per_minute'));
+
         RateLimiter::for('login', fn (Request $request) => [
-            Limit::perMinute(5)->by('login:'.$email($request).'|'.$request->ip()),
-            Limit::perMinute(20)->by('login-ip:'.$request->ip()),
+            Limit::perMinute($perAccount)->by('login:'.$email($request).'|'.$request->ip()),
+            Limit::perMinute(max(20, $perAccount * 4))->by('login-ip:'.$request->ip()),
         ]);
 
         RateLimiter::for('two-factor', fn (Request $request) => Limit::perMinute(5)

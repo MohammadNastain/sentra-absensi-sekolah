@@ -4,6 +4,7 @@ namespace App\Domain\Tenancy;
 
 use App\Domain\Identity\Permission;
 use App\Domain\Identity\Role;
+use App\Models\Device;
 use App\Models\School;
 use App\Models\SchoolMembership;
 use LogicException;
@@ -19,6 +20,8 @@ final class TenantContext
 
     private ?SchoolMembership $membership = null;
 
+    private ?Device $device = null;
+
     /** @var list<Role> */
     private array $roles = [];
 
@@ -32,10 +35,25 @@ final class TenantContext
         $this->roles = $roles;
     }
 
+    /** Konteks terminal: sekolah berasal dari perangkat yang lolos guard `device`; tidak ada keanggotaan/peran. */
+    public function enterDevice(School $school, Device $device): void
+    {
+        $this->school = $school;
+        $this->membership = null;
+        $this->device = $device;
+        $this->roles = [];
+    }
+
+    public function device(): Device
+    {
+        return $this->device ?? throw new LogicException('Konteks perangkat belum ditetapkan.');
+    }
+
     public function clear(): void
     {
         $this->school = null;
         $this->membership = null;
+        $this->device = null;
         $this->roles = [];
     }
 

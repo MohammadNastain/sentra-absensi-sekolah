@@ -22,6 +22,8 @@ final class AuditRedactor
         'teacher' => ['full_name', 'employee_number', 'membership_id', 'status'],
         'student' => ['student_number', 'nisn', 'full_name', 'date_of_birth', 'status'],
         'import_batch' => ['type', 'original_filename', 'file_sha256', 'total_rows', 'valid_rows', 'invalid_rows', 'committed_rows', 'status'],
+        'student_credential' => ['student_id', 'credential_type', 'status', 'status_reason', 'replaces_credential_id'],
+        'device' => ['name', 'device_type', 'status', 'revoked_reason'],
         'holiday' => ['name', 'start_date', 'end_date'],
         'schedule' => ['scope_type', 'grade_level', 'class_id', 'day_of_week', 'check_in_start', 'check_in_deadline', 'late_grace_minutes', 'check_out_start', 'scheduled_check_out', 'effective_from', 'effective_until', 'is_active'],
         'class_enrollment' => ['student_id', 'class_id', 'start_date', 'end_date'],

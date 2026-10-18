@@ -9,19 +9,21 @@ import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { fetchAll } from "@/lib/fetch-all";
 import { useSchool } from "../school-context";
+import { ClassCardsPanel } from "./cards-dialog";
 
 type SchoolClass = Schemas["SchoolClass"];
 type AcademicYear = Schemas["AcademicYear"];
 type Teacher = Schemas["Teacher"];
 type StatusFilter = Schemas["ClassStatus"] | "";
 
-type PendingAction = { kind: "create" } | { kind: "edit"; schoolClass: SchoolClass };
+type PendingAction = { kind: "create" } | { kind: "edit"; schoolClass: SchoolClass } | { kind: "cards"; schoolClass: SchoolClass };
 
 const GRADES = Array.from({ length: 13 }, (_, i) => i + 1);
 
 export default function ClassesPage() {
   const { code, can } = useSchool();
   const canManage = can("school.academic.manage");
+  const canCards = can("school.credentials.manage");
   const [classes, setClasses] = useState<SchoolClass[] | null>(null);
   const [meta, setMeta] = useState<Schemas["PageMeta"] | null>(null);
   const [years, setYears] = useState<AcademicYear[]>([]);
@@ -204,6 +206,15 @@ export default function ClassesPage() {
                         >
                           {schoolClass.status === "active" ? "Arsipkan" : "Aktifkan"}
                         </button>
+                        {canCards && schoolClass.status === "active" ? (
+                          <button
+                            type="button"
+                            className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                            onClick={() => setAction({ kind: "cards", schoolClass })}
+                          >
+                            Cetak kartu QR
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   ) : null}
@@ -216,12 +227,18 @@ export default function ClassesPage() {
 
       {meta ? <Pager meta={meta} onPage={setPage} /> : null}
 
+      <Dialog open={action?.kind === "cards"} title="Cetak kartu QR kelas" onClose={() => setAction(null)}>
+        {action?.kind === "cards" ? (
+          <ClassCardsPanel key={action.schoolClass.id} classId={action.schoolClass.id} className={action.schoolClass.name} onClose={() => setAction(null)} />
+        ) : null}
+      </Dialog>
+
       <Dialog
-        open={action !== null}
+        open={action !== null && action.kind !== "cards"}
         title={action?.kind === "edit" ? "Ubah kelas" : "Tambah kelas"}
         onClose={() => setAction(null)}
       >
-        {action ? (
+        {action && action.kind !== "cards" ? (
           <ClassForm
             key={action.kind === "create" ? "create" : action.schoolClass.id}
             action={action}
@@ -246,7 +263,7 @@ function ClassForm({
   onCancel,
   onDone,
 }: {
-  action: PendingAction;
+  action: Exclude<PendingAction, { kind: "cards" }>;
   code: string;
   years: AcademicYear[];
   onCancel: () => void;

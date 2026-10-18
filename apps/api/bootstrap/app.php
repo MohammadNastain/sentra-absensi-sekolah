@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequireSchoolPermission;
+use App\Http\Middleware\RequireTerminalHeader;
 use App\Http\Middleware\ResetDatabaseContext;
 use App\Support\Http\ProblemRenderer;
 use App\Support\Http\RequestId;
@@ -22,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')
                 ->prefix('api/v1')
                 ->group(base_path('routes/api.php'));
+
+            // Terminal: tanpa sesi/CSRF cookie; autentikasi lewat token perangkat (AuthenticateDevice).
+            Route::prefix('api/v1/terminal')->group(base_path('routes/terminal.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -31,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             RequireSchoolPermission::ALIAS => RequireSchoolPermission::class,
             EnsureEmailTransportReady::ALIAS => EnsureEmailTransportReady::class,
+            RequireTerminalHeader::ALIAS => RequireTerminalHeader::class,
         ]);
         // Tanpa halaman login di API: tamu selalu mendapat 401 problem+json.
         $middleware->redirectGuestsTo(fn () => null);

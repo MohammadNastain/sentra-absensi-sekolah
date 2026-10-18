@@ -11,6 +11,8 @@ use App\Domain\Identity\Permission;
  * - 'public'          : tanpa login (tetap dibatasi rate limit/CSRF)
  * - 'authenticated'   : login, tanpa konteks sekolah
  * - 'platform'        : Super Admin + 2FA
+ * - 'device'          : token perangkat terminal (guard device)
+ * - 'pairing'         : terminal belum dipasangkan (kode pairing)
  * - Permission::X     : anggota aktif sekolah {school} dengan izin X
  */
 final class RouteMatrix
@@ -72,6 +74,29 @@ final class RouteMatrix
             'POST api/v1/schools/{school}/members/{membership}/reactivate' => Permission::SchoolMembersManage,
             'POST api/v1/schools/{school}/members/{membership}/end' => Permission::SchoolMembersManage,
             'POST api/v1/schools/{school}/members/{membership}/password-reset' => Permission::SchoolMembersManage,
+
+            // Terminal (Tahap 3B)
+            'POST api/v1/terminal/pair' => 'pairing',
+            'GET api/v1/terminal/config' => 'device',
+            'POST api/v1/terminal/heartbeat' => 'device',
+            'POST api/v1/terminal/scans' => 'device',
+            'GET api/v1/terminal/recent' => 'device',
+
+            // Perangkat (Tahap 3B)
+            'GET api/v1/schools/{school}/devices' => Permission::SchoolDevicesView,
+            'POST api/v1/schools/{school}/devices' => Permission::SchoolDevicesManage,
+            'GET api/v1/schools/{school}/devices/{device}' => Permission::SchoolDevicesView,
+            'PATCH api/v1/schools/{school}/devices/{device}' => Permission::SchoolDevicesManage,
+            'POST api/v1/schools/{school}/devices/{device}/pairing-code' => Permission::SchoolDevicesManage,
+            'POST api/v1/schools/{school}/devices/{device}/revoke' => Permission::SchoolDevicesManage,
+
+            // Kredensial (Tahap 3A)
+            'GET api/v1/schools/{school}/students/{student}/credentials' => Permission::SchoolCredentialsView,
+            'POST api/v1/schools/{school}/students/{student}/credentials/qr' => Permission::SchoolCredentialsManage,
+            'POST api/v1/schools/{school}/classes/{schoolClass}/credentials/qr' => Permission::SchoolCredentialsManage,
+            'POST api/v1/schools/{school}/credentials/{credential}/block' => Permission::SchoolCredentialsManage,
+            'POST api/v1/schools/{school}/credentials/{credential}/unblock' => Permission::SchoolCredentialsManage,
+            'POST api/v1/schools/{school}/credentials/{credential}/revoke' => Permission::SchoolCredentialsManage,
             'GET api/v1/schools/{school}/invitations' => Permission::SchoolMembersManage,
             'POST api/v1/schools/{school}/invitations' => Permission::SchoolMembersManage,
             'POST api/v1/schools/{school}/invitations/{invitation}/resend' => Permission::SchoolMembersManage,
@@ -108,6 +133,7 @@ final class RouteMatrix
             'GET api/v1/schools/{school}/schedules/{schedule}' => Permission::SchoolScheduleView,
             'PATCH api/v1/schools/{school}/schedules/{schedule}' => Permission::SchoolScheduleManage,
             'GET api/v1/schools/{school}/calendar' => Permission::SchoolScheduleView,
+            'GET api/v1/schools/{school}/attendance/today' => Permission::SchoolAttendanceView,
             'GET api/v1/schools/{school}/classes' => Permission::SchoolAcademicView,
             'POST api/v1/schools/{school}/classes' => Permission::SchoolAcademicManage,
             'GET api/v1/schools/{school}/classes/{schoolClass}' => Permission::SchoolAcademicView,

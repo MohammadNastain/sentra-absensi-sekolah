@@ -90,6 +90,9 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
     nav.push({ href: `${base}/holidays`, label: "Libur", active: pathname.startsWith(`${base}/holidays`) });
     nav.push({ href: `${base}/calendar`, label: "Kalender", active: pathname.startsWith(`${base}/calendar`) });
   }
+  if (value.can("school.devices.view")) {
+    nav.push({ href: `${base}/devices`, label: "Perangkat", active: pathname.startsWith(`${base}/devices`) });
+  }
   if (value.can("school.audit.view")) {
     nav.push({ href: `${base}/audit`, label: "Audit", active: pathname.startsWith(`${base}/audit`) });
   }

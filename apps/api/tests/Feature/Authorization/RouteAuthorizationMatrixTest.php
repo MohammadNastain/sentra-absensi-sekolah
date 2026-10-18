@@ -2,8 +2,10 @@
 
 use App\Domain\Identity\Permission;
 use App\Domain\Identity\Role;
+use App\Http\Middleware\AuthenticateDevice;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\RequireSchoolPermission;
+use App\Http\Middleware\RequireTerminalHeader;
 use App\Http\Middleware\ResolveSchoolMembership;
 use App\Models\School;
 use App\Models\User;
@@ -62,6 +64,8 @@ it('T08: middleware setiap rute sesuai deklarasi aksesnya', function () {
         match (true) {
             $access === 'public' => expect(hasAuth($route))->toBeFalse("{$key} harus publik"),
             $access === 'authenticated' => expect(hasAuth($route) && ! $isSchool && ! $isPlatform)->toBeTrue("{$key} harus login saja"),
+            $access === 'device' => expect(in_array(AuthenticateDevice::class, $middleware, true) && ! hasAuth($route) && ! $isSchool)->toBeTrue("{$key} harus memakai guard device"),
+            $access === 'pairing' => expect(in_array(RequireTerminalHeader::class, $middleware, true) && ! hasAuth($route) && ! $isSchool)->toBeTrue("{$key} harus rute pairing terminal"),
             $access === 'platform' => expect(hasAuth($route) && $isPlatform && ! $isSchool)->toBeTrue("{$key} harus rute platform"),
             $access instanceof Permission => expect(hasAuth($route) && $isSchool
                 && in_array(RequireSchoolPermission::class.':'.$access->value, $middleware, true))

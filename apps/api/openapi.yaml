@@ -17,6 +17,7 @@ tags:
   - name: me
   - name: platform
   - name: school
+  - name: terminal
   - name: invitation
 
 paths:
@@ -1730,6 +1731,23 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/today:
+    get:
+      tags: [school]
+      operationId: getAttendanceToday
+      summary: "Ringkasan absensi hari ini"
+      description: "Izin: school.attendance.view. Hari ini menurut zona waktu sekolah. Wali kelas hanya melihat kelas yang ia ampu. Dipoll dari dashboard."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Ringkasan hari ini."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AttendanceTodayEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /schools/{school}/calendar:
     get:
       tags: [school]
@@ -1758,6 +1776,380 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
 
+  /schools/{school}/students/{student}/credentials:
+    get:
+      tags: [school]
+      operationId: listStudentCredentials
+      summary: "Riwayat kredensial siswa (tanpa nilai token)"
+      description: "Izin: school.credentials.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+      responses:
+        "200":
+          description: "Kredensial, terbaru lebih dulu."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CredentialListEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/students/{student}/credentials/qr:
+    post:
+      tags: [school]
+      operationId: issueStudentQr
+      summary: "Terbitkan QR siswa (kartu lama dicabut)"
+      description: "Izin: school.credentials.manage. Token mentah hanya ada di respons ini (Cache-Control: no-store) dan tidak dapat diambil lagi; server hanya menyimpan HMAC-nya. QR aktif sebelumnya otomatis dicabut. 409 bila siswa tidak aktif."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+      responses:
+        "201":
+          description: "Kredensial baru beserta token mentah, hanya terlihat sekali."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CredentialIssuedEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /schools/{school}/classes/{schoolClass}/credentials/qr:
+    post:
+      tags: [school]
+      operationId: issueClassQr
+      summary: "Terbitkan QR massal untuk siswa di sebuah kelas"
+      description: "Izin: school.credentials.manage. Hanya siswa aktif dengan penempatan berjalan. mode missing (bawaan) = hanya yang belum punya QR aktif; all = terbit ulang semuanya. Maksimum 200 siswa per permintaan."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/ClassId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CredentialClassIssue" }
+      responses:
+        "201":
+          description: "Kredensial baru beserta token mentah, hanya terlihat sekali."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CredentialClassIssuedEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/credentials/{credential}/block:
+    post:
+      tags: [school]
+      operationId: blockCredential
+      summary: "Blokir kredensial (alasan wajib)"
+      description: "Izin: school.credentials.manage. Status hanya maju: active ⇄ blocked → revoked; perubahan tidak sah 409 INVALID_STATE_TRANSITION."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/CredentialId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequired" }
+      responses:
+        "200":
+          description: "Kredensial setelah perubahan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CredentialEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/credentials/{credential}/unblock:
+    post:
+      tags: [school]
+      operationId: unblockCredential
+      summary: "Buka blokir kredensial"
+      description: "Izin: school.credentials.manage. Status hanya maju: active ⇄ blocked → revoked; perubahan tidak sah 409 INVALID_STATE_TRANSITION."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/CredentialId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonOptional" }
+      responses:
+        "200":
+          description: "Kredensial setelah perubahan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CredentialEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/credentials/{credential}/revoke:
+    post:
+      tags: [school]
+      operationId: revokeCredential
+      summary: "Cabut kredensial permanen (alasan wajib)"
+      description: "Izin: school.credentials.manage. Status hanya maju: active ⇄ blocked → revoked; perubahan tidak sah 409 INVALID_STATE_TRANSITION."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/CredentialId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequired" }
+      responses:
+        "200":
+          description: "Kredensial setelah perubahan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CredentialEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+  /schools/{school}/devices:
+    get:
+      tags: [school]
+      operationId: listDevices
+      summary: "Daftar perangkat terminal"
+      description: "Izin: school.devices.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Perangkat (aktif, menunggu pairing, lalu dicabut)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeviceListEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [school]
+      operationId: registerDevice
+      summary: "Daftarkan perangkat terminal baru"
+      description: "Izin: school.devices.manage. Kode pairing 8 karakter berlaku 10 menit dan hanya tampil di respons ini (Cache-Control: no-store). 409 DEVICE_LIMIT_REACHED bila jumlah perangkat yang belum dicabut sudah mencapai batas sekolah (bawaan 1)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeviceName" }
+      responses:
+        "201":
+          description: "Perangkat menunggu pairing beserta kode sekali pakai."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DevicePairingEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/devices/{device}:
+    get:
+      tags: [school]
+      operationId: getDevice
+      summary: "Detail perangkat"
+      description: "Izin: school.devices.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/DeviceId"
+      responses:
+        "200":
+          description: "Perangkat."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeviceEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [school]
+      operationId: renameDevice
+      summary: "Ubah nama perangkat"
+      description: "Izin: school.devices.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/DeviceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeviceName" }
+      responses:
+        "200":
+          description: "Diubah."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeviceEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/devices/{device}/pairing-code:
+    post:
+      tags: [school]
+      operationId: renewDevicePairingCode
+      summary: "Buat kode pairing baru untuk perangkat yang belum dipasangkan"
+      description: "Izin: school.devices.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/DeviceId"
+      responses:
+        "200":
+          description: "Kode baru; kode lama tidak berlaku."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DevicePairingEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /schools/{school}/devices/{device}/revoke:
+    post:
+      tags: [school]
+      operationId: revokeDevice
+      summary: "Cabut perangkat (alasan wajib, langsung efektif)"
+      description: "Izin: school.devices.manage. Request berikutnya dari terminal itu ditolak 403 DEVICE_REVOKED."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/DeviceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequired" }
+      responses:
+        "200":
+          description: "Perangkat dicabut."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeviceEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /terminal/pair:
+    post:
+      tags: [terminal]
+      operationId: pairTerminal
+      summary: "Tukar kode pairing dengan token perangkat"
+      description: "Tanpa login. Berhasil memasang cookie sentra_device (HttpOnly, SameSite=Strict) berisi token perangkat; token tidak ada di body. Kode sekali pakai, berlaku 10 menit; semua kegagalan 422 PAIRING_CODE_INVALID. Header X-Sentra-Terminal: 1 wajib."
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TerminalPairRequest" }
+      responses:
+        "200":
+          description: "Terminal dipasangkan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TerminalPairEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /terminal/config:
+    get:
+      tags: [terminal]
+      operationId: getTerminalConfig
+      summary: "Konfigurasi terminal"
+      description: "Nama sekolah, zona waktu, waktu server, dan metode input aktif. 401 DEVICE_UNPAIRED / 403 DEVICE_REVOKED / 403 SCHOOL_UNAVAILABLE."
+      security:
+        - deviceCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalHeader"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TerminalConfigEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /terminal/heartbeat:
+    post:
+      tags: [terminal]
+      operationId: terminalHeartbeat
+      summary: "Heartbeat terminal"
+      description: "Menandakan terminal masih terhubung dan mengembalikan waktu server."
+      security:
+        - deviceCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalHeader"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TerminalHeartbeatEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /terminal/scans:
+    post:
+      tags: [terminal]
+      operationId: recordTerminalScan
+      summary: "Catat satu scan QR dari terminal"
+      description: "Waktu selalu waktu server. Kunci idempotensi yang sama mengembalikan hasil yang sama tanpa catatan baru. Hasil accepted/duplicate/rejected/needs_review dikembalikan dengan HTTP 200; kode alasan stabil ada di `code`."
+      security:
+        - deviceCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TerminalScanRequest" }
+      responses:
+        "200":
+          description: "Hasil scan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TerminalScanEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /terminal/recent:
+    get:
+      tags: [terminal]
+      operationId: listTerminalRecent
+      summary: "Sepuluh transaksi terakhir sekolah"
+      description: "Hanya nama tampilan ringkas, tanpa nilai kredensial."
+      security:
+        - deviceCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TerminalHeader"
+      responses:
+        "200":
+          description: "Transaksi terakhir."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TerminalRecentEnvelope" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
 components:
   securitySchemes:
     sessionCookie:
@@ -1765,6 +2157,11 @@ components:
       in: cookie
       name: sentra_session
       description: "Cookie sesi Sanctum SPA. Request tulis juga wajib header X-XSRF-TOKEN."
+    deviceCookie:
+      type: apiKey
+      in: cookie
+      name: sentra_device
+      description: "Token perangkat terminal (256-bit) dari /terminal/pair. Tanpa sesi dan tanpa CSRF cookie; header X-Sentra-Terminal: 1 wajib."
   parameters:
     Token:
       name: token
@@ -1827,6 +2224,22 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    CredentialId:
+      name: credential
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    DeviceId:
+      name: device
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TerminalHeader:
+      name: X-Sentra-Terminal
+      in: header
+      required: true
+      description: "Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal."
+      schema: { type: string, enum: ["1"] }
   responses:
     Unauthenticated:
       description: "Belum login atau sesi berakhir (`UNAUTHENTICATED`, `LOGIN_REQUIRED`)."
@@ -1859,6 +2272,11 @@ components:
           schema: { $ref: "#/components/schemas/Problem" }
     ValidationFailed:
       description: "Validasi gagal (`VALIDATION_FAILED`) dengan `errors` per field."
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    BadRequest:
+      description: "Permintaan tidak valid (mis. header terminal hilang)."
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/Problem" }
@@ -1913,7 +2331,7 @@ components:
       enum: [school_admin, principal, homeroom_teacher, duty_officer, terminal_operator]
     Permission:
       type: string
-      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage]
+      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view]
     SchoolStatus:
       type: string
       enum: [trial, active, suspended, terminated]
@@ -2479,6 +2897,261 @@ components:
             days:
               type: array
               items: { $ref: "#/components/schemas/CalendarDay" }
+    CredentialStatus:
+      type: string
+      enum: [active, blocked, revoked]
+    Credential:
+      type: object
+      required: [id, student_id, credential_type, status, status_reason, issued_at, blocked_at, revoked_at, replaces_credential_id]
+      properties:
+        id: { type: string, format: uuid }
+        student_id: { type: string, format: uuid }
+        credential_type: { type: string, enum: [qr, rfid] }
+        status: { $ref: "#/components/schemas/CredentialStatus" }
+        status_reason: { type: [string, "null"] }
+        issued_at: { type: string, format: date-time }
+        blocked_at: { type: [string, "null"], format: date-time }
+        revoked_at: { type: [string, "null"], format: date-time }
+        replaces_credential_id: { type: [string, "null"], format: uuid }
+    CredentialEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Credential" }
+    CredentialListEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Credential" }
+    CredentialIssuedEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [credential, token]
+          properties:
+            credential: { $ref: "#/components/schemas/Credential" }
+            token: { type: string, pattern: "^SA1\\.[A-Z2-7]{26}$", description: "Nilai QR mentah; hanya terlihat sekali." }
+    CredentialClassIssue:
+      type: object
+      properties:
+        mode: { type: string, enum: [missing, all], default: missing }
+    CredentialClassIssuedEnvelope:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            required: [student, credential, token]
+            properties:
+              student:
+                type: object
+                required: [id, student_number, full_name]
+                properties:
+                  id: { type: string, format: uuid }
+                  student_number: { type: string }
+                  full_name: { type: string }
+              credential: { $ref: "#/components/schemas/Credential" }
+              token: { type: string, description: "Nilai QR mentah; hanya terlihat sekali." }
+        meta:
+          type: object
+          required: [issued]
+          properties:
+            issued: { type: integer }
+    DeviceStatus:
+      type: string
+      enum: [pending_pairing, active, revoked]
+    Device:
+      type: object
+      required: [id, name, device_type, status, online, pairing_expires_at, paired_at, last_seen_at, revoked_at, revoked_reason]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        device_type: { type: string, enum: [gate_terminal] }
+        status: { $ref: "#/components/schemas/DeviceStatus" }
+        online: { type: boolean, description: "Aktivitas terakhir dalam 2 menit." }
+        pairing_expires_at: { type: [string, "null"], format: date-time }
+        paired_at: { type: [string, "null"], format: date-time }
+        last_seen_at: { type: [string, "null"], format: date-time }
+        revoked_at: { type: [string, "null"], format: date-time }
+        revoked_reason: { type: [string, "null"] }
+    DeviceEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Device" }
+    DeviceListEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Device" }
+    DeviceName:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+    DevicePairingEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [device, pairing_code]
+          properties:
+            device: { $ref: "#/components/schemas/Device" }
+            pairing_code: { type: string, pattern: "^[A-HJKMNP-Z2-9]{8}$", description: "Hanya terlihat sekali." }
+    TerminalPairRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, minLength: 6, maxLength: 20, description: "Spasi dan tanda hubung diabaikan; huruf kecil dianggap sama." }
+    TerminalPairEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [school]
+          properties:
+            school:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+    TerminalConfigEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [school, device, server_time, methods, show_photo]
+          properties:
+            school:
+              type: object
+              required: [name, timezone]
+              properties:
+                name: { type: string }
+                timezone: { type: string }
+            device:
+              type: object
+              required: [id, name]
+              properties:
+                id: { type: string, format: uuid }
+                name: { type: string }
+            server_time: { type: string, format: date-time }
+            methods:
+              type: array
+              items: { type: string, enum: [qr, rfid] }
+            show_photo: { type: boolean }
+    TerminalHeartbeatEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [server_time]
+          properties:
+            server_time: { type: string, format: date-time }
+    ScanResult:
+      type: string
+      enum: [accepted, duplicate, rejected, needs_review]
+    TerminalScanRequest:
+      type: object
+      required: [value, idempotency_key]
+      properties:
+        value: { type: string, maxLength: 200, description: "Isi QR/kartu mentah dari pemindai." }
+        idempotency_key: { type: string, format: uuid, description: "Dibuat klien per scan; dipakai ulang saat mengulang." }
+        captured_at: { type: [string, "null"], format: date-time, description: "Hanya informasi diagnostik; tidak dipakai untuk menentukan waktu absensi." }
+    TerminalScan:
+      type: object
+      required: [result, code, event_type, student, recorded_at, recorded_at_local, message]
+      properties:
+        result: { $ref: "#/components/schemas/ScanResult" }
+        code: { type: string, description: "CHECK_IN_OK, CHECK_IN_LATE, CHECK_OUT_OK, CHECK_OUT_EARLY, ALREADY_CHECKED_IN, ALREADY_CHECKED_OUT, TOO_EARLY, CHECKOUT_WITHOUT_CHECKIN, UNKNOWN_CREDENTIAL, CREDENTIAL_BLOCKED, STUDENT_INACTIVE, HOLIDAY, NO_SCHEDULE" }
+        event_type: { type: [string, "null"], enum: [check_in, check_out, null] }
+        student:
+          type: [object, "null"]
+          required: [display_name, class_name, photo_url]
+          properties:
+            display_name: { type: string }
+            class_name: { type: [string, "null"] }
+            photo_url: { type: [string, "null"] }
+        recorded_at: { type: string, format: date-time }
+        recorded_at_local: { type: string, example: "07.03" }
+        message: { type: string }
+    TerminalScanEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/TerminalScan" }
+    TerminalRecentEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            required: [result, code, event_type, display_name, class_name, is_late, recorded_at_local]
+            properties:
+              result: { $ref: "#/components/schemas/ScanResult" }
+              code: { type: [string, "null"] }
+              event_type: { type: [string, "null"] }
+              display_name: { type: [string, "null"] }
+              class_name: { type: [string, "null"] }
+              is_late: { type: [boolean, "null"] }
+              recorded_at_local: { type: string }
+    AttendanceTodayEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [date, timezone, day, totals, recent, devices]
+          properties:
+            date: { type: string, format: date }
+            timezone: { type: string }
+            day:
+              type: object
+              required: [kind, holiday_name]
+              properties:
+                kind: { type: string, enum: [school_day, holiday, no_schedule] }
+                holiday_name: { type: [string, "null"] }
+            totals:
+              type: object
+              required: [students, present, on_time, late, not_recorded, checked_out]
+              properties:
+                students: { type: integer }
+                present: { type: integer, description: "Hadir + terlambat." }
+                on_time: { type: integer }
+                late: { type: integer }
+                not_recorded: { type: integer }
+                checked_out: { type: integer }
+            recent:
+              type: array
+              items:
+                type: object
+                required: [student_name, class_name, event_type, result, is_late, recorded_at_local]
+                properties:
+                  student_name: { type: string }
+                  class_name: { type: string }
+                  event_type: { type: [string, "null"] }
+                  result: { $ref: "#/components/schemas/ScanResult" }
+                  is_late: { type: [boolean, "null"] }
+                  recorded_at_local: { type: string }
+            devices:
+              type: object
+              required: [active, offline]
+              properties:
+                active: { type: integer }
+                offline: { type: integer }
 
 security:
   - sessionCookie: []

@@ -6,6 +6,39 @@ column academic_years.name text nullable=NO
 column academic_years.school_id uuid nullable=NO
 column academic_years.start_date date nullable=NO
 column academic_years.updated_at timestamp with time zone nullable=NO
+column attendance_events.assist_note text nullable=YES
+column attendance_events.assist_reason_code text nullable=YES
+column attendance_events.attendance_date date nullable=YES
+column attendance_events.attendance_session_id uuid nullable=YES
+column attendance_events.client_captured_at timestamp with time zone nullable=YES
+column attendance_events.created_at timestamp with time zone nullable=NO
+column attendance_events.created_by_user_id uuid nullable=YES
+column attendance_events.credential_fingerprint bytea nullable=YES
+column attendance_events.credential_id uuid nullable=YES
+column attendance_events.device_id uuid nullable=YES
+column attendance_events.event_type text nullable=YES
+column attendance_events.id uuid nullable=NO
+column attendance_events.idempotency_key uuid nullable=NO
+column attendance_events.is_early_leave boolean nullable=YES
+column attendance_events.is_late boolean nullable=YES
+column attendance_events.late_minutes integer nullable=YES
+column attendance_events.metadata jsonb nullable=YES
+column attendance_events.method text nullable=NO
+column attendance_events.occurred_at_server timestamp with time zone nullable=NO
+column attendance_events.reason_code text nullable=YES
+column attendance_events.response_snapshot jsonb nullable=NO
+column attendance_events.result text nullable=NO
+column attendance_events.school_id uuid nullable=NO
+column attendance_events.student_id uuid nullable=YES
+column attendance_sessions.closed_at timestamp with time zone nullable=YES
+column attendance_sessions.created_at timestamp with time zone nullable=NO
+column attendance_sessions.id uuid nullable=NO
+column attendance_sessions.schedule_id uuid nullable=NO
+column attendance_sessions.school_id uuid nullable=NO
+column attendance_sessions.session_date date nullable=NO
+column attendance_sessions.status text nullable=NO
+column attendance_sessions.timezone text nullable=NO
+column attendance_sessions.updated_at timestamp with time zone nullable=NO
 column audit_logs.action text nullable=NO
 column audit_logs.actor_device_id uuid nullable=YES
 column audit_logs.actor_type text nullable=NO
@@ -39,6 +72,38 @@ column classes.name text nullable=NO
 column classes.school_id uuid nullable=NO
 column classes.status text nullable=NO
 column classes.updated_at timestamp with time zone nullable=NO
+column daily_attendance.attendance_date date nullable=NO
+column daily_attendance.attendance_session_id uuid nullable=YES
+column daily_attendance.attendance_status text nullable=NO
+column daily_attendance.check_in_event_id uuid nullable=YES
+column daily_attendance.check_out_event_id uuid nullable=YES
+column daily_attendance.class_id uuid nullable=YES
+column daily_attendance.created_at timestamp with time zone nullable=NO
+column daily_attendance.early_leave boolean nullable=NO
+column daily_attendance.early_leave_status text nullable=YES
+column daily_attendance.id uuid nullable=NO
+column daily_attendance.late_minutes integer nullable=YES
+column daily_attendance.school_id uuid nullable=NO
+column daily_attendance.source text nullable=NO
+column daily_attendance.student_id uuid nullable=NO
+column daily_attendance.updated_at timestamp with time zone nullable=NO
+column daily_attendance.version integer nullable=NO
+column devices.created_at timestamp with time zone nullable=NO
+column devices.created_by_user_id uuid nullable=NO
+column devices.device_type text nullable=NO
+column devices.id uuid nullable=NO
+column devices.last_seen_at timestamp with time zone nullable=YES
+column devices.name text nullable=NO
+column devices.paired_at timestamp with time zone nullable=YES
+column devices.pairing_code_hash bytea nullable=YES
+column devices.pairing_expires_at timestamp with time zone nullable=YES
+column devices.reader_profile text nullable=YES
+column devices.revoked_at timestamp with time zone nullable=YES
+column devices.revoked_reason text nullable=YES
+column devices.school_id uuid nullable=NO
+column devices.status text nullable=NO
+column devices.token_hash bytea nullable=YES
+column devices.updated_at timestamp with time zone nullable=NO
 column failed_jobs.connection text nullable=NO
 column failed_jobs.exception text nullable=NO
 column failed_jobs.failed_at timestamp with time zone nullable=NO
@@ -136,6 +201,7 @@ column school_memberships.user_id uuid nullable=NO
 column schools.address text nullable=YES
 column schools.code USER-DEFINED nullable=NO
 column schools.created_at timestamp with time zone nullable=NO
+column schools.device_limit smallint nullable=NO
 column schools.education_levels ARRAY nullable=NO
 column schools.id uuid nullable=NO
 column schools.name text nullable=NO
@@ -143,6 +209,23 @@ column schools.npsn text nullable=YES
 column schools.status text nullable=NO
 column schools.timezone text nullable=NO
 column schools.updated_at timestamp with time zone nullable=NO
+column student_credentials.blocked_at timestamp with time zone nullable=YES
+column student_credentials.created_at timestamp with time zone nullable=NO
+column student_credentials.created_by_user_id uuid nullable=NO
+column student_credentials.credential_type text nullable=NO
+column student_credentials.hash_key_version smallint nullable=NO
+column student_credentials.id uuid nullable=NO
+column student_credentials.issued_at timestamp with time zone nullable=NO
+column student_credentials.reader_profile text nullable=YES
+column student_credentials.replaces_credential_id uuid nullable=YES
+column student_credentials.revoked_at timestamp with time zone nullable=YES
+column student_credentials.school_id uuid nullable=NO
+column student_credentials.status text nullable=NO
+column student_credentials.status_reason text nullable=YES
+column student_credentials.student_id uuid nullable=NO
+column student_credentials.updated_at timestamp with time zone nullable=NO
+column student_credentials.value_hash bytea nullable=NO
+column student_credentials.value_hint text nullable=YES
 column students.created_at timestamp with time zone nullable=NO
 column students.date_of_birth date nullable=YES
 column students.full_name text nullable=NO
@@ -175,12 +258,20 @@ column users.two_factor_recovery_codes text nullable=YES
 column users.two_factor_secret text nullable=YES
 column users.updated_at timestamp with time zone nullable=NO
 index CREATE INDEX academic_years_no_overlap ON public.academic_years USING gist (school_id, daterange(start_date, end_date, '[]'::text))
+index CREATE INDEX attendance_events_device_index ON public.attendance_events USING btree (school_id, device_id, occurred_at_server DESC)
+index CREATE INDEX attendance_events_issues_index ON public.attendance_events USING btree (school_id, result, occurred_at_server) WHERE (result <> 'accepted'::text)
+index CREATE INDEX attendance_events_recent_index ON public.attendance_events USING btree (school_id, occurred_at_server DESC)
+index CREATE INDEX attendance_events_student_date_index ON public.attendance_events USING btree (school_id, student_id, attendance_date)
 index CREATE INDEX audit_logs_school_created_index ON public.audit_logs USING btree (school_id, created_at DESC)
 index CREATE INDEX audit_logs_school_entity_index ON public.audit_logs USING btree (school_id, entity_type, entity_id)
 index CREATE INDEX class_enrollments_class_index ON public.class_enrollments USING btree (school_id, class_id)
 index CREATE INDEX class_enrollments_no_overlap ON public.class_enrollments USING gist (school_id, student_id, daterange(start_date, end_date, '[]'::text))
 index CREATE INDEX class_enrollments_student_index ON public.class_enrollments USING btree (school_id, student_id, start_date)
 index CREATE INDEX classes_homeroom_teacher_index ON public.classes USING btree (school_id, homeroom_teacher_id)
+index CREATE INDEX daily_attendance_class_date_index ON public.daily_attendance USING btree (school_id, class_id, attendance_date)
+index CREATE INDEX daily_attendance_date_index ON public.daily_attendance USING btree (school_id, attendance_date)
+index CREATE INDEX daily_attendance_status_date_index ON public.daily_attendance USING btree (school_id, attendance_status, attendance_date)
+index CREATE INDEX devices_school_status_index ON public.devices USING btree (school_id, status)
 index CREATE INDEX holidays_school_dates_index ON public.holidays USING btree (school_id, start_date, end_date)
 index CREATE INDEX import_batches_school_created_index ON public.import_batches USING btree (school_id, created_at DESC)
 index CREATE INDEX import_rows_batch_status_index ON public.import_rows USING btree (school_id, batch_id, status, row_number)
@@ -189,6 +280,7 @@ index CREATE INDEX membership_roles_school_role_index ON public.membership_roles
 index CREATE INDEX schedules_no_overlap ON public.schedules USING gist (school_id, scope_key, day_of_week, daterange(effective_from, effective_until, '[]'::text)) WHERE is_active
 index CREATE INDEX schedules_school_scope_index ON public.schedules USING btree (school_id, scope_key, day_of_week, effective_from)
 index CREATE INDEX school_memberships_user_id_index ON public.school_memberships USING btree (user_id)
+index CREATE INDEX student_credentials_student_index ON public.student_credentials USING btree (school_id, student_id, issued_at DESC)
 index CREATE INDEX students_full_name_trgm ON public.students USING gin (full_name gin_trgm_ops)
 index CREATE INDEX students_school_name_index ON public.students USING btree (school_id, full_name)
 index CREATE INDEX teachers_school_name_index ON public.teachers USING btree (school_id, full_name)
@@ -196,12 +288,26 @@ index CREATE UNIQUE INDEX academic_years_one_active ON public.academic_years USI
 index CREATE UNIQUE INDEX academic_years_pkey ON public.academic_years USING btree (id)
 index CREATE UNIQUE INDEX academic_years_school_id_id_unique ON public.academic_years USING btree (school_id, id)
 index CREATE UNIQUE INDEX academic_years_school_name_unique ON public.academic_years USING btree (school_id, name)
+index CREATE UNIQUE INDEX attendance_events_idempotency_unique ON public.attendance_events USING btree (school_id, idempotency_key)
+index CREATE UNIQUE INDEX attendance_events_one_accepted ON public.attendance_events USING btree (school_id, student_id, attendance_date, event_type) WHERE (result = 'accepted'::text)
+index CREATE UNIQUE INDEX attendance_events_pkey ON public.attendance_events USING btree (id)
+index CREATE UNIQUE INDEX attendance_events_school_id_id_unique ON public.attendance_events USING btree (school_id, id)
+index CREATE UNIQUE INDEX attendance_sessions_pkey ON public.attendance_sessions USING btree (id)
+index CREATE UNIQUE INDEX attendance_sessions_school_id_id_unique ON public.attendance_sessions USING btree (school_id, id)
+index CREATE UNIQUE INDEX attendance_sessions_unique ON public.attendance_sessions USING btree (school_id, session_date, schedule_id)
 index CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)
 index CREATE UNIQUE INDEX class_enrollments_pkey ON public.class_enrollments USING btree (id)
 index CREATE UNIQUE INDEX class_enrollments_school_id_id_unique ON public.class_enrollments USING btree (school_id, id)
 index CREATE UNIQUE INDEX classes_pkey ON public.classes USING btree (id)
 index CREATE UNIQUE INDEX classes_school_id_id_unique ON public.classes USING btree (school_id, id)
 index CREATE UNIQUE INDEX classes_year_name_unique ON public.classes USING btree (school_id, academic_year_id, name)
+index CREATE UNIQUE INDEX daily_attendance_pkey ON public.daily_attendance USING btree (id)
+index CREATE UNIQUE INDEX daily_attendance_school_id_id_unique ON public.daily_attendance USING btree (school_id, id)
+index CREATE UNIQUE INDEX daily_attendance_student_date_unique ON public.daily_attendance USING btree (school_id, student_id, attendance_date)
+index CREATE UNIQUE INDEX devices_pairing_code_unique ON public.devices USING btree (pairing_code_hash) WHERE (pairing_code_hash IS NOT NULL)
+index CREATE UNIQUE INDEX devices_pkey ON public.devices USING btree (id)
+index CREATE UNIQUE INDEX devices_school_id_id_unique ON public.devices USING btree (school_id, id)
+index CREATE UNIQUE INDEX devices_token_hash_unique ON public.devices USING btree (token_hash)
 index CREATE UNIQUE INDEX failed_jobs_pkey ON public.failed_jobs USING btree (id)
 index CREATE UNIQUE INDEX failed_jobs_uuid_key ON public.failed_jobs USING btree (uuid)
 index CREATE UNIQUE INDEX holidays_pkey ON public.holidays USING btree (id)
@@ -226,6 +332,10 @@ index CREATE UNIQUE INDEX school_memberships_school_user_unique ON public.school
 index CREATE UNIQUE INDEX schools_code_unique ON public.schools USING btree (code)
 index CREATE UNIQUE INDEX schools_npsn_unique ON public.schools USING btree (npsn)
 index CREATE UNIQUE INDEX schools_pkey ON public.schools USING btree (id)
+index CREATE UNIQUE INDEX student_credentials_one_active ON public.student_credentials USING btree (school_id, student_id, credential_type) WHERE (status = 'active'::text)
+index CREATE UNIQUE INDEX student_credentials_pkey ON public.student_credentials USING btree (id)
+index CREATE UNIQUE INDEX student_credentials_school_id_id_unique ON public.student_credentials USING btree (school_id, id)
+index CREATE UNIQUE INDEX student_credentials_value_unique ON public.student_credentials USING btree (school_id, credential_type, value_hash) WHERE (status <> 'revoked'::text)
 index CREATE UNIQUE INDEX students_nisn_unique ON public.students USING btree (school_id, nisn) WHERE (nisn IS NOT NULL)
 index CREATE UNIQUE INDEX students_pkey ON public.students USING btree (id)
 index CREATE UNIQUE INDEX students_school_id_id_unique ON public.students USING btree (school_id, id)
@@ -251,6 +361,43 @@ constraint academic_years academic_years_school_id_not_null NOT NULL school_id
 constraint academic_years academic_years_school_name_unique UNIQUE (school_id, name)
 constraint academic_years academic_years_start_date_not_null NOT NULL start_date
 constraint academic_years academic_years_updated_at_not_null NOT NULL updated_at
+constraint attendance_events attendance_events_accepted_complete CHECK (((result <> 'accepted'::text) OR ((student_id IS NOT NULL) AND (event_type IS NOT NULL) AND (attendance_session_id IS NOT NULL) AND (attendance_date IS NOT NULL))))
+constraint attendance_events attendance_events_assist_complete CHECK (((method <> 'assisted_manual'::text) OR ((created_by_user_id IS NOT NULL) AND (assist_reason_code IS NOT NULL))))
+constraint attendance_events attendance_events_created_at_not_null NOT NULL created_at
+constraint attendance_events attendance_events_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+constraint attendance_events attendance_events_credential_fk FOREIGN KEY (school_id, credential_id) REFERENCES student_credentials(school_id, id)
+constraint attendance_events attendance_events_device_fk FOREIGN KEY (school_id, device_id) REFERENCES devices(school_id, id)
+constraint attendance_events attendance_events_fingerprint_length CHECK (((credential_fingerprint IS NULL) OR (octet_length(credential_fingerprint) = 8)))
+constraint attendance_events attendance_events_id_not_null NOT NULL id
+constraint attendance_events attendance_events_idempotency_key_not_null NOT NULL idempotency_key
+constraint attendance_events attendance_events_idempotency_unique UNIQUE (school_id, idempotency_key)
+constraint attendance_events attendance_events_method_check CHECK ((method = ANY (ARRAY['qr'::text, 'rfid'::text, 'assisted_manual'::text])))
+constraint attendance_events attendance_events_method_not_null NOT NULL method
+constraint attendance_events attendance_events_occurred_at_server_not_null NOT NULL occurred_at_server
+constraint attendance_events attendance_events_pkey PRIMARY KEY (id)
+constraint attendance_events attendance_events_response_snapshot_not_null NOT NULL response_snapshot
+constraint attendance_events attendance_events_result_check CHECK ((result = ANY (ARRAY['accepted'::text, 'duplicate'::text, 'rejected'::text, 'needs_review'::text])))
+constraint attendance_events attendance_events_result_not_null NOT NULL result
+constraint attendance_events attendance_events_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint attendance_events attendance_events_school_id_id_unique UNIQUE (school_id, id)
+constraint attendance_events attendance_events_school_id_not_null NOT NULL school_id
+constraint attendance_events attendance_events_session_fk FOREIGN KEY (school_id, attendance_session_id) REFERENCES attendance_sessions(school_id, id)
+constraint attendance_events attendance_events_student_fk FOREIGN KEY (school_id, student_id) REFERENCES students(school_id, id)
+constraint attendance_events attendance_events_type_check CHECK (((event_type IS NULL) OR (event_type = ANY (ARRAY['check_in'::text, 'check_out'::text]))))
+constraint attendance_sessions attendance_sessions_created_at_not_null NOT NULL created_at
+constraint attendance_sessions attendance_sessions_id_not_null NOT NULL id
+constraint attendance_sessions attendance_sessions_pkey PRIMARY KEY (id)
+constraint attendance_sessions attendance_sessions_schedule_fk FOREIGN KEY (school_id, schedule_id) REFERENCES schedules(school_id, id)
+constraint attendance_sessions attendance_sessions_schedule_id_not_null NOT NULL schedule_id
+constraint attendance_sessions attendance_sessions_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint attendance_sessions attendance_sessions_school_id_id_unique UNIQUE (school_id, id)
+constraint attendance_sessions attendance_sessions_school_id_not_null NOT NULL school_id
+constraint attendance_sessions attendance_sessions_session_date_not_null NOT NULL session_date
+constraint attendance_sessions attendance_sessions_status_check CHECK ((status = ANY (ARRAY['open'::text, 'closed'::text, 'finalized'::text])))
+constraint attendance_sessions attendance_sessions_status_not_null NOT NULL status
+constraint attendance_sessions attendance_sessions_timezone_not_null NOT NULL timezone
+constraint attendance_sessions attendance_sessions_unique UNIQUE (school_id, session_date, schedule_id)
+constraint attendance_sessions attendance_sessions_updated_at_not_null NOT NULL updated_at
 constraint audit_logs audit_logs_action_format CHECK ((action ~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$'::text))
 constraint audit_logs audit_logs_action_not_null NOT NULL action
 constraint audit_logs audit_logs_actor_device_check CHECK (((actor_type <> 'device'::text) OR (actor_device_id IS NOT NULL)))
@@ -294,6 +441,47 @@ constraint classes classes_status_check CHECK ((status = ANY (ARRAY['active'::te
 constraint classes classes_status_not_null NOT NULL status
 constraint classes classes_updated_at_not_null NOT NULL updated_at
 constraint classes classes_year_name_unique UNIQUE (school_id, academic_year_id, name)
+constraint daily_attendance daily_attendance_attendance_date_not_null NOT NULL attendance_date
+constraint daily_attendance daily_attendance_attendance_status_not_null NOT NULL attendance_status
+constraint daily_attendance daily_attendance_check_in_fk FOREIGN KEY (school_id, check_in_event_id) REFERENCES attendance_events(school_id, id)
+constraint daily_attendance daily_attendance_check_out_fk FOREIGN KEY (school_id, check_out_event_id) REFERENCES attendance_events(school_id, id)
+constraint daily_attendance daily_attendance_class_fk FOREIGN KEY (school_id, class_id) REFERENCES classes(school_id, id)
+constraint daily_attendance daily_attendance_created_at_not_null NOT NULL created_at
+constraint daily_attendance daily_attendance_early_leave_not_null NOT NULL early_leave
+constraint daily_attendance daily_attendance_early_status_check CHECK (((early_leave_status IS NULL) OR (early_leave_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))))
+constraint daily_attendance daily_attendance_id_not_null NOT NULL id
+constraint daily_attendance daily_attendance_late_minutes_check CHECK (((late_minutes IS NULL) OR (late_minutes >= 0)))
+constraint daily_attendance daily_attendance_pkey PRIMARY KEY (id)
+constraint daily_attendance daily_attendance_present_needs_event CHECK (((attendance_status <> ALL (ARRAY['hadir'::text, 'terlambat'::text])) OR (check_in_event_id IS NOT NULL) OR (source = 'manual_adjustment'::text)))
+constraint daily_attendance daily_attendance_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint daily_attendance daily_attendance_school_id_id_unique UNIQUE (school_id, id)
+constraint daily_attendance daily_attendance_school_id_not_null NOT NULL school_id
+constraint daily_attendance daily_attendance_session_fk FOREIGN KEY (school_id, attendance_session_id) REFERENCES attendance_sessions(school_id, id)
+constraint daily_attendance daily_attendance_source_check CHECK ((source = ANY (ARRAY['automatic'::text, 'manual_adjustment'::text])))
+constraint daily_attendance daily_attendance_source_not_null NOT NULL source
+constraint daily_attendance daily_attendance_status_check CHECK ((attendance_status = ANY (ARRAY['belum_tercatat'::text, 'hadir'::text, 'terlambat'::text, 'izin'::text, 'sakit'::text, 'dispensasi'::text, 'alpa_belum_diverifikasi'::text, 'alpa'::text])))
+constraint daily_attendance daily_attendance_student_date_unique UNIQUE (school_id, student_id, attendance_date)
+constraint daily_attendance daily_attendance_student_fk FOREIGN KEY (school_id, student_id) REFERENCES students(school_id, id)
+constraint daily_attendance daily_attendance_student_id_not_null NOT NULL student_id
+constraint daily_attendance daily_attendance_updated_at_not_null NOT NULL updated_at
+constraint daily_attendance daily_attendance_version_not_null NOT NULL version
+constraint devices devices_created_at_not_null NOT NULL created_at
+constraint devices devices_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+constraint devices devices_created_by_user_id_not_null NOT NULL created_by_user_id
+constraint devices devices_device_type_not_null NOT NULL device_type
+constraint devices devices_id_not_null NOT NULL id
+constraint devices devices_name_not_blank CHECK ((btrim(name) <> ''::text))
+constraint devices devices_name_not_null NOT NULL name
+constraint devices devices_pkey PRIMARY KEY (id)
+constraint devices devices_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint devices devices_school_id_id_unique UNIQUE (school_id, id)
+constraint devices devices_school_id_not_null NOT NULL school_id
+constraint devices devices_state_check CHECK ((((status = 'pending_pairing'::text) AND (token_hash IS NULL) AND (pairing_code_hash IS NOT NULL) AND (pairing_expires_at IS NOT NULL)) OR ((status = 'active'::text) AND (token_hash IS NOT NULL) AND (paired_at IS NOT NULL) AND (pairing_code_hash IS NULL)) OR ((status = 'revoked'::text) AND (revoked_at IS NOT NULL) AND (pairing_code_hash IS NULL))))
+constraint devices devices_status_check CHECK ((status = ANY (ARRAY['pending_pairing'::text, 'active'::text, 'revoked'::text])))
+constraint devices devices_status_not_null NOT NULL status
+constraint devices devices_token_hash_unique UNIQUE (token_hash)
+constraint devices devices_type_check CHECK ((device_type = 'gate_terminal'::text))
+constraint devices devices_updated_at_not_null NOT NULL updated_at
 constraint failed_jobs failed_jobs_connection_not_null NOT NULL connection
 constraint failed_jobs failed_jobs_exception_not_null NOT NULL exception
 constraint failed_jobs failed_jobs_failed_at_not_null NOT NULL failed_at
@@ -433,6 +621,8 @@ constraint schools schools_code_format CHECK ((code ~ '^[a-z0-9]([a-z0-9-]{0,38}
 constraint schools schools_code_not_null NOT NULL code
 constraint schools schools_code_unique UNIQUE (code)
 constraint schools schools_created_at_not_null NOT NULL created_at
+constraint schools schools_device_limit_check CHECK (((device_limit >= 1) AND (device_limit <= 50)))
+constraint schools schools_device_limit_not_null NOT NULL device_limit
 constraint schools schools_education_levels_check CHECK (((cardinality(education_levels) >= 1) AND (education_levels <@ ARRAY['SD'::text, 'MI'::text, 'SMP'::text, 'MTs'::text, 'SMA'::text, 'SMK'::text, 'MA'::text, 'lainnya'::text])))
 constraint schools schools_education_levels_not_null NOT NULL education_levels
 constraint schools schools_id_not_null NOT NULL id
@@ -446,6 +636,27 @@ constraint schools schools_status_not_null NOT NULL status
 constraint schools schools_timezone_check CHECK ((timezone = ANY (ARRAY['Asia/Jakarta'::text, 'Asia/Makassar'::text, 'Asia/Jayapura'::text])))
 constraint schools schools_timezone_not_null NOT NULL timezone
 constraint schools schools_updated_at_not_null NOT NULL updated_at
+constraint student_credentials student_credentials_created_at_not_null NOT NULL created_at
+constraint student_credentials student_credentials_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+constraint student_credentials student_credentials_created_by_user_id_not_null NOT NULL created_by_user_id
+constraint student_credentials student_credentials_credential_type_not_null NOT NULL credential_type
+constraint student_credentials student_credentials_hash_key_version_not_null NOT NULL hash_key_version
+constraint student_credentials student_credentials_hash_length CHECK ((octet_length(value_hash) = 32))
+constraint student_credentials student_credentials_id_not_null NOT NULL id
+constraint student_credentials student_credentials_issued_at_not_null NOT NULL issued_at
+constraint student_credentials student_credentials_pkey PRIMARY KEY (id)
+constraint student_credentials student_credentials_replaces_fk FOREIGN KEY (school_id, replaces_credential_id) REFERENCES student_credentials(school_id, id)
+constraint student_credentials student_credentials_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint student_credentials student_credentials_school_id_id_unique UNIQUE (school_id, id)
+constraint student_credentials student_credentials_school_id_not_null NOT NULL school_id
+constraint student_credentials student_credentials_status_check CHECK ((status = ANY (ARRAY['active'::text, 'blocked'::text, 'revoked'::text])))
+constraint student_credentials student_credentials_status_not_null NOT NULL status
+constraint student_credentials student_credentials_status_timestamps CHECK ((((status <> 'revoked'::text) OR (revoked_at IS NOT NULL)) AND ((status <> 'blocked'::text) OR (blocked_at IS NOT NULL))))
+constraint student_credentials student_credentials_student_fk FOREIGN KEY (school_id, student_id) REFERENCES students(school_id, id)
+constraint student_credentials student_credentials_student_id_not_null NOT NULL student_id
+constraint student_credentials student_credentials_type_check CHECK ((credential_type = ANY (ARRAY['qr'::text, 'rfid'::text])))
+constraint student_credentials student_credentials_updated_at_not_null NOT NULL updated_at
+constraint student_credentials student_credentials_value_hash_not_null NOT NULL value_hash
 constraint students students_created_at_not_null NOT NULL created_at
 constraint students students_full_name_not_blank CHECK ((btrim(full_name) <> ''::text))
 constraint students students_full_name_not_null NOT NULL full_name
@@ -488,10 +699,16 @@ constraint users users_status_not_null NOT NULL status
 constraint users users_two_factor_confirmed_requires_secret CHECK (((two_factor_confirmed_at IS NULL) OR (two_factor_secret IS NOT NULL)))
 constraint users users_updated_at_not_null NOT NULL updated_at
 policy academic_years tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy attendance_events tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy attendance_sessions tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy audit_logs audit_insert INSERT  ((school_id IS NULL) OR (school_id = app_school_id()))
 policy audit_logs audit_read SELECT (((school_id IS NOT NULL) AND (school_id = app_school_id())) OR ((school_id IS NULL) AND app_is_platform())) 
 policy class_enrollments tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy classes tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy daily_attendance tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy devices device_claim_owner_update UPDATE (status = 'pending_pairing'::text) true
+policy devices device_lookup_owner_read SELECT true 
+policy devices tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy holidays tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy import_batches tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy import_rows tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
@@ -507,12 +724,17 @@ policy membership_roles tenant_isolation ALL (school_id = app_school_id()) (scho
 policy schedules tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy school_memberships own_memberships_read SELECT (user_id = app_user_id()) 
 policy school_memberships tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy student_credentials tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy students tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy teachers tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 rls academic_years enabled=true forced=true
+rls attendance_events enabled=true forced=true
+rls attendance_sessions enabled=true forced=true
 rls audit_logs enabled=true forced=true
 rls class_enrollments enabled=true forced=true
 rls classes enabled=true forced=true
+rls daily_attendance enabled=true forced=true
+rls devices enabled=true forced=true
 rls failed_jobs enabled=false forced=false
 rls holidays enabled=true forced=true
 rls import_batches enabled=true forced=true
@@ -525,6 +747,7 @@ rls roles enabled=false forced=false
 rls schedules enabled=true forced=true
 rls school_memberships enabled=true forced=true
 rls schools enabled=false forced=false
+rls student_credentials enabled=true forced=true
 rls students enabled=true forced=true
 rls teachers enabled=true forced=true
 rls users enabled=false forced=false
