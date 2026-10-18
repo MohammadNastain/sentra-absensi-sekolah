@@ -76,6 +76,19 @@ final class RouteMatrix
             'POST api/v1/schools/{school}/invitations/{invitation}/resend' => Permission::SchoolMembersManage,
             'POST api/v1/schools/{school}/invitations/{invitation}/revoke' => Permission::SchoolMembersManage,
             'GET api/v1/schools/{school}/audit-logs' => Permission::SchoolAuditView,
+            'GET api/v1/schools/{school}/academic-years' => Permission::SchoolAcademicView,
+            'POST api/v1/schools/{school}/academic-years' => Permission::SchoolAcademicManage,
+            'GET api/v1/schools/{school}/academic-years/{academicYear}' => Permission::SchoolAcademicView,
+            'PATCH api/v1/schools/{school}/academic-years/{academicYear}' => Permission::SchoolAcademicManage,
+            'POST api/v1/schools/{school}/academic-years/{academicYear}/activate' => Permission::SchoolAcademicManage,
+            'GET api/v1/schools/{school}/teachers' => Permission::SchoolAcademicView,
+            'POST api/v1/schools/{school}/teachers' => Permission::SchoolAcademicManage,
+            'GET api/v1/schools/{school}/teachers/{teacher}' => Permission::SchoolAcademicView,
+            'PATCH api/v1/schools/{school}/teachers/{teacher}' => Permission::SchoolAcademicManage,
+            'GET api/v1/schools/{school}/classes' => Permission::SchoolAcademicView,
+            'POST api/v1/schools/{school}/classes' => Permission::SchoolAcademicManage,
+            'GET api/v1/schools/{school}/classes/{schoolClass}' => Permission::SchoolAcademicView,
+            'PATCH api/v1/schools/{school}/classes/{schoolClass}' => Permission::SchoolAcademicManage,
         ];
     }
 }

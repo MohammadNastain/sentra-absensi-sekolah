@@ -22,7 +22,7 @@ export default defineConfig({
     locale: "id-ID",
   },
   webServer: {
-    command: process.env.CI ? "pnpm start" : "pnpm dev",
+    command: process.env.CI ? "corepack pnpm start" : "corepack pnpm dev",
     url: baseURL,
     reuseExistingServer: true,
     timeout: 120_000,

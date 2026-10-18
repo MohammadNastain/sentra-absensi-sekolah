@@ -13,6 +13,8 @@ enum Permission: string
     case SchoolMembersView = 'school.members.view';
     case SchoolMembersManage = 'school.members.manage';
     case SchoolAuditView = 'school.audit.view';
+    case SchoolAcademicView = 'school.academic.view';
+    case SchoolAcademicManage = 'school.academic.manage';
 
     /**
      * @param  iterable<Role>  $roles

@@ -105,6 +105,20 @@ Aturan umum untuk setiap tahap:
 **Test plan:** unit `ScheduleResolver` (prioritas scope, tanggal efektif, libur, hari tanpa jadwal), validator baris impor; database (exclusion enrollment/jadwal/tahun ajaran, unique NIS); integrasi impor dengan fixture (valid, campuran, encoding, kolom hilang, duplikat dalam file vs DB, file >batas, tipe palsu, XLSX rusak); otorisasi wali kelas; E2E: setup sekolah → impor → lihat siswa.
 **Acceptance:** B1–B4, A3, G4 (validasi file impor), D3 (libur tidak menghasilkan sesi).
 
+**Progres Tahap 2** (dikerjakan per irisan, tiap irisan: migrasi + RLS → API + test → kontrak OpenAPI → UI → E2E):
+- [x] **2A — Tahun ajaran, guru, kelas.** Tabel `teachers`, `academic_years`, `classes` (FK komposit, exclusion tumpang tindih tanggal, satu tahun aktif, RLS dipaksa); API `academic-years` (+ aktivasi), `teachers`, `classes`; UI `/schools/[code]/{academic-years,teachers,classes}`; izin `school.academic.view|manage`; data demo di `DemoSeeder`; E2E `tahap2-akademik.spec.ts`. Lokalisasi pesan validasi/autentikasi ke bahasa Indonesia (`apps/api/lang/id`) ikut selesai.
+- [ ] 2B — Siswa (cari trigram, filter, status), enrollment dan pindah kelas.
+- [ ] 2C — Impor CSV/XLSX (upload → validasi async → preview → commit baris valid, D-15) dan templat.
+- [ ] 2D — Hari libur, jadwal berversi, `ScheduleResolver`, tampilan kalender.
+- [ ] 2E — Scope wali kelas pada daftar siswa/kelas; reset password oleh admin; foto siswa (butuh keputusan penyimpanan objek).
+
+Keputusan 2A (sudah diterapkan, tercatat agar tidak ditebak ulang):
+- Tanpa endpoint DELETE untuk data akademik: guru dinonaktifkan, kelas diarsipkan, tahun ajaran dinonaktifkan lewat aktivasi tahun lain (konvensi "data inti tidak di-hard-delete").
+- Guru yang masih menjadi wali kelas **aktif** tidak bisa dinonaktifkan (409); kelas harus dialihkan/diarsipkan dulu.
+- Tahun ajaran sebuah kelas tidak bisa diganti setelah dibuat (penempatan siswa dan absensi menempel padanya).
+- Wali kelas (`homeroom_teacher`) belum diberi izin `school.academic.view` sampai scope kelas ada di 2E, agar tidak melihat data kelas lain. Kepala Sekolah hanya melihat.
+- Penautan guru ke akun login (`membership_id`) opsional dan harus keanggotaan sekolah yang belum berakhir (D-07).
+
 ---
 
 ## Tahap 3 — QR & Terminal

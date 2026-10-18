@@ -26,12 +26,16 @@ enum Role: string
                 Permission::SchoolMembersView,
                 Permission::SchoolMembersManage,
                 Permission::SchoolAuditView,
+                Permission::SchoolAcademicView,
+                Permission::SchoolAcademicManage,
             ],
             self::Principal => [
                 Permission::SchoolProfileView,
                 Permission::SchoolMembersView,
                 Permission::SchoolAuditView,
+                Permission::SchoolAcademicView,
             ],
+            // Wali kelas baru mendapat akses data kelasnya sendiri setelah scope kelas ada (Tahap 2E).
             self::HomeroomTeacher,
             self::DutyOfficer,
             self::TerminalOperator => [

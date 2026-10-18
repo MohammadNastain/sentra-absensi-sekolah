@@ -4,8 +4,11 @@ namespace Database\Seeders;
 
 use App\Domain\Identity\Role;
 use App\Domain\Tenancy\DatabaseContext;
+use App\Models\AcademicYear;
 use App\Models\School;
+use App\Models\SchoolClass;
 use App\Models\SchoolMembership;
+use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -54,8 +57,35 @@ class DemoSeeder extends Seeder
                     'membership_id' => $membership->id,
                     'role_code' => Role::SchoolAdmin->value,
                 ]);
+
+                $this->seedAcademic($school);
             });
         });
+    }
+
+    /** Data akademik contoh (idempoten): satu tahun ajaran aktif, dua guru, tiga kelas. */
+    private function seedAcademic(School $school): void
+    {
+        $year = AcademicYear::query()->firstOrCreate(
+            ['school_id' => $school->id, 'name' => '2026/2027'],
+            ['start_date' => '2026-07-13', 'end_date' => '2027-06-26', 'is_active' => true],
+        );
+
+        $siti = Teacher::query()->firstOrCreate(
+            ['school_id' => $school->id, 'employee_number' => '198001012005012001'],
+            ['full_name' => 'Siti Rahma', 'status' => Teacher::STATUS_ACTIVE],
+        );
+        Teacher::query()->firstOrCreate(
+            ['school_id' => $school->id, 'employee_number' => '198505052010011002'],
+            ['full_name' => 'Budi Santoso', 'status' => Teacher::STATUS_ACTIVE],
+        );
+
+        foreach ([['7A', 7, $siti->id], ['7B', 7, null], ['8A', 8, null]] as [$name, $grade, $homeroom]) {
+            SchoolClass::query()->firstOrCreate(
+                ['school_id' => $school->id, 'academic_year_id' => $year->id, 'name' => $name],
+                ['grade_level' => $grade, 'homeroom_teacher_id' => $homeroom, 'status' => SchoolClass::STATUS_ACTIVE],
+            );
+        }
     }
 
     /** Super Admin demo (superadmin@demo.test) dengan 2FA aktif; dibutuhkan untuk menguji area /platform. */

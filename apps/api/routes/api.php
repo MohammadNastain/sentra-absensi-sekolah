@@ -7,10 +7,13 @@ use App\Http\Controllers\Invitation\PublicInvitationController;
 use App\Http\Controllers\Me\MyInvitationController;
 use App\Http\Controllers\Me\MySchoolsController;
 use App\Http\Controllers\Platform\PlatformSchoolController;
+use App\Http\Controllers\School\AcademicYearController;
 use App\Http\Controllers\School\AuditLogController;
 use App\Http\Controllers\School\InvitationController;
 use App\Http\Controllers\School\MemberController;
+use App\Http\Controllers\School\SchoolClassController;
 use App\Http\Controllers\School\SchoolProfileController;
+use App\Http\Controllers\School\TeacherController;
 use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\RejectRememberMe;
@@ -121,4 +124,34 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
 
     Route::get('audit-logs', [AuditLogController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAuditView))->name('audit-logs.index');
+
+    // Data akademik (Tahap 2A). Tanpa DELETE: data inti dinonaktifkan/diarsipkan, tidak dihapus.
+    Route::get('academic-years', [AcademicYearController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('academic-years.index');
+    Route::post('academic-years', [AcademicYearController::class, 'store'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('academic-years.store');
+    Route::get('academic-years/{academicYear}', [AcademicYearController::class, 'show'])->whereUuid('academicYear')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('academic-years.show');
+    Route::patch('academic-years/{academicYear}', [AcademicYearController::class, 'update'])->whereUuid('academicYear')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('academic-years.update');
+    Route::post('academic-years/{academicYear}/activate', [AcademicYearController::class, 'activate'])->whereUuid('academicYear')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('academic-years.activate');
+
+    Route::get('teachers', [TeacherController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('teachers.index');
+    Route::post('teachers', [TeacherController::class, 'store'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teachers.store');
+    Route::get('teachers/{teacher}', [TeacherController::class, 'show'])->whereUuid('teacher')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('teachers.show');
+    Route::patch('teachers/{teacher}', [TeacherController::class, 'update'])->whereUuid('teacher')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teachers.update');
+
+    Route::get('classes', [SchoolClassController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('classes.index');
+    Route::post('classes', [SchoolClassController::class, 'store'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('classes.store');
+    Route::get('classes/{schoolClass}', [SchoolClassController::class, 'show'])->whereUuid('schoolClass')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('classes.show');
+    Route::patch('classes/{schoolClass}', [SchoolClassController::class, 'update'])->whereUuid('schoolClass')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('classes.update');
 });

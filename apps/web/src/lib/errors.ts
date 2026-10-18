@@ -28,8 +28,10 @@ export function toFormFailure(error: unknown): FormFailure {
       if (first) fields[name] = first;
     }
     const firstField = Object.values(fields)[0];
+    // Judul menyebut masalahnya, detail memberi petunjuk (mis. 409 "tumpang tindih" + "ubah tanggal ...").
+    const generic = problem.detail && problem.detail !== problem.title ? `${problem.title} ${problem.detail}` : problem.title;
     return {
-      message: MESSAGES[problem.code] ?? firstField ?? problem.title,
+      message: MESSAGES[problem.code] ?? firstField ?? generic,
       fields,
     };
   }

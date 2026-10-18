@@ -98,6 +98,16 @@ class ApiProblem extends HttpException
         return new self(403, 'CANNOT_CHANGE_OWN_ROLES', 'Anda tidak dapat mengubah peran Anda sendiri.');
     }
 
+    public static function academicYearOverlap(): self
+    {
+        return new self(409, 'ACADEMIC_YEAR_OVERLAP', 'Tanggal tahun ajaran tumpang tindih dengan tahun ajaran lain.', 'Ubah tanggal mulai atau selesai agar tidak beririsan.');
+    }
+
+    public static function duplicateValue(string $detail): self
+    {
+        return new self(409, 'DUPLICATE_VALUE', 'Data yang sama sudah ada.', $detail);
+    }
+
     public static function invalidStateTransition(string $detail): self
     {
         return new self(409, 'INVALID_STATE_TRANSITION', 'Perubahan status tidak diizinkan.', $detail);

@@ -674,6 +674,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/academic-years": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar tahun ajaran (terbaru dulu)
+         * @description Izin: school.academic.view.
+         */
+        get: operations["listAcademicYears"];
+        put?: never;
+        /**
+         * Buat tahun ajaran (belum aktif)
+         * @description Izin: school.academic.manage. Tanggal tidak boleh tumpang tindih (409 ACADEMIC_YEAR_OVERLAP).
+         */
+        post: operations["createAcademicYear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/academic-years/{academicYear}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail tahun ajaran
+         * @description Izin: school.academic.view.
+         */
+        get: operations["getAcademicYear"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah nama atau tanggal tahun ajaran
+         * @description Izin: school.academic.manage.
+         */
+        patch: operations["updateAcademicYear"];
+        trace?: never;
+    };
+    "/schools/{school}/academic-years/{academicYear}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Jadikan tahun ajaran ini satu-satunya yang aktif (idempoten)
+         * @description Izin: school.academic.manage.
+         */
+        post: operations["activateAcademicYear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/teachers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar guru
+         * @description Izin: school.academic.view.
+         */
+        get: operations["listTeachers"];
+        put?: never;
+        /**
+         * Tambah guru (akun login opsional)
+         * @description Izin: school.academic.manage.
+         */
+        post: operations["createTeacher"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/teachers/{teacher}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail guru
+         * @description Izin: school.academic.view.
+         */
+        get: operations["getTeacher"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah guru, tautan akun, atau status
+         * @description Izin: school.academic.manage. Guru yang masih wali kelas aktif tidak bisa dinonaktifkan (409 INVALID_STATE_TRANSITION).
+         */
+        patch: operations["updateTeacher"];
+        trace?: never;
+    };
+    "/schools/{school}/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar kelas
+         * @description Izin: school.academic.view.
+         */
+        get: operations["listClasses"];
+        put?: never;
+        /**
+         * Buat kelas pada satu tahun ajaran
+         * @description Izin: school.academic.manage.
+         */
+        post: operations["createClass"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/classes/{schoolClass}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail kelas
+         * @description Izin: school.academic.view.
+         */
+        get: operations["getClass"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah kelas, wali kelas, atau arsipkan
+         * @description Izin: school.academic.manage. Tahun ajaran kelas tidak dapat diubah.
+         */
+        patch: operations["updateClass"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -703,7 +867,7 @@ export interface components {
         /** @enum {string} */
         Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -879,6 +1043,113 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        /** @enum {string} */
+        TeacherStatus: "active" | "inactive";
+        /** @enum {string} */
+        ClassStatus: "active" | "archived";
+        AcademicYear: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+            is_active: boolean;
+        };
+        AcademicYearEnvelope: {
+            data: components["schemas"]["AcademicYear"];
+        };
+        AcademicYearCreate: {
+            name: string;
+            /** Format: date */
+            start_date: string;
+            /**
+             * Format: date
+             * @description Harus setelah start_date.
+             */
+            end_date: string;
+        };
+        AcademicYearUpdate: {
+            name?: string;
+            /** Format: date */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string;
+        };
+        Teacher: {
+            /** Format: uuid */
+            id: string;
+            full_name: string;
+            employee_number: string | null;
+            status: components["schemas"]["TeacherStatus"];
+            /** @description Akun login guru; null bila guru tidak punya akun. */
+            account: {
+                /** Format: uuid */
+                membership_id: string;
+                name: string;
+                /** Format: email */
+                email: string;
+                status: components["schemas"]["MembershipStatus"];
+            } | null;
+        };
+        TeacherEnvelope: {
+            data: components["schemas"]["Teacher"];
+        };
+        TeacherCreate: {
+            full_name: string;
+            employee_number?: string | null;
+            /**
+             * Format: uuid
+             * @description Keanggotaan sekolah yang belum berakhir; satu akun untuk satu guru.
+             */
+            membership_id?: string | null;
+        };
+        TeacherUpdate: {
+            full_name?: string;
+            employee_number?: string | null;
+            /** Format: uuid */
+            membership_id?: string | null;
+            status?: components["schemas"]["TeacherStatus"];
+        };
+        SchoolClass: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            grade_level: number;
+            status: components["schemas"]["ClassStatus"];
+            academic_year: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            homeroom_teacher: {
+                /** Format: uuid */
+                id: string;
+                full_name: string;
+            } | null;
+        };
+        ClassEnvelope: {
+            data: components["schemas"]["SchoolClass"];
+        };
+        ClassCreate: {
+            /** Format: uuid */
+            academic_year_id: string;
+            name: string;
+            grade_level: number;
+            /**
+             * Format: uuid
+             * @description Harus guru aktif di sekolah ini.
+             */
+            homeroom_teacher_id?: string | null;
+        };
+        ClassUpdate: {
+            name?: string;
+            grade_level?: number;
+            /** Format: uuid */
+            homeroom_teacher_id?: string | null;
+            status?: components["schemas"]["ClassStatus"];
+        };
     };
     responses: {
         /** @description Belum login atau sesi berakhir (`UNAUTHENTICATED`, `LOGIN_REQUIRED`). */
@@ -911,7 +1182,10 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Konflik. `code`: LAST_SCHOOL_ADMIN, INVALID_STATE_TRANSITION, INVITATION_ALREADY_PENDING, ALREADY_MEMBER. */
+        /**
+         * @description Konflik. `code`: LAST_SCHOOL_ADMIN, INVALID_STATE_TRANSITION, INVITATION_ALREADY_PENDING, ALREADY_MEMBER,
+         *     ACADEMIC_YEAR_OVERLAP, DUPLICATE_VALUE.
+         */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -975,6 +1249,9 @@ export interface components {
         SchoolCode: string;
         MembershipId: string;
         InvitationId: string;
+        AcademicYearId: string;
+        TeacherId: string;
+        ClassId: string;
     };
     requestBodies: never;
     headers: never;
@@ -2179,6 +2456,410 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listAcademicYears: {
+        parameters: {
+            query?: {
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman tahun ajaran. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AcademicYear"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createAcademicYear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcademicYearCreate"];
+            };
+        };
+        responses: {
+            /** @description Dibuat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademicYearEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getAcademicYear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                academicYear: components["parameters"]["AcademicYearId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tahun ajaran. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademicYearEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateAcademicYear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                academicYear: components["parameters"]["AcademicYearId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcademicYearUpdate"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademicYearEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    activateAcademicYear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                academicYear: components["parameters"]["AcademicYearId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aktif. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademicYearEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listTeachers: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["TeacherStatus"];
+                /** @description Cari nama atau nomor pegawai (tidak peka huruf besar/kecil). */
+                q?: string;
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman guru. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Teacher"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createTeacher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeacherCreate"];
+            };
+        };
+        responses: {
+            /** @description Dibuat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeacherEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getTeacher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                teacher: components["parameters"]["TeacherId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Guru. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeacherEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateTeacher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                teacher: components["parameters"]["TeacherId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeacherUpdate"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeacherEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listClasses: {
+        parameters: {
+            query?: {
+                academic_year_id?: string;
+                grade_level?: number;
+                status?: components["schemas"]["ClassStatus"];
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman kelas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SchoolClass"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassCreate"];
+            };
+        };
+        responses: {
+            /** @description Dibuat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                schoolClass: components["parameters"]["ClassId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kelas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                schoolClass: components["parameters"]["ClassId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassUpdate"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
         };
     };

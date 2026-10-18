@@ -1,3 +1,11 @@
+column academic_years.created_at timestamp with time zone nullable=NO
+column academic_years.end_date date nullable=NO
+column academic_years.id uuid nullable=NO
+column academic_years.is_active boolean nullable=NO
+column academic_years.name text nullable=NO
+column academic_years.school_id uuid nullable=NO
+column academic_years.start_date date nullable=NO
+column academic_years.updated_at timestamp with time zone nullable=NO
 column audit_logs.action text nullable=NO
 column audit_logs.actor_device_id uuid nullable=YES
 column audit_logs.actor_type text nullable=NO
@@ -13,6 +21,15 @@ column audit_logs.reason text nullable=YES
 column audit_logs.request_id text nullable=YES
 column audit_logs.school_id uuid nullable=YES
 column audit_logs.user_agent text nullable=YES
+column classes.academic_year_id uuid nullable=NO
+column classes.created_at timestamp with time zone nullable=NO
+column classes.grade_level smallint nullable=NO
+column classes.homeroom_teacher_id uuid nullable=YES
+column classes.id uuid nullable=NO
+column classes.name text nullable=NO
+column classes.school_id uuid nullable=NO
+column classes.status text nullable=NO
+column classes.updated_at timestamp with time zone nullable=NO
 column failed_jobs.connection text nullable=NO
 column failed_jobs.exception text nullable=NO
 column failed_jobs.failed_at timestamp with time zone nullable=NO
@@ -66,6 +83,14 @@ column schools.npsn text nullable=YES
 column schools.status text nullable=NO
 column schools.timezone text nullable=NO
 column schools.updated_at timestamp with time zone nullable=NO
+column teachers.created_at timestamp with time zone nullable=NO
+column teachers.employee_number text nullable=YES
+column teachers.full_name text nullable=NO
+column teachers.id uuid nullable=NO
+column teachers.membership_id uuid nullable=YES
+column teachers.school_id uuid nullable=NO
+column teachers.status text nullable=NO
+column teachers.updated_at timestamp with time zone nullable=NO
 column users.created_at timestamp with time zone nullable=NO
 column users.email USER-DEFINED nullable=NO
 column users.email_verified_at timestamp with time zone nullable=YES
@@ -79,12 +104,22 @@ column users.two_factor_confirmed_at timestamp with time zone nullable=YES
 column users.two_factor_recovery_codes text nullable=YES
 column users.two_factor_secret text nullable=YES
 column users.updated_at timestamp with time zone nullable=NO
+index CREATE INDEX academic_years_no_overlap ON public.academic_years USING gist (school_id, daterange(start_date, end_date, '[]'::text))
 index CREATE INDEX audit_logs_school_created_index ON public.audit_logs USING btree (school_id, created_at DESC)
 index CREATE INDEX audit_logs_school_entity_index ON public.audit_logs USING btree (school_id, entity_type, entity_id)
+index CREATE INDEX classes_homeroom_teacher_index ON public.classes USING btree (school_id, homeroom_teacher_id)
 index CREATE INDEX membership_invitations_email_index ON public.membership_invitations USING btree (email)
 index CREATE INDEX membership_roles_school_role_index ON public.membership_roles USING btree (school_id, role_code)
 index CREATE INDEX school_memberships_user_id_index ON public.school_memberships USING btree (user_id)
+index CREATE INDEX teachers_school_name_index ON public.teachers USING btree (school_id, full_name)
+index CREATE UNIQUE INDEX academic_years_one_active ON public.academic_years USING btree (school_id) WHERE is_active
+index CREATE UNIQUE INDEX academic_years_pkey ON public.academic_years USING btree (id)
+index CREATE UNIQUE INDEX academic_years_school_id_id_unique ON public.academic_years USING btree (school_id, id)
+index CREATE UNIQUE INDEX academic_years_school_name_unique ON public.academic_years USING btree (school_id, name)
 index CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)
+index CREATE UNIQUE INDEX classes_pkey ON public.classes USING btree (id)
+index CREATE UNIQUE INDEX classes_school_id_id_unique ON public.classes USING btree (school_id, id)
+index CREATE UNIQUE INDEX classes_year_name_unique ON public.classes USING btree (school_id, academic_year_id, name)
 index CREATE UNIQUE INDEX failed_jobs_pkey ON public.failed_jobs USING btree (id)
 index CREATE UNIQUE INDEX failed_jobs_uuid_key ON public.failed_jobs USING btree (uuid)
 index CREATE UNIQUE INDEX membership_invitations_pending_unique ON public.membership_invitations USING btree (school_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL))
@@ -101,8 +136,27 @@ index CREATE UNIQUE INDEX school_memberships_school_user_unique ON public.school
 index CREATE UNIQUE INDEX schools_code_unique ON public.schools USING btree (code)
 index CREATE UNIQUE INDEX schools_npsn_unique ON public.schools USING btree (npsn)
 index CREATE UNIQUE INDEX schools_pkey ON public.schools USING btree (id)
+index CREATE UNIQUE INDEX teachers_employee_number_unique ON public.teachers USING btree (school_id, employee_number) WHERE (employee_number IS NOT NULL)
+index CREATE UNIQUE INDEX teachers_membership_id_unique ON public.teachers USING btree (membership_id)
+index CREATE UNIQUE INDEX teachers_pkey ON public.teachers USING btree (id)
+index CREATE UNIQUE INDEX teachers_school_id_id_unique ON public.teachers USING btree (school_id, id)
 index CREATE UNIQUE INDEX users_email_unique ON public.users USING btree (email)
 index CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)
+constraint academic_years academic_years_created_at_not_null NOT NULL created_at
+constraint academic_years academic_years_dates_check CHECK ((end_date > start_date))
+constraint academic_years academic_years_end_date_not_null NOT NULL end_date
+constraint academic_years academic_years_id_not_null NOT NULL id
+constraint academic_years academic_years_is_active_not_null NOT NULL is_active
+constraint academic_years academic_years_name_not_blank CHECK ((btrim(name) <> ''::text))
+constraint academic_years academic_years_name_not_null NOT NULL name
+constraint academic_years academic_years_no_overlap EXCLUDE USING gist (school_id WITH =, daterange(start_date, end_date, '[]'::text) WITH &&)
+constraint academic_years academic_years_pkey PRIMARY KEY (id)
+constraint academic_years academic_years_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint academic_years academic_years_school_id_id_unique UNIQUE (school_id, id)
+constraint academic_years academic_years_school_id_not_null NOT NULL school_id
+constraint academic_years academic_years_school_name_unique UNIQUE (school_id, name)
+constraint academic_years academic_years_start_date_not_null NOT NULL start_date
+constraint academic_years academic_years_updated_at_not_null NOT NULL updated_at
 constraint audit_logs audit_logs_action_format CHECK ((action ~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$'::text))
 constraint audit_logs audit_logs_action_not_null NOT NULL action
 constraint audit_logs audit_logs_actor_device_check CHECK (((actor_type <> 'device'::text) OR (actor_device_id IS NOT NULL)))
@@ -114,6 +168,23 @@ constraint audit_logs audit_logs_created_at_not_null NOT NULL created_at
 constraint audit_logs audit_logs_id_not_null NOT NULL id
 constraint audit_logs audit_logs_pkey PRIMARY KEY (id)
 constraint audit_logs audit_logs_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint classes classes_academic_year_fk FOREIGN KEY (school_id, academic_year_id) REFERENCES academic_years(school_id, id)
+constraint classes classes_academic_year_id_not_null NOT NULL academic_year_id
+constraint classes classes_created_at_not_null NOT NULL created_at
+constraint classes classes_grade_level_check CHECK (((grade_level >= 1) AND (grade_level <= 13)))
+constraint classes classes_grade_level_not_null NOT NULL grade_level
+constraint classes classes_homeroom_teacher_fk FOREIGN KEY (school_id, homeroom_teacher_id) REFERENCES teachers(school_id, id)
+constraint classes classes_id_not_null NOT NULL id
+constraint classes classes_name_not_blank CHECK ((btrim(name) <> ''::text))
+constraint classes classes_name_not_null NOT NULL name
+constraint classes classes_pkey PRIMARY KEY (id)
+constraint classes classes_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint classes classes_school_id_id_unique UNIQUE (school_id, id)
+constraint classes classes_school_id_not_null NOT NULL school_id
+constraint classes classes_status_check CHECK ((status = ANY (ARRAY['active'::text, 'archived'::text])))
+constraint classes classes_status_not_null NOT NULL status
+constraint classes classes_updated_at_not_null NOT NULL updated_at
+constraint classes classes_year_name_unique UNIQUE (school_id, academic_year_id, name)
 constraint failed_jobs failed_jobs_connection_not_null NOT NULL connection
 constraint failed_jobs failed_jobs_exception_not_null NOT NULL exception
 constraint failed_jobs failed_jobs_failed_at_not_null NOT NULL failed_at
@@ -194,6 +265,20 @@ constraint schools schools_status_not_null NOT NULL status
 constraint schools schools_timezone_check CHECK ((timezone = ANY (ARRAY['Asia/Jakarta'::text, 'Asia/Makassar'::text, 'Asia/Jayapura'::text])))
 constraint schools schools_timezone_not_null NOT NULL timezone
 constraint schools schools_updated_at_not_null NOT NULL updated_at
+constraint teachers teachers_created_at_not_null NOT NULL created_at
+constraint teachers teachers_employee_number_not_blank CHECK (((employee_number IS NULL) OR (btrim(employee_number) <> ''::text)))
+constraint teachers teachers_full_name_not_blank CHECK ((btrim(full_name) <> ''::text))
+constraint teachers teachers_full_name_not_null NOT NULL full_name
+constraint teachers teachers_id_not_null NOT NULL id
+constraint teachers teachers_membership_fk FOREIGN KEY (school_id, membership_id) REFERENCES school_memberships(school_id, id)
+constraint teachers teachers_membership_id_unique UNIQUE (membership_id)
+constraint teachers teachers_pkey PRIMARY KEY (id)
+constraint teachers teachers_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint teachers teachers_school_id_id_unique UNIQUE (school_id, id)
+constraint teachers teachers_school_id_not_null NOT NULL school_id
+constraint teachers teachers_status_check CHECK ((status = ANY (ARRAY['active'::text, 'inactive'::text])))
+constraint teachers teachers_status_not_null NOT NULL status
+constraint teachers teachers_updated_at_not_null NOT NULL updated_at
 constraint users users_created_at_not_null NOT NULL created_at
 constraint users users_email_not_null NOT NULL email
 constraint users users_email_unique UNIQUE (email)
@@ -206,8 +291,10 @@ constraint users users_status_check CHECK ((status = ANY (ARRAY['active'::text, 
 constraint users users_status_not_null NOT NULL status
 constraint users users_two_factor_confirmed_requires_secret CHECK (((two_factor_confirmed_at IS NULL) OR (two_factor_secret IS NOT NULL)))
 constraint users users_updated_at_not_null NOT NULL updated_at
+policy academic_years tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy audit_logs audit_insert INSERT  ((school_id IS NULL) OR (school_id = app_school_id()))
 policy audit_logs audit_read SELECT (((school_id IS NOT NULL) AND (school_id = app_school_id())) OR ((school_id IS NULL) AND app_is_platform())) 
+policy classes tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy membership_invitations own_invitations_read SELECT (email = ( SELECT u.email
    FROM users u
   WHERE (u.id = app_user_id()))) 
@@ -219,7 +306,10 @@ policy membership_roles own_membership_roles_read SELECT (EXISTS ( SELECT 1
 policy membership_roles tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy school_memberships own_memberships_read SELECT (user_id = app_user_id()) 
 policy school_memberships tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy teachers tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+rls academic_years enabled=true forced=true
 rls audit_logs enabled=true forced=true
+rls classes enabled=true forced=true
 rls failed_jobs enabled=false forced=false
 rls membership_invitations enabled=true forced=true
 rls membership_roles enabled=true forced=true
@@ -228,4 +318,5 @@ rls platform_admins enabled=false forced=false
 rls roles enabled=false forced=false
 rls school_memberships enabled=true forced=true
 rls schools enabled=false forced=false
+rls teachers enabled=true forced=true
 rls users enabled=false forced=false
