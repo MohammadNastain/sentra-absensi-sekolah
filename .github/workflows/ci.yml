@@ -86,6 +86,96 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  web:
+    name: Web & klien API (OpenAPI, tipe, typecheck)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install, bangkitkan klien dari OpenAPI, typecheck
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo node:24-slim sh -c '
+            corepack enable &&
+            pnpm install --frozen-lockfile &&
+            pnpm --filter @sentra/api-client generate &&
+            pnpm --filter @sentra/api-client typecheck &&
+            pnpm --filter @sentra/web typecheck'
+
+      - name: Skema klien yang di-commit harus sama dengan hasil generate
+        run: git diff --exit-code -- packages/api-client/src/schema.d.ts
+
+  e2e:
+    name: E2E Playwright (stack penuh)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Buat .env dengan secret acak sekali pakai
+        run: |
+          node scripts/init-env.mjs
+          echo "HOST_UID=$(id -u)" >> .env
+          echo "HOST_GID=$(id -g)" >> .env
+
+      - name: Jalankan PostgreSQL, Redis, Mailpit & build image PHP
+        run: |
+          docker compose up -d --wait postgres redis mailpit
+          docker compose --profile api build api
+
+      - name: Siapkan API (composer, .env, migrasi, seed demo)
+        run: |
+          docker compose run --rm --no-deps api composer install --no-interaction --no-progress
+          docker compose run --rm --no-deps api sh -c "cp .env.example .env && php artisan key:generate --no-interaction"
+          docker compose run --rm api php artisan migrate:fresh --database=pgsql_owner --force
+          docker compose run --rm api php artisan db:seed --class=DemoSeeder --no-interaction
+
+      - name: Jalankan API dan worker antrean
+        run: |
+          docker compose --profile api up -d api queue
+          for _ in $(seq 1 30); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/sanctum/csrf-cookie)" = "204" ] && exit 0
+            sleep 2
+          done
+          echo "API tidak merespons" >&2
+          exit 1
+
+      # Image resmi Playwright berisi browser yang cocok dengan versi paket (harus sama dengan @playwright/test).
+      # --network host: Next, API (8000) dan Mailpit (8025) saling terjangkau lewat localhost, seperti di mesin dev.
+      - name: Build web & jalankan E2E
+        run: |
+          docker run --rm --network host --ipc=host -e CI=true -v "$PWD:/repo" -w /repo             mcr.microsoft.com/playwright:v1.63.0-noble sh -c '
+              corepack enable &&
+              pnpm install --frozen-lockfile &&
+              pnpm --filter @sentra/web build &&
+              pnpm --filter @sentra/web e2e'
+
+      # Job email menelan error transport (dicatat ke delivery_error + laravel.log), jadi log container saja tidak cukup.
+      - name: Diagnostik pengiriman email bila gagal
+        if: failure()
+        run: |
+          docker compose exec -T postgres psql -U sentra_owner -d sentra \
+            -c "select email, delivery_status, delivery_error from membership_invitations order by created_at desc limit 5" || true
+          docker compose --profile api exec -T api sh -c 'tail -n 60 storage/logs/laravel.log' || true
+          curl -s "http://localhost:8025/api/v1/messages?limit=5" | head -c 1500 || true
+
+      - name: Log container bila gagal
+        if: failure()
+        run: docker compose --profile api logs --no-color
+
+      - name: Unggah laporan & trace Playwright bila gagal
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-test-results
+          path: apps/web/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Bersihkan
+        if: always()
+        run: docker compose --profile api down -v
+
   repo-hygiene:
     name: Pemeriksaan repo (shell, YAML, secret)
     runs-on: ubuntu-24.04

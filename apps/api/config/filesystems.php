@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Tanpa rute storage/{path} publik; akses file privat dirancang di Tahap 2 (signed URL).
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

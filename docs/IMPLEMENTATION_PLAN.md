@@ -70,7 +70,22 @@ Aturan umum untuk setiap tahap:
 - [x] `DatabaseContext` (set/reset `app.school_id`, `app.user_id`, `app.platform`).
 - [x] Test DB (32 lulus, sebagai sentra_app): T10, U02, U04, I05, FK komposit, REVOKE, constraint.
 - [x] Job CI `api` (belum pernah berjalan, karena belum ada remote).
-- [ ] Middleware tenant, auth Fortify/Sanctum + 2FA, endpoint §6, audit logger, matriks otorisasi, OpenAPI + klien TS, frontend.
+- [x] Model, enum `Role`/`Permission`, `TenantContext`, problem+json (RFC 9457) + request ID.
+- [x] Pipeline middleware: `ResetDatabaseContext` (global), `EnsureUserActive` (+ sesi absolut 12 jam), `ResolveSchoolMembership`, `RequireSchoolPermission`, `EnsurePlatformAdmin` (+2FA).
+- [x] Auth Fortify: login, logout, 2FA, lupa/reset/ganti password, rate limit; audit event auth; `AuditLogger` + redaksi allowlist.
+- [x] Endpoint: `auth/me`, `me/schools`, `schools/{school}` (profil), `platform/schools` (daftar).
+- [x] Test (67 lulus): A01–A06, A08, T01–T04, T08 (meta), T09 (matriks), T11, T13, + test DB sebelumnya.
+- [x] Endpoint platform (buat/ubah/suspend/aktifkan sekolah, undang admin pertama), undangan & anggota (I01–I05, R01–R03), audit-log API, `TenantAwareJob`, DemoSeeder.
+- [x] Test API lengkap (270 lulus): ditambah U01, U03, A07, T05–T07, T12, M03 (snapshot skema `database/schema-snapshot.txt`), M04, matriks otorisasi untuk seluruh rute. Pint + Larastan level 8 bersih; CI hijau di PR #1.
+- [x] OpenAPI 3.1 (`apps/api/openapi.yaml`, ditulis tangan; test drift `OpenApiContractTest` menjamin setiap rute terdokumentasi dan sebaliknya) + paket `packages/api-client` (tipe dari `openapi-typescript` 7.13.0, klien `openapi-fetch` 0.17.0 dengan cookie + CSRF). Job CI `web` membangkitkan ulang skema dan menggagalkan build bila `schema.d.ts` tidak sinkron.
+- [x] Frontend (irisan 1): proxy `/api` + `/sanctum` ke Laravel (cookie same-origin), halaman login, tantangan 2FA, lupa password, reset password; teruji manual end-to-end terhadap API sungguhan. Service `api` di compose diganti ke server bawaan PHP (`artisan serve` tidak meneruskan `DB_HOST` ke worker).
+- [x] Frontend (irisan 2): halaman terima undangan (`/invitations/[token]`, akun baru atau akun lama), pemilih sekolah + undangan tertunda (`/schools`), `/no-access`, logout, `?next=` aman di login. Service `queue` ditambahkan ke compose (tanpa worker, email undangan tidak pernah terkirim di dev). Teruji nyata: undang → Mailpit → buat akun → login.
+- [x] Frontend (irisan 3): area Super Admin (`/platform`: daftar, buat, detail, ubah profil, tangguhkan/aktifkan, undang Admin Sekolah pertama) dan kerangka sekolah (`/schools/[code]`: layout dengan izin, ringkasan, ubah profil). `DemoSeeder` menambah `superadmin@demo.test` dengan 2FA aktif (kunci TOTP tetap `JBSWY3DPEHPK3PXP`, hanya dev). Teruji nyata dengan kode TOTP sungguhan.
+- [x] Frontend (irisan 4): halaman sekolah Anggota (ubah peran, tangguhkan, aktifkan, akhiri, dengan alasan), Undangan (buat, kirim ulang, cabut, status pengiriman), dan Audit (filter, rincian sebelum/sesudah, paginasi); navigasi menurut izin; parameter `page` masuk kontrak OpenAPI.
+- [x] Frontend (irisan 5): setup 2FA (`/account/two-factor`): konfirmasi password, QR + kunci manual, konfirmasi TOTP, kode pemulihan, matikan 2FA; Super Admin tanpa 2FA diarahkan ke sana; tautan "Keamanan" di header. Teruji nyata dengan TOTP sungguhan (aktivasi langsung membuka `/platform`, tanpa login ulang).
+- [x] E2E Playwright (`apps/web/e2e/tahap1.spec.ts`, `pnpm e2e`): Super Admin login + 2FA → buat sekolah → undang admin → admin menerima undangan lewat Mailpit → login → undang Wali Kelas → Wali Kelas hanya melihat menu sesuai izin, ditolak API di halaman audit, dan tidak bisa membuka sekolah lain → admin melihat jejak audit. Lulus di stack lokal (Chrome terpasang).
+- [x] E2E di CI: job `e2e` (PostgreSQL, Redis, Mailpit, API, worker, migrasi + DemoSeeder, lalu Playwright di image resmi `playwright:v1.63.0-noble`; trace diunggah bila gagal). Versi image harus sama dengan `@playwright/test`.
+- [x] Penutupan Tahap 1: CI hijau penuh di PR #1 (API, web, Docker, hygiene, E2E). Temuan dari E2E di CI: folder `storage/framework/*` harus ter-track agar checkout bersih bisa merender email.
 
 ---
 

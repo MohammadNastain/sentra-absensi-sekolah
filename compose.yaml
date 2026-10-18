@@ -86,7 +86,9 @@ services:
         HOST_GID: ${HOST_GID:-1000}
     image: sentra/php-dev:8.5
     working_dir: /var/www/api
-    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+    # Server bawaan PHP langsung (bukan `artisan serve`): artisan serve tidak meneruskan DB_HOST dkk. ke worker,
+    # sehingga Laravel jatuh ke 127.0.0.1 dan gagal terhubung ke PostgreSQL di container lain.
+    command: ["sh", "-c", "cd public && exec php -S 0.0.0.0:8000 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php"]
     ports:
       - "127.0.0.1:${FORWARD_API_PORT:-8000}:8000"
     volumes:
@@ -112,6 +114,17 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_started
+
+  # Worker antrean (Redis): tanpa ini email undangan/reset tidak pernah terkirim di dev.
+  # tries=1: pengiriman undangan sengaja tanpa retry otomatis (ADR 0008).
+  # --max-time membuat worker keluar tiap jam (mencegah kebocoran memori); `restart` menyalakannya lagi.
+  queue:
+    profiles: ["api"]
+    restart: unless-stopped
+    extends:
+      service: api
+    ports: !reset []
+    command: ["php", "artisan", "queue:work", "--tries=1", "--sleep=1", "--max-time=3600"]
 
 volumes:
   postgres-data:

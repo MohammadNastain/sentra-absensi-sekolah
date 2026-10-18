@@ -1,0 +1,1257 @@
+openapi: 3.1.0
+info:
+  title: Sentra Absensi Sekolah API
+  version: 0.1.0
+  description: |
+    Kontrak API Tahap 1 (auth, tenant, undangan, anggota, audit). Ditulis tangan dan dijaga
+    oleh test drift (tests/Feature/OpenApiContractTest.php): setiap rute wajib terdokumentasi
+    dan sebaliknya. Klien TypeScript dibangkitkan dari berkas ini (packages/api-client).
+
+    Autentikasi: cookie sesi Sanctum (SPA). Ambil cookie CSRF lewat `GET /sanctum/csrf-cookie`
+    (di luar prefiks /api/v1), lalu kirim header `X-XSRF-TOKEN` pada setiap request tulis.
+    Semua error berformat RFC 9457 problem+json dengan `code` stabil.
+servers:
+  - url: /api/v1
+tags:
+  - name: auth
+  - name: me
+  - name: platform
+  - name: school
+  - name: invitation
+
+paths:
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: "Masuk dengan email dan password"
+      description: "Bila akun memakai 2FA, respons `two_factor: true` dan sesi menunggu `two-factor-challenge`."
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        "200":
+          description: "Berhasil masuk, atau perlu tantangan 2FA."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  two_factor: { type: boolean }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /auth/two-factor-challenge:
+    post:
+      tags: [auth]
+      operationId: twoFactorChallenge
+      summary: "Selesaikan tantangan 2FA (kode TOTP atau kode pemulihan)"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code: { type: string }
+                recovery_code: { type: string }
+      responses:
+        "204": { description: Berhasil. }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /auth/forgot-password:
+    post:
+      tags: [auth]
+      operationId: forgotPassword
+      summary: "Minta tautan reset password"
+      description: "Selalu 202 apa pun hasilnya, agar tidak bisa dipakai menebak email terdaftar."
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "202":
+          description: "Diterima."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/EmailNotConfigured" }
+  /auth/reset-password:
+    post:
+      tags: [auth]
+      operationId: resetPassword
+      summary: "Tetapkan password baru dengan token reset (sekali pakai, 60 menit)"
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, email, password, password_confirmation]
+              properties:
+                token: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                password_confirmation: { type: string, format: password }
+      responses:
+        "200":
+          description: "Password diubah."
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: "Keluar"
+      responses:
+        "204": { description: Berhasil keluar. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /auth/me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: "Profil user yang sedang login"
+      responses:
+        "200":
+          description: "Profil."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/Me" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /auth/password:
+    put:
+      tags: [auth]
+      operationId: updatePassword
+      summary: "Ganti password"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, password, password_confirmation]
+              properties:
+                current_password: { type: string, format: password }
+                password: { type: string, format: password }
+                password_confirmation: { type: string, format: password }
+      responses:
+        "200": { description: Password diubah. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /auth/confirm-password:
+    post:
+      tags: [auth]
+      operationId: confirmPassword
+      summary: "Konfirmasi password untuk aksi sensitif (2FA)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, format: password }
+      responses:
+        "201": { description: Terkonfirmasi. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /auth/confirmed-password-status:
+    get:
+      tags: [auth]
+      operationId: getConfirmedPasswordStatus
+      summary: "Status konfirmasi password"
+      responses:
+        "200":
+          description: "Status."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  confirmed: { type: boolean }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /auth/two-factor:
+    post:
+      tags: [auth]
+      operationId: enableTwoFactor
+      summary: "Mulai aktivasi 2FA (butuh konfirmasi password)"
+      responses:
+        "200": { description: Rahasia dibuat; konfirmasi dengan kode TOTP. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "423": { $ref: "#/components/responses/PasswordConfirmationRequired" }
+    delete:
+      tags: [auth]
+      operationId: disableTwoFactor
+      summary: "Matikan 2FA (butuh konfirmasi password)"
+      responses:
+        "200": { description: 2FA dimatikan. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "423": { $ref: "#/components/responses/PasswordConfirmationRequired" }
+  /auth/two-factor/confirm:
+    post:
+      tags: [auth]
+      operationId: confirmTwoFactor
+      summary: "Konfirmasi aktivasi 2FA dengan kode TOTP"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        "200": { description: 2FA aktif. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "423": { $ref: "#/components/responses/PasswordConfirmationRequired" }
+  /auth/two-factor/qr-code:
+    get:
+      tags: [auth]
+      operationId: getTwoFactorQrCode
+      summary: "SVG kode QR untuk aplikasi authenticator"
+      responses:
+        "200":
+          description: "SVG dan URL."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  svg: { type: string }
+                  url: { type: string }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "423": { $ref: "#/components/responses/PasswordConfirmationRequired" }
+  /auth/two-factor/secret-key:
+    get:
+      tags: [auth]
+      operationId: getTwoFactorSecretKey
+      summary: "Kunci rahasia 2FA untuk input manual"
+      responses:
+        "200":
+          description: "Kunci."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secretKey: { type: string }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "423": { $ref: "#/components/responses/PasswordConfirmationRequired" }
+  /auth/two-factor/recovery-codes:
+    get:
+      tags: [auth]
+      operationId: getRecoveryCodes
+      summary: "Daftar kode pemulihan 2FA"
+      responses:
+        "200":
+          description: "Kode pemulihan."
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "423": { $ref: "#/components/responses/PasswordConfirmationRequired" }
+    post:
+      tags: [auth]
+      operationId: regenerateRecoveryCodes
+      summary: "Buat ulang kode pemulihan 2FA"
+      responses:
+        "200": { description: Kode dibuat ulang. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "423": { $ref: "#/components/responses/PasswordConfirmationRequired" }
+
+  /invitations/{token}:
+    get:
+      tags: [invitation]
+      operationId: getInvitationByToken
+      summary: "Lihat undangan lewat token dari email"
+      description: "Token tidak dikenal, kedaluwarsa, dicabut, dan sudah dipakai menghasilkan respons 410 yang identik."
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Token"
+      responses:
+        "200":
+          description: "Ringkasan undangan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/PublicInvitation" }
+        "410": { $ref: "#/components/responses/InvitationUnavailable" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /invitations/{token}/accept:
+    post:
+      tags: [invitation]
+      operationId: acceptInvitationByToken
+      summary: "Terima undangan lewat token"
+      description: |
+        Email baru: wajib `name`, `password`, `password_confirmation`; akun dibuat dan email terverifikasi.
+        Email yang sudah terdaftar: wajib login sebagai email itu (401 `LOGIN_REQUIRED`, 403 `INVITATION_EMAIL_MISMATCH`).
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Token"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 2, maxLength: 150 }
+                password: { type: string, format: password }
+                password_confirmation: { type: string, format: password }
+      responses:
+        "201":
+          description: "Undangan diterima."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [school, account_created, email]
+                    properties:
+                      school: { $ref: "#/components/schemas/SchoolRef" }
+                      account_created: { type: boolean }
+                      email: { type: string, format: email }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "410": { $ref: "#/components/responses/InvitationUnavailable" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /me/schools:
+    get:
+      tags: [me]
+      operationId: listMySchools
+      summary: "Sekolah milik user beserta peran dan izinnya"
+      responses:
+        "200":
+          description: "Daftar sekolah."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/MySchool" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /me/invitations:
+    get:
+      tags: [me]
+      operationId: listMyInvitations
+      summary: "Undangan tertunda untuk email user yang login"
+      responses:
+        "200":
+          description: "Daftar undangan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/MyInvitation" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /me/invitations/{invitation}/accept:
+    post:
+      tags: [me]
+      operationId: acceptMyInvitation
+      summary: "Terima undangan milik sendiri"
+      parameters:
+        - $ref: "#/components/parameters/InvitationId"
+      responses:
+        "201":
+          description: "Diterima."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [school]
+                    properties:
+                      school: { $ref: "#/components/schemas/SchoolRef" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "410": { $ref: "#/components/responses/InvitationUnavailable" }
+  /me/invitations/{invitation}/decline:
+    post:
+      tags: [me]
+      operationId: declineMyInvitation
+      summary: "Tolak undangan milik sendiri"
+      parameters:
+        - $ref: "#/components/parameters/InvitationId"
+      responses:
+        "204": { description: Ditolak. }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "410": { $ref: "#/components/responses/InvitationUnavailable" }
+
+  /platform/schools:
+    get:
+      tags: [platform]
+      operationId: listSchools
+      summary: "Daftar semua sekolah (Super Admin)"
+      parameters:
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman sekolah."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/School" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [platform]
+      operationId: createSchool
+      summary: "Buat sekolah (Super Admin)"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SchoolCreate" }
+      responses:
+        "201":
+          description: "Sekolah dibuat."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /platform/schools/{school}:
+    get:
+      tags: [platform]
+      operationId: getSchool
+      summary: "Detail sekolah (Super Admin)"
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Sekolah."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [platform]
+      operationId: updateSchool
+      summary: "Ubah profil sekolah (kode dan status tidak bisa diubah di sini)"
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SchoolUpdate" }
+      responses:
+        "200":
+          description: "Sekolah diubah."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /platform/schools/{school}/suspend:
+    post:
+      tags: [platform]
+      operationId: suspendSchool
+      summary: "Tangguhkan sekolah (alasan wajib)"
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequired" }
+      responses:
+        "200":
+          description: "Ditangguhkan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /platform/schools/{school}/activate:
+    post:
+      tags: [platform]
+      operationId: activateSchool
+      summary: "Aktifkan kembali sekolah yang ditangguhkan"
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonOptional" }
+      responses:
+        "200":
+          description: "Diaktifkan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /platform/schools/{school}/invitations:
+    post:
+      tags: [platform]
+      operationId: inviteFirstSchoolAdmin
+      summary: "Undang Admin Sekolah pertama (peran selalu school_admin)"
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "201":
+          description: "Undangan dibuat dan dititipkan ke layanan email."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "503": { $ref: "#/components/responses/EmailNotConfigured" }
+
+  /schools/{school}:
+    get:
+      tags: [school]
+      operationId: getSchoolProfile
+      summary: "Profil sekolah dengan peran dan izin user saat ini"
+      description: "Izin: school.profile.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Profil."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/SchoolProfile" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [school]
+      operationId: updateSchoolProfile
+      summary: "Ubah profil sekolah"
+      description: "Izin: school.profile.update."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SchoolUpdate" }
+      responses:
+        "200":
+          description: "Profil diubah."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/SchoolProfile" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/members:
+    get:
+      tags: [school]
+      operationId: listMembers
+      summary: "Daftar anggota sekolah"
+      description: "Izin: school.members.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/MembershipStatus" }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman anggota."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Member" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/members/{membership}:
+    get:
+      tags: [school]
+      operationId: getMember
+      summary: "Detail anggota"
+      description: "Izin: school.members.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/MembershipId"
+      responses:
+        "200":
+          description: "Anggota."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/members/{membership}/roles:
+    put:
+      tags: [school]
+      operationId: replaceMemberRoles
+      summary: "Ganti seluruh peran anggota (alasan wajib; tidak bisa untuk diri sendiri)"
+      description: "Izin: school.members.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/MembershipId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roles, reason]
+              properties:
+                roles:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items: { $ref: "#/components/schemas/Role" }
+                reason: { type: string, minLength: 5 }
+      responses:
+        "200":
+          description: "Peran diganti."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/members/{membership}/suspend:
+    post:
+      tags: [school]
+      operationId: suspendMember
+      summary: "Tangguhkan anggota (alasan wajib)"
+      description: "Izin: school.members.manage. Admin aktif terakhir tidak bisa ditangguhkan (409 LAST_SCHOOL_ADMIN)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/MembershipId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequired" }
+      responses:
+        "200":
+          description: "Ditangguhkan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/members/{membership}/reactivate:
+    post:
+      tags: [school]
+      operationId: reactivateMember
+      summary: "Aktifkan kembali anggota yang ditangguhkan"
+      description: "Izin: school.members.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/MembershipId"
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonOptional" }
+      responses:
+        "200":
+          description: "Diaktifkan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /schools/{school}/members/{membership}/end:
+    post:
+      tags: [school]
+      operationId: endMember
+      summary: "Akhiri keanggotaan (alasan wajib)"
+      description: "Izin: school.members.manage. Admin aktif terakhir tidak bisa diakhiri (409 LAST_SCHOOL_ADMIN)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/MembershipId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequired" }
+      responses:
+        "200":
+          description: "Diakhiri."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/invitations:
+    get:
+      tags: [school]
+      operationId: listInvitations
+      summary: "Daftar undangan sekolah"
+      description: "Izin: school.members.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/InvitationStatus" }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman undangan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Invitation" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [school]
+      operationId: createInvitation
+      summary: "Undang anggota lewat email"
+      description: "Izin: school.members.manage. Token mentah hanya ada di email, tidak di respons maupun DB."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, roles]
+              properties:
+                email: { type: string, format: email }
+                roles:
+                  type: array
+                  minItems: 1
+                  items: { $ref: "#/components/schemas/Role" }
+      responses:
+        "201":
+          description: "Undangan dibuat."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "503": { $ref: "#/components/responses/EmailNotConfigured" }
+  /schools/{school}/invitations/{invitation}/resend:
+    post:
+      tags: [school]
+      operationId: resendInvitation
+      summary: "Kirim ulang undangan (token baru, token lama mati)"
+      description: "Izin: school.members.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/InvitationId"
+      responses:
+        "200":
+          description: "Dikirim ulang."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "503": { $ref: "#/components/responses/EmailNotConfigured" }
+  /schools/{school}/invitations/{invitation}/revoke:
+    post:
+      tags: [school]
+      operationId: revokeInvitation
+      summary: "Cabut undangan"
+      description: "Izin: school.members.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/InvitationId"
+      responses:
+        "200":
+          description: "Dicabut."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InvitationEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /schools/{school}/audit-logs:
+    get:
+      tags: [school]
+      operationId: listAuditLogs
+      summary: "Audit log sekolah (hanya baca, append-only)"
+      description: "Izin: school.audit.view. Baris platform tidak pernah muncul di sini."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: action
+          in: query
+          description: "Awalan action, mis. `school.member`."
+          schema: { type: string }
+        - name: entity_type
+          in: query
+          schema: { type: string }
+        - name: entity_id
+          in: query
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman audit, terbaru lebih dulu."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AuditLog" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sentra_session
+      description: "Cookie sesi Sanctum SPA. Request tulis juga wajib header X-XSRF-TOKEN."
+  parameters:
+    Token:
+      name: token
+      in: path
+      required: true
+      schema: { type: string, minLength: 43, maxLength: 43 }
+    Page:
+      name: page
+      in: query
+      description: Nomor halaman (50 baris per halaman), mulai dari 1.
+      schema: { type: integer, minimum: 1, default: 1 }
+    SchoolCode:
+      name: school
+      in: path
+      required: true
+      description: "Kode sekolah (slug), bukan UUID."
+      schema: { type: string }
+    MembershipId:
+      name: membership
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    InvitationId:
+      name: invitation
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    Unauthenticated:
+      description: "Belum login atau sesi berakhir (`UNAUTHENTICATED`, `LOGIN_REQUIRED`)."
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Forbidden:
+      description: |
+        Ditolak. `code`: PERMISSION_DENIED, PLATFORM_ADMIN_REQUIRED, TWO_FACTOR_REQUIRED, MEMBERSHIP_SUSPENDED,
+        SCHOOL_UNAVAILABLE, CANNOT_CHANGE_OWN_ROLES, INVITATION_EMAIL_MISMATCH.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: "Tidak ditemukan, atau bukan milik sekolah/user ini (sengaja tidak dibedakan)."
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    Conflict:
+      description: |
+        Konflik. `code`: LAST_SCHOOL_ADMIN, INVALID_STATE_TRANSITION, INVITATION_ALREADY_PENDING, ALREADY_MEMBER.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    InvitationUnavailable:
+      description: "Undangan tidak tersedia (`INVITATION_UNAVAILABLE`); semua sebabnya berbentuk sama."
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    ValidationFailed:
+      description: "Validasi gagal (`VALIDATION_FAILED`) dengan `errors` per field."
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    TooManyRequests:
+      description: "Dibatasi laju (`TOO_MANY_REQUESTS`)."
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    EmailNotConfigured:
+      description: "Transport email belum disiapkan di lingkungan ini (`EMAIL_NOT_CONFIGURED`)."
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    PasswordConfirmationRequired:
+      description: "Konfirmasi password diperlukan terlebih dulu."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+  schemas:
+    Problem:
+      type: object
+      description: "RFC 9457 problem+json."
+      required: [type, title, status, code]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string, description: Kode stabil untuk logika klien. }
+        detail: { type: string }
+        instance: { type: string }
+        request_id: { type: string }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+    Message:
+      type: object
+      properties:
+        message: { type: string }
+    PageMeta:
+      type: object
+      required: [current_page, last_page, total]
+      properties:
+        current_page: { type: integer }
+        last_page: { type: integer }
+        total: { type: integer }
+    Role:
+      type: string
+      enum: [school_admin, principal, homeroom_teacher, duty_officer, terminal_operator]
+    Permission:
+      type: string
+      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view]
+    SchoolStatus:
+      type: string
+      enum: [trial, active, suspended, terminated]
+    MembershipStatus:
+      type: string
+      enum: [active, suspended, ended]
+    InvitationStatus:
+      type: string
+      enum: [pending, accepted, revoked, expired]
+    EducationLevel:
+      type: string
+      enum: [SD, MI, SMP, MTs, SMA, SMK, MA, lainnya]
+    Timezone:
+      type: string
+      enum: [Asia/Jakarta, Asia/Makassar, Asia/Jayapura]
+    Me:
+      type: object
+      required: [id, email, name, two_factor_enabled, is_platform_admin, two_factor_passed]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        two_factor_enabled: { type: boolean }
+        is_platform_admin: { type: boolean }
+        two_factor_passed: { type: boolean }
+    SchoolRef:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+    School:
+      type: object
+      required: [id, code, npsn, name, education_levels, timezone, address, status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        npsn: { type: [string, "null"], pattern: "^[0-9]{8}$" }
+        name: { type: string }
+        education_levels:
+          type: array
+          items: { $ref: "#/components/schemas/EducationLevel" }
+        timezone: { $ref: "#/components/schemas/Timezone" }
+        address: { type: [string, "null"] }
+        status: { $ref: "#/components/schemas/SchoolStatus" }
+    SchoolEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/School" }
+    SchoolCreate:
+      type: object
+      required: [code, name, education_levels, timezone]
+      properties:
+        code:
+          type: string
+          pattern: "^[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?$"
+          description: "Slug unik, tidak bisa diubah setelah dibuat."
+        name: { type: string, maxLength: 200 }
+        npsn: { type: [string, "null"], pattern: "^[0-9]{8}$" }
+        education_levels:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/EducationLevel" }
+        timezone: { $ref: "#/components/schemas/Timezone" }
+        address: { type: [string, "null"], maxLength: 500 }
+        status:
+          type: string
+          enum: [trial, active]
+          description: "Opsional; bila dikosongkan sekolah dibuat dengan status `active`."
+    SchoolUpdate:
+      type: object
+      description: "Semua field opsional. `code` dan `status` ditolak (422)."
+      properties:
+        name: { type: string, maxLength: 200 }
+        npsn: { type: [string, "null"], pattern: "^[0-9]{8}$" }
+        education_levels:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/EducationLevel" }
+        timezone: { $ref: "#/components/schemas/Timezone" }
+        address: { type: [string, "null"], maxLength: 500 }
+    SchoolProfile:
+      type: object
+      required: [code, npsn, name, education_levels, timezone, address, status, my_roles, my_permissions]
+      properties:
+        code: { type: string }
+        npsn: { type: [string, "null"] }
+        name: { type: string }
+        education_levels:
+          type: array
+          items: { $ref: "#/components/schemas/EducationLevel" }
+        timezone: { $ref: "#/components/schemas/Timezone" }
+        address: { type: [string, "null"] }
+        status: { $ref: "#/components/schemas/SchoolStatus" }
+        my_roles:
+          type: array
+          items: { $ref: "#/components/schemas/Role" }
+        my_permissions:
+          type: array
+          items: { $ref: "#/components/schemas/Permission" }
+    MySchool:
+      type: object
+      required: [school, membership_status, roles, permissions]
+      properties:
+        school:
+          type: object
+          required: [code, name, status, accessible]
+          properties:
+            code: { type: string }
+            name: { type: string }
+            status: { $ref: "#/components/schemas/SchoolStatus" }
+            accessible: { type: boolean }
+        membership_status: { $ref: "#/components/schemas/MembershipStatus" }
+        roles:
+          type: array
+          items: { $ref: "#/components/schemas/Role" }
+        permissions:
+          type: array
+          items: { $ref: "#/components/schemas/Permission" }
+    Member:
+      type: object
+      required: [id, user, status, status_reason, roles, joined_at, ended_at]
+      properties:
+        id: { type: string, format: uuid }
+        user:
+          type: object
+          required: [id, name, email]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+            email: { type: string, format: email }
+        status: { $ref: "#/components/schemas/MembershipStatus" }
+        status_reason: { type: [string, "null"] }
+        roles:
+          type: array
+          items: { $ref: "#/components/schemas/Role" }
+        joined_at: { type: string, format: date-time }
+        ended_at: { type: [string, "null"], format: date-time }
+    MemberEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Member" }
+    Invitation:
+      type: object
+      required: [id, email, roles, status, expires_at, delivery_status, delivery_error, invited_by_user_id, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        roles:
+          type: array
+          items: { $ref: "#/components/schemas/Role" }
+        status: { $ref: "#/components/schemas/InvitationStatus" }
+        expires_at: { type: string, format: date-time }
+        delivery_status:
+          type: string
+          enum: [queued, handed_off, failed]
+          description: "`handed_off` = transport email menerima pesan, bukan berarti sampai di kotak masuk."
+        delivery_error: { type: [string, "null"] }
+        invited_by_user_id: { type: [string, "null"], format: uuid }
+        created_at: { type: string, format: date-time }
+    InvitationEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Invitation" }
+    PublicInvitation:
+      type: object
+      required: [school, email, roles, expires_at, account_exists]
+      properties:
+        school:
+          type: object
+          required: [name]
+          properties:
+            name: { type: string }
+        email: { type: string, description: "Email tersamar, mis. g***@contoh.test." }
+        roles:
+          type: array
+          description: "Nama peran yang ditampilkan, bukan kode."
+          items: { type: string }
+        expires_at: { type: string, format: date-time }
+        account_exists: { type: boolean }
+    MyInvitation:
+      type: object
+      required: [id, school, roles, expires_at]
+      properties:
+        id: { type: string, format: uuid }
+        school:
+          type: object
+          properties:
+            name: { type: [string, "null"] }
+        roles:
+          type: array
+          items: { $ref: "#/components/schemas/Role" }
+        expires_at: { type: string, format: date-time }
+    ReasonRequired:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 5 }
+    ReasonOptional:
+      type: object
+      properties:
+        reason: { type: [string, "null"] }
+    AuditLog:
+      type: object
+      required: [id, action, entity_type, entity_id, reason, before, after, actor, request_id, created_at]
+      properties:
+        id: { type: string }
+        action: { type: string }
+        entity_type: { type: string }
+        entity_id: { type: [string, "null"] }
+        reason: { type: [string, "null"] }
+        before: { type: [object, "null"], additionalProperties: true }
+        after: { type: [object, "null"], additionalProperties: true }
+        actor:
+          type: object
+          properties:
+            type: { type: string }
+            user_id: { type: [string, "null"] }
+            name: { type: [string, "null"] }
+        request_id: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+
+security:
+  - sessionCookie: []

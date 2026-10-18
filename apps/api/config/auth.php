@@ -114,4 +114,7 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    // Cek password bocor via k-anonymity (ADR 0007 D-39).
+    'password_check_uncompromised' => (bool) env('PASSWORD_CHECK_UNCOMPROMISED', true),
+
 ];

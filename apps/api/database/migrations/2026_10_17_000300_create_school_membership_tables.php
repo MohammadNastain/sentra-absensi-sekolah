@@ -97,9 +97,14 @@ return new class extends Migration
                 accepted_at timestamptz NULL,
                 accepted_user_id uuid NULL REFERENCES users (id),
                 revoked_at timestamptz NULL,
+                -- ADR 0008: handed_off = diterima transport, BUKAN berarti sampai di kotak masuk.
+                delivery_status text NOT NULL DEFAULT 'queued',
+                delivery_error text NULL,
                 created_at timestamptz NOT NULL DEFAULT now(),
                 updated_at timestamptz NOT NULL DEFAULT now(),
                 CONSTRAINT membership_invitations_token_hash_unique UNIQUE (token_hash),
+                CONSTRAINT membership_invitations_delivery_status_check
+                    CHECK (delivery_status IN ('queued', 'handed_off', 'failed')),
                 CONSTRAINT membership_invitations_school_id_id_unique UNIQUE (school_id, id),
                 CONSTRAINT membership_invitations_token_hash_length CHECK (octet_length(token_hash) = 32),
                 CONSTRAINT membership_invitations_role_codes_check CHECK (

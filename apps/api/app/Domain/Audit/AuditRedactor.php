@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Domain\Audit;
+
+use InvalidArgumentException;
+
+/**
+ * Allowlist field before/after per jenis entitas (ARCHITECTURE §12, U03).
+ * Field di luar allowlist dibuang. Jenis entitas tanpa allowlist ditolak agar
+ * entitas baru wajib dideklarasikan, bukan diam-diam menyimpan semua field.
+ */
+final class AuditRedactor
+{
+    /** @var array<string, list<string>> */
+    private const ALLOWLIST = [
+        'school' => ['code', 'npsn', 'name', 'education_levels', 'timezone', 'address', 'status'],
+        'school_membership' => ['user_id', 'status', 'status_reason', 'roles'],
+        'membership_invitation' => ['email', 'role_codes', 'expires_at', 'accepted_at', 'revoked_at', 'delivery_status'],
+        'user' => ['email', 'name', 'status', 'two_factor_enabled'],
+        'platform_admin' => ['user_id'],
+        'auth' => ['email'],
+    ];
+
+    /**
+     * @param  array<string, mixed>|null  $values
+     * @return array<string, mixed>|null
+     */
+    public function redact(string $entityType, ?array $values): ?array
+    {
+        if ($values === null) {
+            return null;
+        }
+
+        $allowed = self::ALLOWLIST[$entityType]
+            ?? throw new InvalidArgumentException("Jenis entitas audit '{$entityType}' belum memiliki allowlist.");
+
+        return array_intersect_key($values, array_flip($allowed));
+    }
+}

@@ -131,7 +131,7 @@ return [
     |
     */
 
-    'views' => true,
+    'views' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -162,17 +162,11 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Tanpa registrasi publik: user baru masuk lewat undangan (ADR 0004, D-37).
         Features::resetPasswords(),
-        // Features::emailVerification(),
-        Features::updateProfileInformation(),
         Features::updatePasswords(),
         Features::twoFactorAuthentication([
             'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0,
-        ]),
-        Features::passkeys([
             'confirmPassword' => true,
         ]),
     ],

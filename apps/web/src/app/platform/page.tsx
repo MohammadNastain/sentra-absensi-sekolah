@@ -1,0 +1,100 @@
+"use client";
+
+import type { Schemas } from "@sentra/api-client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { AppShell } from "@/components/AppShell";
+import { FormAlert, StatusBadge } from "@/components/ui";
+import { api } from "@/lib/api";
+import { toFormFailure } from "@/lib/errors";
+import { redirectFor, useMe } from "@/lib/use-me";
+
+type School = Schemas["School"];
+
+/** Daftar seluruh sekolah (Super Admin). */
+export default function PlatformPage() {
+  const router = useRouter();
+  const me = useMe();
+  const [schools, setSchools] = useState<School[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .GET("/platform/schools")
+      .then(({ data, error: problem }) => {
+        if (cancelled) return;
+        const target = redirectFor(problem);
+        if (target) router.replace(target);
+        else if (problem !== undefined) setError(toFormFailure(problem).message);
+        else setSchools(data?.data ?? []);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(toFormFailure(e).message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  return (
+    <AppShell context="Platform" userLabel={me?.email}>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Sekolah</h1>
+        <Link
+          href="/platform/new"
+          className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+        >
+          Sekolah baru
+        </Link>
+      </div>
+
+      {error ? <FormAlert>{error}</FormAlert> : null}
+
+      {schools === null && !error ? (
+        <p role="status" className="text-zinc-600 dark:text-zinc-400">
+          Memuat…
+        </p>
+      ) : null}
+
+      {schools && schools.length === 0 ? (
+        <p className="text-zinc-600 dark:text-zinc-400">Belum ada sekolah. Buat sekolah pertama.</p>
+      ) : null}
+
+      {schools && schools.length > 0 ? (
+        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+              <tr>
+                <th scope="col" className="px-4 py-3 font-medium">Nama</th>
+                <th scope="col" className="px-4 py-3 font-medium">Kode</th>
+                <th scope="col" className="px-4 py-3 font-medium">Jenjang</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schools.map((school) => (
+                <tr key={school.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/platform/${school.code}`}
+                      className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                    >
+                      {school.name}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-zinc-700 dark:text-zinc-300">{school.code}</td>
+                  <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{school.education_levels.join(", ")}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={school.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </AppShell>
+  );
+}
