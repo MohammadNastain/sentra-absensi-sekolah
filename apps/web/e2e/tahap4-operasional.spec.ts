@@ -180,3 +180,41 @@ test("Tahap 5A: pengaturan aturan alpa dan penahanan/pelepasan hari", async ({ p
     await expect(panel.getByText(/Aturan alpa ditahan untuk hari ini/)).toBeHidden();
   });
 });
+
+test("Tahap 5B: ajukan izin dengan lampiran, setujui, lalu batalkan", async ({ page }) => {
+  await loginAsAdmin(page);
+  await nav(page, "Izin").click();
+  await expect(page.getByRole("heading", { name: "Izin dan sakit", exact: true })).toBeVisible();
+
+  const form = page.getByRole("region", { name: "Ajukan izin" });
+  await form.getByLabel("Cari siswa").fill("Candra");
+  await form.getByRole("button", { name: "Cari" }).click();
+  await form.getByRole("listitem").filter({ hasText: "Candra Wijaya" }).getByRole("button", { name: "Pilih" }).click();
+
+  await form.getByLabel("Jenis").selectOption("sakit");
+  await form.getByLabel("Mulai").fill("2026-02-02");
+  await form.getByLabel("Sampai").fill("2026-02-03");
+  const submit = form.getByRole("button", { name: "Ajukan" });
+  await expect(submit).toBeDisabled();
+  await form.getByLabel("Alasan").fill("Demam tinggi (uji e2e)");
+  await form.getByLabel(/Lampiran/).setInputFiles({ name: "surat.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%uji\n") });
+  await submit.click();
+  await expect(page.getByText("Pengajuan tersimpan dan menunggu keputusan.")).toBeVisible();
+
+  const row = page.getByRole("listitem").filter({ hasText: "Demam tinggi (uji e2e)" }).first();
+  await expect(row.getByText("Menunggu")).toBeVisible();
+  await expect(row.getByRole("link", { name: /Unduh lampiran/ })).toBeVisible();
+
+  await row.getByRole("button", { name: "Setujui" }).click();
+  await row.getByRole("button", { name: "Setujui izin" }).click();
+  await expect(page.getByText("Izin disetujui.")).toBeVisible();
+  await expect(row.getByText("Disetujui")).toBeVisible();
+
+  await row.getByRole("button", { name: "Batalkan" }).click();
+  const cancel = row.getByRole("button", { name: "Batalkan izin" });
+  await expect(cancel).toBeDisabled();
+  await row.getByLabel(/Alasan/).fill("Pembersihan uji e2e izin");
+  await cancel.click();
+  await expect(page.getByText("Izin dibatalkan.")).toBeVisible();
+  await expect(row.getByText("Dibatalkan")).toBeVisible();
+});

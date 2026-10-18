@@ -16,6 +16,7 @@ use App\Http\Controllers\School\CredentialController;
 use App\Http\Controllers\School\DeviceController;
 use App\Http\Controllers\School\HolidayController;
 use App\Http\Controllers\School\InvitationController;
+use App\Http\Controllers\School\LeaveRequestController;
 use App\Http\Controllers\School\MemberController;
 use App\Http\Controllers\School\ScheduleController;
 use App\Http\Controllers\School\SchoolClassController;
@@ -260,6 +261,20 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.disruption');
     Route::post('attendance/days/{date}/release', [AbsenceController::class, 'releaseHold'])->where('date', '\d{4}-\d{2}-\d{2}')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.release');
+    Route::get('leave-requests', [LeaveRequestController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.index');
+    Route::get('leave-requests/students', [LeaveRequestController::class, 'students'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.students');
+    Route::post('leave-requests', [LeaveRequestController::class, 'store'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.store');
+    Route::post('leave-requests/{leave}/attachment', [LeaveRequestController::class, 'attach'])->whereUuid('leave')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.attach');
+    Route::get('leave-requests/{leave}/attachment', [LeaveRequestController::class, 'attachment'])->whereUuid('leave')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.attachment');
+    Route::post('leave-requests/{leave}/decision', [LeaveRequestController::class, 'decide'])->whereUuid('leave')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveApprove))->name('leave-requests.decide');
+    Route::post('leave-requests/{leave}/cancel', [LeaveRequestController::class, 'cancel'])->whereUuid('leave')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.cancel');
     Route::get('attendance/today', [AttendanceController::class, 'today'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('attendance.today');
     Route::get('calendar', [CalendarController::class, 'show'])
