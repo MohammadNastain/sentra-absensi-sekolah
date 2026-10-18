@@ -11,6 +11,7 @@ import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { fetchAll } from "@/lib/fetch-all";
 import { formatDate } from "@/lib/format";
 import { useSchool } from "../school-context";
+import { CredentialsPanel } from "./credentials-dialog";
 
 type Student = Schemas["Student"];
 type StudentDetail = Schemas["StudentDetail"];
@@ -20,7 +21,8 @@ type StatusFilter = Schemas["StudentStatus"] | "";
 type PendingAction =
   | { kind: "create" }
   | { kind: "edit"; student: Student }
-  | { kind: "class"; student: Student };
+  | { kind: "class"; student: Student }
+  | { kind: "cards"; student: Student };
 
 const STATUS_LABEL: Record<Schemas["StudentStatus"], string> = {
   active: "Aktif",
@@ -38,6 +40,7 @@ function todayLocal(): string {
 export default function StudentsPage() {
   const { code, can } = useSchool();
   const canManage = can("school.students.manage");
+  const canCards = can("school.credentials.manage");
   const [students, setStudents] = useState<Student[] | null>(null);
   const [meta, setMeta] = useState<Schemas["PageMeta"] | null>(null);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
@@ -216,6 +219,15 @@ export default function StudentsPage() {
                       >
                         {canManage ? "Kelas" : "Riwayat kelas"}
                       </button>
+                      {canCards && student.status === "active" ? (
+                        <button
+                          type="button"
+                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                          onClick={() => setAction({ kind: "cards", student })}
+                        >
+                          Kartu QR
+                        </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -228,11 +240,11 @@ export default function StudentsPage() {
       {meta ? <Pager meta={meta} onPage={setPage} /> : null}
 
       <Dialog
-        open={action !== null && action.kind !== "class"}
+        open={action !== null && action.kind !== "class" && action.kind !== "cards"}
         title={action?.kind === "edit" ? "Ubah siswa" : "Tambah siswa"}
         onClose={() => setAction(null)}
       >
-        {action && action.kind !== "class" ? (
+        {action && action.kind !== "class" && action.kind !== "cards" ? (
           <StudentForm
             key={action.kind === "create" ? "create" : action.student.id}
             student={action.kind === "edit" ? action.student : null}
@@ -242,6 +254,19 @@ export default function StudentsPage() {
               setAction(null);
               void load();
             }}
+          />
+        ) : null}
+      </Dialog>
+
+      <Dialog open={action?.kind === "cards"} title="Kartu QR" onClose={() => setAction(null)}>
+        {action?.kind === "cards" ? (
+          <CredentialsPanel
+            key={action.student.id}
+            studentId={action.student.id}
+            studentName={action.student.full_name}
+            studentNumber={action.student.student_number}
+            className={action.student.current_class?.name ?? null}
+            onClose={() => setAction(null)}
           />
         ) : null}
       </Dialog>

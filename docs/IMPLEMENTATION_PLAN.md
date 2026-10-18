@@ -165,6 +165,22 @@ Keputusan 2C:
 **Test plan:** unit tabel batas waktu mesin keadaan (setiap baris tabel ARCHITECTURE §8.1 ±1 menit, zona waktu WIB/WITA/WIT), token QR (format, entropi, tanpa PII); feature: semua `reason_code`, replay idempotensi identik, device dicabut; **uji konkurensi** (N scan paralel → tepat 1 accepted); E2E terminal dengan input keyboard berkecepatan scanner + simulasi jaringan putus; uji log tidak memuat token.
 **Acceptance:** C1, C2, C4 (QR), C5, C6, D1, D2, D5, G1, G2 (endpoint terminal).
 
+**Progres Tahap 3** (kamera laptop dipakai untuk uji; pemindai keyboard-wedge didukung sejak awal untuk perangkat sungguhan):
+- [x] **3A — Kredensial QR.** Tabel `student_credentials` (hash HMAC-SHA256 berversi, satu QR aktif per siswa, status hanya maju); terbit, terbit ulang, blokir/buka blokir, cabut; kartu per kelas (maks 200); token hanya tampil sekali; kartu dirender dan dicetak di browser (CSS cetak) karena server hanya menyimpan hash, sehingga tidak ada job PDF; izin `school.credentials.view|manage`.
+- [x] **3B — Perangkat terminal.** Tabel `devices` (kode pairing 8 karakter berlaku 10 menit, hanya hash; token perangkat 256-bit, hanya hash); fungsi `SECURITY DEFINER` `claim_device_pairing`/`find_device_by_token_hash` untuk pencarian sebelum konteks sekolah dikenal; guard `AuthenticateDevice` (cookie HttpOnly SameSite=Strict + header `X-Sentra-Terminal`); heartbeat, pencabutan langsung efektif (`DEVICE_REVOKED`); batas perangkat per sekolah `schools.device_limit` (bawaan 1, D-30); izin `school.devices.view|manage`; UI `/schools/[code]/devices`.
+- [x] **3C — Inti absensi.** Tabel `attendance_sessions`, `attendance_events` (append-only lewat trigger, indeks unik satu accepted per siswa per hari per jenis, kunci idempotensi unik), `daily_attendance`; trigger yang membekukan isi jadwal yang sudah dirujuk sesi; `AttendanceStateMachine` murni (tabel ARCHITECTURE §8.1); `RecordScanAction`; endpoint terminal `POST scans` dan `GET recent`; uji konkurensi nyata (8 proses `pcntl_fork`, tepat 1 accepted).
+- [x] **3D — App terminal `/terminal`.** Pairing, pemindai kamera (jsQR) dan keyboard-wedge, kolom tempel kode untuk uji, hasil layar penuh berwarna, daftar transaksi terakhir, jam sinkron server, heartbeat, percobaan ulang jaringan dengan kunci idempotensi yang sama; E2E `tahap3-terminal.spec.ts`. Pembacaan kamera sungguhan belum diuji otomatis (hanya manual).
+- [x] **3E — Dashboard harian.** `GET attendance/today` (izin `school.attendance.view`: Admin, Kepala Sekolah, Wali Kelas dibatasi `ClassScope`, Petugas Piket); kartu hadir/terlambat/belum tercatat/pulang, transaksi terbaru, peringatan perangkat offline; polling 10 detik di halaman Ringkasan.
+- [ ] Penutupan Tahap 3: commit, PR `tahap-3/qr-terminal` → `main`, CI hijau. **Belum ada**: CSP ketat untuk `/terminal`, simulasi jaringan putus di E2E, uji dengan perangkat pemindai fisik.
+
+Keputusan Tahap 3:
+- Nilai scan mentah tidak pernah disimpan atau dicatat di log; kartu tak dikenal hanya meninggalkan sidik jari HMAC terpotong (8 byte). Layar terminal hanya menampilkan nama depan + inisial nama belakang.
+- Hasil `duplicate`, `rejected`, dan `needs_review` tetap menjadi event diagnostik dan tidak pernah dihitung hadir; scan ulang tidak pernah menjadi check-out sebelum jendela pulang dibuka atau sebelum 5 menit sejak check-in.
+- Waktu absensi selalu waktu server dalam zona waktu sekolah; `captured_at` klien hanya informasi diagnostik.
+- Baris `daily_attendance` dibuat saat scan pertama yang lolos penyaringan jadwal (termasuk `TOO_EARLY`) dengan status `belum_tercatat`; hanya check-in/check-out accepted yang mengubahnya.
+- Terminal belum mendukung antrean offline: scan saat jaringan putus gagal dengan pesan jelas dan diulang 2 kali dengan kunci idempotensi yang sama.
+- `last_seen_ip` perangkat tidak disimpan (kebijakan retensi); `last_seen_at` diperbarui paling cepat tiap 30 detik; online = terlihat dalam 2 menit.
+
 ---
 
 ## Tahap 4 — RFID, Mode Bantuan, Operasi Harian

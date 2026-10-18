@@ -19,6 +19,11 @@ enum Permission: string
     case SchoolStudentsManage = 'school.students.manage';
     case SchoolScheduleView = 'school.schedule.view';
     case SchoolScheduleManage = 'school.schedule.manage';
+    case SchoolCredentialsView = 'school.credentials.view';
+    case SchoolCredentialsManage = 'school.credentials.manage';
+    case SchoolDevicesView = 'school.devices.view';
+    case SchoolDevicesManage = 'school.devices.manage';
+    case SchoolAttendanceView = 'school.attendance.view';
 
     /**
      * @param  iterable<Role>  $roles

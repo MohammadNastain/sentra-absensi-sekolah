@@ -32,6 +32,8 @@ class AppServiceProvider extends ServiceProvider
         Event::subscribe(RecordAuthenticationEvents::class);
 
         // Endpoint undangan publik: 10/menit per IP (TAHAP_1_FONDASI §6).
+        RateLimiter::for('terminal-pair', fn (Request $request) => Limit::perMinute(10)->by('terminal-pair:'.$request->ip()));
+        RateLimiter::for('terminal', fn (Request $request) => Limit::perMinute(240)->by('terminal:'.sha1(is_string($request->cookie('sentra_device')) ? $request->cookie('sentra_device') : (string) $request->ip())));
         RateLimiter::for('invitation-public', fn (Request $request) => Limit::perMinute(10)->by('invitation:'.$request->ip()));
     }
 }

@@ -32,6 +32,11 @@ enum Role: string
                 Permission::SchoolStudentsManage,
                 Permission::SchoolScheduleView,
                 Permission::SchoolScheduleManage,
+                Permission::SchoolCredentialsView,
+                Permission::SchoolCredentialsManage,
+                Permission::SchoolDevicesView,
+                Permission::SchoolDevicesManage,
+                Permission::SchoolAttendanceView,
             ],
             self::Principal => [
                 Permission::SchoolProfileView,
@@ -40,6 +45,7 @@ enum Role: string
                 Permission::SchoolAcademicView,
                 Permission::SchoolStudentsView,
                 Permission::SchoolScheduleView,
+                Permission::SchoolAttendanceView,
             ],
             // Data akademik wali kelas dibatasi ke kelas yang ia ampu oleh ClassScope.
             self::HomeroomTeacher => [
@@ -47,8 +53,13 @@ enum Role: string
                 Permission::SchoolAcademicView,
                 Permission::SchoolStudentsView,
                 Permission::SchoolScheduleView,
+                Permission::SchoolAttendanceView,
             ],
-            self::DutyOfficer,
+            // Petugas piket melihat ringkasan harian (tanpa data akademik); terminal memakai token perangkat, bukan akun.
+            self::DutyOfficer => [
+                Permission::SchoolProfileView,
+                Permission::SchoolAttendanceView,
+            ],
             self::TerminalOperator => [
                 Permission::SchoolProfileView,
             ],

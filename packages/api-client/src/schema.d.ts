@@ -1166,6 +1166,26 @@ export interface paths {
         patch: operations["updateSchedule"];
         trace?: never;
     };
+    "/schools/{school}/attendance/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ringkasan absensi hari ini
+         * @description Izin: school.attendance.view. Hari ini menurut zona waktu sekolah. Wali kelas hanya melihat kelas yang ia ampu. Dipoll dari dashboard.
+         */
+        get: operations["getAttendanceToday"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/calendar": {
         parameters: {
             query?: never;
@@ -1178,6 +1198,314 @@ export interface paths {
          * @description Izin: school.schedule.view.
          */
         get: operations["getCalendar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/students/{student}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Riwayat kredensial siswa (tanpa nilai token)
+         * @description Izin: school.credentials.view.
+         */
+        get: operations["listStudentCredentials"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/students/{student}/credentials/qr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Terbitkan QR siswa (kartu lama dicabut)
+         * @description Izin: school.credentials.manage. Token mentah hanya ada di respons ini (Cache-Control: no-store) dan tidak dapat diambil lagi; server hanya menyimpan HMAC-nya. QR aktif sebelumnya otomatis dicabut. 409 bila siswa tidak aktif.
+         */
+        post: operations["issueStudentQr"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/classes/{schoolClass}/credentials/qr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Terbitkan QR massal untuk siswa di sebuah kelas
+         * @description Izin: school.credentials.manage. Hanya siswa aktif dengan penempatan berjalan. mode missing (bawaan) = hanya yang belum punya QR aktif; all = terbit ulang semuanya. Maksimum 200 siswa per permintaan.
+         */
+        post: operations["issueClassQr"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/credentials/{credential}/block": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Blokir kredensial (alasan wajib)
+         * @description Izin: school.credentials.manage. Status hanya maju: active ⇄ blocked → revoked; perubahan tidak sah 409 INVALID_STATE_TRANSITION.
+         */
+        post: operations["blockCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/credentials/{credential}/unblock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Buka blokir kredensial
+         * @description Izin: school.credentials.manage. Status hanya maju: active ⇄ blocked → revoked; perubahan tidak sah 409 INVALID_STATE_TRANSITION.
+         */
+        post: operations["unblockCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/credentials/{credential}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cabut kredensial permanen (alasan wajib)
+         * @description Izin: school.credentials.manage. Status hanya maju: active ⇄ blocked → revoked; perubahan tidak sah 409 INVALID_STATE_TRANSITION.
+         */
+        post: operations["revokeCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar perangkat terminal
+         * @description Izin: school.devices.view.
+         */
+        get: operations["listDevices"];
+        put?: never;
+        /**
+         * Daftarkan perangkat terminal baru
+         * @description Izin: school.devices.manage. Kode pairing 8 karakter berlaku 10 menit dan hanya tampil di respons ini (Cache-Control: no-store). 409 DEVICE_LIMIT_REACHED bila jumlah perangkat yang belum dicabut sudah mencapai batas sekolah (bawaan 1).
+         */
+        post: operations["registerDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/devices/{device}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail perangkat
+         * @description Izin: school.devices.view.
+         */
+        get: operations["getDevice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah nama perangkat
+         * @description Izin: school.devices.manage.
+         */
+        patch: operations["renameDevice"];
+        trace?: never;
+    };
+    "/schools/{school}/devices/{device}/pairing-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Buat kode pairing baru untuk perangkat yang belum dipasangkan
+         * @description Izin: school.devices.manage.
+         */
+        post: operations["renewDevicePairingCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/devices/{device}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cabut perangkat (alasan wajib, langsung efektif)
+         * @description Izin: school.devices.manage. Request berikutnya dari terminal itu ditolak 403 DEVICE_REVOKED.
+         */
+        post: operations["revokeDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/terminal/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tukar kode pairing dengan token perangkat
+         * @description Tanpa login. Berhasil memasang cookie sentra_device (HttpOnly, SameSite=Strict) berisi token perangkat; token tidak ada di body. Kode sekali pakai, berlaku 10 menit; semua kegagalan 422 PAIRING_CODE_INVALID. Header X-Sentra-Terminal: 1 wajib.
+         */
+        post: operations["pairTerminal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/terminal/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Konfigurasi terminal
+         * @description Nama sekolah, zona waktu, waktu server, dan metode input aktif. 401 DEVICE_UNPAIRED / 403 DEVICE_REVOKED / 403 SCHOOL_UNAVAILABLE.
+         */
+        get: operations["getTerminalConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/terminal/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Heartbeat terminal
+         * @description Menandakan terminal masih terhubung dan mengembalikan waktu server.
+         */
+        post: operations["terminalHeartbeat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/terminal/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Catat satu scan QR dari terminal
+         * @description Waktu selalu waktu server. Kunci idempotensi yang sama mengembalikan hasil yang sama tanpa catatan baru. Hasil accepted/duplicate/rejected/needs_review dikembalikan dengan HTTP 200; kode alasan stabil ada di `code`.
+         */
+        post: operations["recordTerminalScan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/terminal/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sepuluh transaksi terakhir sekolah
+         * @description Hanya nama tampilan ringkas, tanpa nilai kredensial.
+         */
+        get: operations["listTerminalRecent"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1215,7 +1543,7 @@ export interface components {
         /** @enum {string} */
         Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -1714,6 +2042,213 @@ export interface components {
                 days: components["schemas"]["CalendarDay"][];
             };
         };
+        /** @enum {string} */
+        CredentialStatus: "active" | "blocked" | "revoked";
+        Credential: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            student_id: string;
+            /** @enum {string} */
+            credential_type: "qr" | "rfid";
+            status: components["schemas"]["CredentialStatus"];
+            status_reason: string | null;
+            /** Format: date-time */
+            issued_at: string;
+            /** Format: date-time */
+            blocked_at: string | null;
+            /** Format: date-time */
+            revoked_at: string | null;
+            /** Format: uuid */
+            replaces_credential_id: string | null;
+        };
+        CredentialEnvelope: {
+            data: components["schemas"]["Credential"];
+        };
+        CredentialListEnvelope: {
+            data: components["schemas"]["Credential"][];
+        };
+        CredentialIssuedEnvelope: {
+            data: {
+                credential: components["schemas"]["Credential"];
+                /** @description Nilai QR mentah; hanya terlihat sekali. */
+                token: string;
+            };
+        };
+        CredentialClassIssue: {
+            /**
+             * @default missing
+             * @enum {string}
+             */
+            mode: "missing" | "all";
+        };
+        CredentialClassIssuedEnvelope: {
+            data: {
+                student: {
+                    /** Format: uuid */
+                    id: string;
+                    student_number: string;
+                    full_name: string;
+                };
+                credential: components["schemas"]["Credential"];
+                /** @description Nilai QR mentah; hanya terlihat sekali. */
+                token: string;
+            }[];
+            meta: {
+                issued: number;
+            };
+        };
+        /** @enum {string} */
+        DeviceStatus: "pending_pairing" | "active" | "revoked";
+        Device: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            device_type: "gate_terminal";
+            status: components["schemas"]["DeviceStatus"];
+            /** @description Aktivitas terakhir dalam 2 menit. */
+            online: boolean;
+            /** Format: date-time */
+            pairing_expires_at: string | null;
+            /** Format: date-time */
+            paired_at: string | null;
+            /** Format: date-time */
+            last_seen_at: string | null;
+            /** Format: date-time */
+            revoked_at: string | null;
+            revoked_reason: string | null;
+        };
+        DeviceEnvelope: {
+            data: components["schemas"]["Device"];
+        };
+        DeviceListEnvelope: {
+            data: components["schemas"]["Device"][];
+        };
+        DeviceName: {
+            name: string;
+        };
+        DevicePairingEnvelope: {
+            data: {
+                device: components["schemas"]["Device"];
+                /** @description Hanya terlihat sekali. */
+                pairing_code: string;
+            };
+        };
+        TerminalPairRequest: {
+            /** @description Spasi dan tanda hubung diabaikan; huruf kecil dianggap sama. */
+            code: string;
+        };
+        TerminalPairEnvelope: {
+            data: {
+                school: {
+                    name: string;
+                };
+            };
+        };
+        TerminalConfigEnvelope: {
+            data: {
+                school: {
+                    name: string;
+                    timezone: string;
+                };
+                device: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                };
+                /** Format: date-time */
+                server_time: string;
+                methods: ("qr" | "rfid")[];
+                show_photo: boolean;
+            };
+        };
+        TerminalHeartbeatEnvelope: {
+            data: {
+                /** Format: date-time */
+                server_time: string;
+            };
+        };
+        /** @enum {string} */
+        ScanResult: "accepted" | "duplicate" | "rejected" | "needs_review";
+        TerminalScanRequest: {
+            /** @description Isi QR/kartu mentah dari pemindai. */
+            value: string;
+            /**
+             * Format: uuid
+             * @description Dibuat klien per scan; dipakai ulang saat mengulang.
+             */
+            idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Hanya informasi diagnostik; tidak dipakai untuk menentukan waktu absensi.
+             */
+            captured_at?: string | null;
+        };
+        TerminalScan: {
+            result: components["schemas"]["ScanResult"];
+            /** @description CHECK_IN_OK, CHECK_IN_LATE, CHECK_OUT_OK, CHECK_OUT_EARLY, ALREADY_CHECKED_IN, ALREADY_CHECKED_OUT, TOO_EARLY, CHECKOUT_WITHOUT_CHECKIN, UNKNOWN_CREDENTIAL, CREDENTIAL_BLOCKED, STUDENT_INACTIVE, HOLIDAY, NO_SCHEDULE */
+            code: string;
+            /** @enum {string|null} */
+            event_type: "check_in" | "check_out" | null;
+            student: {
+                display_name: string;
+                class_name: string | null;
+                photo_url: string | null;
+            } | null;
+            /** Format: date-time */
+            recorded_at: string;
+            /** @example 07.03 */
+            recorded_at_local: string;
+            message: string;
+        };
+        TerminalScanEnvelope: {
+            data: components["schemas"]["TerminalScan"];
+        };
+        TerminalRecentEnvelope: {
+            data: {
+                result: components["schemas"]["ScanResult"];
+                code: string | null;
+                event_type: string | null;
+                display_name: string | null;
+                class_name: string | null;
+                is_late: boolean | null;
+                recorded_at_local: string;
+            }[];
+        };
+        AttendanceTodayEnvelope: {
+            data: {
+                /** Format: date */
+                date: string;
+                timezone: string;
+                day: {
+                    /** @enum {string} */
+                    kind: "school_day" | "holiday" | "no_schedule";
+                    holiday_name: string | null;
+                };
+                totals: {
+                    students: number;
+                    /** @description Hadir + terlambat. */
+                    present: number;
+                    on_time: number;
+                    late: number;
+                    not_recorded: number;
+                    checked_out: number;
+                };
+                recent: {
+                    student_name: string;
+                    class_name: string;
+                    event_type: string | null;
+                    result: components["schemas"]["ScanResult"];
+                    is_late: boolean | null;
+                    recorded_at_local: string;
+                }[];
+                devices: {
+                    active: number;
+                    offline: number;
+                };
+            };
+        };
     };
     responses: {
         /** @description Belum login atau sesi berakhir (`UNAUTHENTICATED`, `LOGIN_REQUIRED`). */
@@ -1776,6 +2311,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /** @description Permintaan tidak valid (mis. header terminal hilang). */
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
         /** @description Dibatasi laju (`TOO_MANY_REQUESTS`). */
         TooManyRequests: {
             headers: {
@@ -1820,6 +2364,10 @@ export interface components {
         ImportId: string;
         HolidayId: string;
         ScheduleId: string;
+        CredentialId: string;
+        DeviceId: string;
+        /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+        TerminalHeader: "1";
     };
     requestBodies: never;
     headers: never;
@@ -4115,6 +4663,32 @@ export interface operations {
             422: components["responses"]["ValidationFailed"];
         };
     };
+    getAttendanceToday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ringkasan hari ini. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceTodayEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     getCalendar: {
         parameters: {
             query: {
@@ -4145,6 +4719,514 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listStudentCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kredensial, terbaru lebih dulu. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialListEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    issueStudentQr: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kredensial baru beserta token mentah, hanya terlihat sekali. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialIssuedEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    issueClassQr: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                schoolClass: components["parameters"]["ClassId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialClassIssue"];
+            };
+        };
+        responses: {
+            /** @description Kredensial baru beserta token mentah, hanya terlihat sekali. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialClassIssuedEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    blockCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                credential: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequired"];
+            };
+        };
+        responses: {
+            /** @description Kredensial setelah perubahan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    unblockCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                credential: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonOptional"];
+            };
+        };
+        responses: {
+            /** @description Kredensial setelah perubahan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    revokeCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                credential: components["parameters"]["CredentialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequired"];
+            };
+        };
+        responses: {
+            /** @description Kredensial setelah perubahan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listDevices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Perangkat (aktif, menunggu pairing, lalu dicabut). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceListEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    registerDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceName"];
+            };
+        };
+        responses: {
+            /** @description Perangkat menunggu pairing beserta kode sekali pakai. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DevicePairingEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                device: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Perangkat. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    renameDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                device: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceName"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    renewDevicePairingCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                device: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kode baru; kode lama tidak berlaku. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DevicePairingEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    revokeDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                device: components["parameters"]["DeviceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequired"];
+            };
+        };
+        responses: {
+            /** @description Perangkat dicabut. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    pairTerminal: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+                "X-Sentra-Terminal": components["parameters"]["TerminalHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TerminalPairRequest"];
+            };
+        };
+        responses: {
+            /** @description Terminal dipasangkan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TerminalPairEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getTerminalConfig: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+                "X-Sentra-Terminal": components["parameters"]["TerminalHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TerminalConfigEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    terminalHeartbeat: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+                "X-Sentra-Terminal": components["parameters"]["TerminalHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TerminalHeartbeatEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    recordTerminalScan: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+                "X-Sentra-Terminal": components["parameters"]["TerminalHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TerminalScanRequest"];
+            };
+        };
+        responses: {
+            /** @description Hasil scan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TerminalScanEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listTerminalRecent: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+                "X-Sentra-Terminal": components["parameters"]["TerminalHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transaksi terakhir. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TerminalRecentEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
 }

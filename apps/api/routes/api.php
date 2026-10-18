@@ -8,8 +8,11 @@ use App\Http\Controllers\Me\MyInvitationController;
 use App\Http\Controllers\Me\MySchoolsController;
 use App\Http\Controllers\Platform\PlatformSchoolController;
 use App\Http\Controllers\School\AcademicYearController;
+use App\Http\Controllers\School\AttendanceController;
 use App\Http\Controllers\School\AuditLogController;
 use App\Http\Controllers\School\CalendarController;
+use App\Http\Controllers\School\CredentialController;
+use App\Http\Controllers\School\DeviceController;
 use App\Http\Controllers\School\HolidayController;
 use App\Http\Controllers\School\InvitationController;
 use App\Http\Controllers\School\MemberController;
@@ -173,6 +176,32 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
     Route::post('students/{student}/enrollments', [StudentController::class, 'enroll'])->whereUuid('student')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('students.enroll');
 
+    Route::get('students/{student}/credentials', [CredentialController::class, 'index'])->whereUuid('student')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsView))->name('credentials.index');
+    Route::post('students/{student}/credentials/qr', [CredentialController::class, 'issueForStudent'])->whereUuid('student')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.issue');
+    Route::post('classes/{schoolClass}/credentials/qr', [CredentialController::class, 'issueForClass'])->whereUuid('schoolClass')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.issue-class');
+    Route::post('credentials/{credential}/block', [CredentialController::class, 'block'])->whereUuid('credential')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.block');
+    Route::post('credentials/{credential}/unblock', [CredentialController::class, 'unblock'])->whereUuid('credential')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.unblock');
+    Route::post('credentials/{credential}/revoke', [CredentialController::class, 'revoke'])->whereUuid('credential')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.revoke');
+
+    Route::get('devices', [DeviceController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesView))->name('devices.index');
+    Route::post('devices', [DeviceController::class, 'store'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesManage))->name('devices.store');
+    Route::get('devices/{device}', [DeviceController::class, 'show'])->whereUuid('device')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesView))->name('devices.show');
+    Route::patch('devices/{device}', [DeviceController::class, 'update'])->whereUuid('device')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesManage))->name('devices.update');
+    Route::post('devices/{device}/pairing-code', [DeviceController::class, 'renewPairingCode'])->whereUuid('device')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesManage))->name('devices.pairing-code');
+    Route::post('devices/{device}/revoke', [DeviceController::class, 'revoke'])->whereUuid('device')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesManage))->name('devices.revoke');
+
     Route::get('imports', [StudentImportController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.index');
     Route::post('imports/students', [StudentImportController::class, 'store'])
@@ -206,6 +235,8 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleView))->name('schedules.show');
     Route::patch('schedules/{schedule}', [ScheduleController::class, 'update'])->whereUuid('schedule')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleManage))->name('schedules.update');
+    Route::get('attendance/today', [AttendanceController::class, 'today'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('attendance.today');
     Route::get('calendar', [CalendarController::class, 'show'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleView))->name('calendar.show');
 });
