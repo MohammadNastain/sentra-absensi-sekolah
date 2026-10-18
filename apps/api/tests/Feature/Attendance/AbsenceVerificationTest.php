@@ -148,3 +148,28 @@ it('tenant lain tidak dapat memverifikasi siswa sekolah ini', function () {
     ])->assertNotFound();
     $this->actingAs($outsider)->getJson(absUrl('/absences?date=2026-10-19'))->assertNotFound();
 });
+
+it('scan masuk setelah alpa final masuk antrean tinjauan tanpa mengubah status; terima mengubahnya menjadi terlambat', function () {
+    $this->actingAs($this->officer)->postJson(absUrl('/absences/verify'), ['date' => '2026-10-19', 'student_ids' => [$this->absent], 'reason' => 'Sudah dicek ke orang tua'])->assertOk();
+
+    Carbon::setTestNow(Carbon::parse('2026-10-19 10:00:00', 'Asia/Jakarta'));
+    scan(scanToken($this, $this->absent))->assertJsonPath('data.result', 'needs_review')->assertJsonPath('data.code', 'ABSENCE_FINAL_CONFLICT');
+    $this->useSchool($this->school);
+    expect(DB::table('daily_attendance')->where('student_id', $this->absent)->value('attendance_status'))->toBe('alpa');
+
+    $queue = $this->actingAs($this->officer)->getJson(absUrl('/review-queue'))->assertJsonCount(1, 'data')->json('data.0');
+    expect($queue['event_type'])->toBe('check_in')->and($queue['reason_code'])->toBe('ABSENCE_FINAL_CONFLICT');
+    $this->actingAs($this->officer)->postJson(absUrl("/review-queue/{$queue['event_id']}/resolve"), ['decision' => 'accept', 'reason' => 'Siswa terbukti hadir, terlambat'])->assertOk();
+
+    $this->useSchool($this->school);
+    $row = DB::table('daily_attendance')->where('student_id', $this->absent)->first();
+    expect($row->attendance_status)->toBe('terlambat')->and($row->check_in_event_id)->toBe($queue['event_id'])->and($row->absence_basis)->toBeNull();
+});
+
+it('scan masuk setelah alpa sementara menggantikannya otomatis menjadi terlambat', function () {
+    Carbon::setTestNow(Carbon::parse('2026-10-19 10:00:00', 'Asia/Jakarta'));
+    scan(scanToken($this, $this->absent))->assertJsonPath('data.result', 'accepted')->assertJsonPath('data.code', 'CHECK_IN_LATE');
+    $this->useSchool($this->school);
+    $row = DB::table('daily_attendance')->where('student_id', $this->absent)->first();
+    expect($row->attendance_status)->toBe('terlambat')->and($row->absence_basis)->toBeNull();
+});

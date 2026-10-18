@@ -137,3 +137,46 @@ test("Tahap 4: mode bantuan di terminal — login petugas, kredensial salah, car
   await page.getByRole("dialog").getByRole("button", { name: "Cabut", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 });
+
+test("Tahap 5A: pengaturan aturan alpa dan penahanan/pelepasan hari", async ({ page }) => {
+  await loginAsAdmin(page);
+  await nav(page, "Kehadiran").click();
+
+  await test.step("Pengaturan: jam batas wajib dan divalidasi, lalu dimatikan kembali", async () => {
+    const settings = page.getByRole("region", { name: "Aturan alpa" });
+    await expect(settings.getByRole("checkbox")).toBeVisible();
+    if (!(await settings.getByRole("checkbox").isChecked())) await settings.getByRole("checkbox").check();
+    await settings.getByLabel("Jam batas (waktu lokal sekolah)").fill("05:00");
+    await settings.getByRole("button", { name: "Simpan" }).click();
+    await expect(settings.getByText(/Jam batas harus setelah batas masuk/).first()).toBeVisible();
+
+    await settings.getByLabel("Jam batas (waktu lokal sekolah)").fill("23:00");
+    await settings.getByRole("button", { name: "Simpan" }).click();
+    await expect(settings.getByText("Pengaturan disimpan.")).toBeVisible();
+
+    await settings.getByRole("checkbox").uncheck();
+    await settings.getByRole("button", { name: "Simpan" }).click();
+    await expect(settings.getByText("Pengaturan disimpan.")).toBeVisible();
+  });
+
+  await test.step("Verifikasi: tandai hari bergangguan lalu lepas penahanan", async () => {
+    const panel = page.getByRole("region", { name: "Verifikasi alpa" });
+    await panel.getByLabel("Tanggal").fill("2026-01-05");
+    await expect(panel.getByText("Tidak ada alpa sementara pada tanggal ini.")).toBeVisible();
+
+    await panel.getByRole("button", { name: "Tandai hari bergangguan" }).click();
+    const submit = panel.getByRole("button", { name: "Tandai bergangguan" });
+    await expect(submit).toBeDisabled();
+    await panel.getByLabel(/Alasan/).fill("Uji e2e: terminal gerbang mati");
+    await submit.click();
+    await expect(panel.getByText("Hari ditandai bergangguan; aturan alpa ditahan.")).toBeVisible();
+    await expect(panel.getByText(/Aturan alpa ditahan untuk hari ini/)).toBeVisible();
+    await expect(panel.getByText("Ditandai bergangguan oleh petugas.")).toBeVisible();
+
+    await panel.getByRole("button", { name: "Lepas penahanan" }).click();
+    await panel.getByLabel(/Alasan/).fill("Uji e2e: sudah diperiksa normal");
+    await panel.getByRole("button", { name: "Lepas penahanan" }).last().click();
+    await expect(panel.getByText("Penahanan dilepas; aturan alpa dijalankan.")).toBeVisible();
+    await expect(panel.getByText(/Aturan alpa ditahan untuk hari ini/)).toBeHidden();
+  });
+});

@@ -183,6 +183,10 @@ final class RecordScanAction
         $decision = $assist === null
             ? $this->machine->decide($window, $nowSeconds, $checkInAt, $hasCheckOut)
             : $this->machine->decideAssisted($window, $nowSeconds, $checkInAt, $hasCheckOut, $assist['event_type']);
+        // Alpa final sudah diverifikasi manusia (ADR 0005 §5.6): scan masuk tidak mengubahnya otomatis, masuk antrean tinjauan.
+        if ($assist === null && $decision->isAccepted() && $decision->eventType === 'check_in' && $daily->attendance_status === 'alpa') {
+            $decision = new ScanDecision('needs_review', 'ABSENCE_FINAL_CONFLICT', 'check_in', $decision->isLate, $decision->lateMinutes);
+        }
         $extra = $who + ['existing_check_in' => $checkInTime, 'existing_check_out' => $checkOutTime, 'window' => $window];
         $event = $this->finish($base + ['attendance_session_id' => $sessionId], $decision, $extra, $now, $local, returnId: true);
 
@@ -258,6 +262,7 @@ final class RecordScanAction
             'ALREADY_CHECKED_OUT' => "Absensi pulang sudah tercatat pukul {$t}.",
             'TOO_EARLY' => 'Absensi masuk dibuka pukul '.($window === null ? '' : gmdate('H.i', $window->checkInStart)).'.',
             'CHECKOUT_WITHOUT_CHECKIN' => 'Belum ada catatan masuk hari ini. Hubungi petugas.',
+            'ABSENCE_FINAL_CONFLICT' => 'Status kehadiran hari ini sedang ditinjau. Hubungi petugas.',
             'CHECKIN_REQUIRED' => 'Belum ada catatan masuk hari ini. Catat masuk lebih dulu.',
             'UNKNOWN_CREDENTIAL' => 'Kartu tidak dikenali.',
             'CREDENTIAL_BLOCKED' => 'Kartu diblokir. Hubungi petugas.',
@@ -313,7 +318,7 @@ final class RecordScanAction
         );
     }
 
-    /** @return object{id: string, check_in_event_id: string|null, check_out_event_id: string|null} */
+    /** @return object{id: string, attendance_status: string, check_in_event_id: string|null, check_out_event_id: string|null} */
     private function lockDaily(string $schoolId, string $studentId, string $date): object
     {
         DB::insert(
@@ -322,7 +327,7 @@ final class RecordScanAction
         );
 
         return DB::selectOne(
-            'SELECT id, check_in_event_id, check_out_event_id FROM daily_attendance WHERE school_id = ? AND student_id = ? AND attendance_date = ? FOR UPDATE',
+            'SELECT id, attendance_status, check_in_event_id, check_out_event_id FROM daily_attendance WHERE school_id = ? AND student_id = ? AND attendance_date = ? FOR UPDATE',
             [$schoolId, $studentId, $date],
         ) ?? throw new \LogicException('Baris harian tidak ditemukan setelah dibuat.');
     }
@@ -331,7 +336,7 @@ final class RecordScanAction
     {
         if ($d->eventType === 'check_in') {
             DB::update(
-                'UPDATE daily_attendance SET attendance_status = ?, check_in_event_id = ?, late_minutes = ?, attendance_session_id = ?, class_id = ?, version = version + 1, updated_at = now() WHERE id = ? AND school_id = ?',
+                'UPDATE daily_attendance SET attendance_status = ?, absence_basis = NULL, check_in_event_id = ?, late_minutes = ?, attendance_session_id = ?, class_id = ?, version = version + 1, updated_at = now() WHERE id = ? AND school_id = ?',
                 [$d->isLate ? 'terlambat' : 'hadir', $eventId, $d->isLate ? $d->lateMinutes : null, $sessionId, $classId, $dailyId, $schoolId],
             );
 
