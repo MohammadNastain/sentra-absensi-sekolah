@@ -150,6 +150,15 @@ jobs:
               pnpm --filter @sentra/web build &&
               pnpm --filter @sentra/web e2e'
 
+      # Job email menelan error transport (dicatat ke delivery_error + laravel.log), jadi log container saja tidak cukup.
+      - name: Diagnostik pengiriman email bila gagal
+        if: failure()
+        run: |
+          docker compose exec -T postgres psql -U sentra_owner -d sentra \
+            -c "select email, delivery_status, delivery_error from membership_invitations order by created_at desc limit 5" || true
+          docker compose --profile api exec -T api sh -c 'tail -n 60 storage/logs/laravel.log' || true
+          curl -s "http://localhost:8025/api/v1/messages?limit=5" | head -c 1500 || true
+
       - name: Log container bila gagal
         if: failure()
         run: docker compose --profile api logs --no-color
