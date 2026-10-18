@@ -57,4 +57,32 @@ final class AttendanceStateMachine
             lateMinutes: $late ? intdiv($now - $window->checkInDeadline, 60) : 0,
         );
     }
+
+    /**
+     * Pencatatan oleh petugas (mode bantuan). Pulang boleh dicatat kapan pun setelah ada catatan masuk (pulang awal
+     * sebelum jendela pulang dibuka, D-09) dan ditandai pulang awal bila sebelum jadwal pulang. Masuk mengikuti
+     * aturan scan biasa. `$requested`: 'check_in' | 'check_out' | null (otomatis).
+     */
+    public function decideAssisted(ScheduleWindow $window, int $now, ?int $checkInAt, bool $hasCheckOut, ?string $requested): ScanDecision
+    {
+        if ($hasCheckOut) {
+            return new ScanDecision('duplicate', 'ALREADY_CHECKED_OUT', 'check_out');
+        }
+
+        $wantsOut = $requested === 'check_out';
+        if ($wantsOut) {
+            if ($checkInAt === null) {
+                return new ScanDecision('rejected', 'CHECKIN_REQUIRED', null);
+            }
+            $early = $now < $window->scheduledCheckOut;
+
+            return new ScanDecision('accepted', $early ? 'CHECK_OUT_EARLY' : 'CHECK_OUT_OK', 'check_out', isEarlyLeave: $early);
+        }
+
+        if ($checkInAt !== null) {
+            return new ScanDecision('duplicate', 'ALREADY_CHECKED_IN', 'check_in');
+        }
+
+        return $this->decide($window, $now, null, false);
+    }
 }

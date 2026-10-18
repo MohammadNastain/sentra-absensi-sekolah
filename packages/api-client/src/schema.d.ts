@@ -1246,6 +1246,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/students/{student}/credentials/rfid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Daftarkan kartu RFID siswa (kartu RFID lama dicabut)
+         * @description Izin: school.credentials.manage. UID dinormalisasi profil generic (heksadesimal 6-20 karakter; spasi, titik dua, strip, huruf kecil diabaikan). 409 CREDENTIAL_IN_USE bila UID masih dipakai kredensial lain di sekolah ini (pesan menyebut pemiliknya).
+         */
+        post: operations["registerStudentRfid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/classes/{schoolClass}/credentials/qr": {
         parameters: {
             query?: never;
@@ -1514,6 +1534,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/terminal/assist/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Buka sesi bantuan petugas di terminal
+         * @description Login petugas (Admin/Petugas Piket) dengan email dan password, plus kode verifikasi bila akun memakai 2FA. Sesi terikat ke perangkat ini, idle 10 menit, maksimum 30 menit; token hanya dikembalikan sekali dan disimpan terminal di memori. Semua kegagalan 401 ASSIST_LOGIN_FAILED; 5 percobaan per menit per perangkat.
+         */
+        post: operations["startAssistSession"];
+        /**
+         * Akhiri sesi bantuan
+         * @description Mengakhiri sesi bantuan saat ini.
+         */
+        delete: operations["endAssistSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/terminal/assist/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cari siswa (minimal) untuk mode bantuan
+         * @description Butuh sesi bantuan. Maksimum 10 siswa aktif dengan penempatan berjalan; minimal 2 karakter nama atau nomor induk.
+         */
+        get: operations["searchAssistStudents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/terminal/assist/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Catat kehadiran lewat mode bantuan (terminal)
+         * @description Butuh sesi bantuan. Pipeline sama dengan scan (metode assisted_manual); waktu = waktu server. Verifikasi visual wajib; alasan dari enum, catatan wajib untuk other. Pulang awal (early_leave atau event_type check_out) boleh sebelum jendela pulang dibuka asal sudah ada catatan masuk. Selalu diaudit.
+         */
+        post: operations["recordAssistedAttendanceTerminal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/assist/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cari siswa (minimal) untuk mode bantuan dari dashboard
+         * @description Izin: school.attendance.assist. Hasil minimal; tidak memerlukan izin melihat data siswa.
+         */
+        get: operations["searchAssistStudentsDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/assisted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Catat kehadiran lewat mode bantuan (dashboard)
+         * @description Izin: school.attendance.assist. Aturan, hasil, dan audit sama dengan terminal; tanpa perangkat.
+         */
+        post: operations["recordAssistedAttendance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/review-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Antrean tinjauan (scan pulang tanpa catatan masuk)
+         * @description Izin: school.attendance.review. Event needs_review yang belum diselesaikan.
+         */
+        get: operations["listReviewQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/review-queue/{event}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Selesaikan satu item antrean tinjauan
+         * @description Izin: school.attendance.review. accept = catat pulang pada absensi harian (sumber manual_adjustment); reject = abaikan. Alasan minimal 10 karakter, menulis attendance_adjustments dan audit. Event tidak diubah.
+         */
+        post: operations["resolveReviewEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/assist-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Laporan anomali mode bantuan
+         * @description Izin: school.attendance.review. Jumlah pencatatan bantuan per petugas, siswa, dan alasan pada rentang tanggal.
+         */
+        get: operations["getAssistReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1543,7 +1727,7 @@ export interface components {
         /** @enum {string} */
         Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -2051,6 +2235,8 @@ export interface components {
             student_id: string;
             /** @enum {string} */
             credential_type: "qr" | "rfid";
+            /** @description Empat karakter terakhir UID RFID; null untuk QR. */
+            value_hint: string | null;
             status: components["schemas"]["CredentialStatus"];
             status_reason: string | null;
             /** Format: date-time */
@@ -2061,6 +2247,10 @@ export interface components {
             revoked_at: string | null;
             /** Format: uuid */
             replaces_credential_id: string | null;
+        };
+        RfidRegistration: {
+            /** @description UID seperti yang dikeluarkan pembaca (tap di kolom isian). */
+            uid: string;
         };
         CredentialEnvelope: {
             data: components["schemas"]["Credential"];
@@ -2249,6 +2439,108 @@ export interface components {
                 };
             };
         };
+        AssistLoginRequest: {
+            email: string;
+            password: string;
+            /** @description Kode 2FA, wajib bila akun memakai 2FA. */
+            code?: string | null;
+        };
+        AssistSessionEnvelope: {
+            data: {
+                token: string;
+                officer_name: string;
+                /** Format: date-time */
+                expires_at: string;
+                idle_seconds: number;
+            };
+        };
+        AssistEndedEnvelope: {
+            data: {
+                ended: boolean;
+            };
+        };
+        AssistStudent: {
+            /** Format: uuid */
+            id: string;
+            full_name: string;
+            student_number: string;
+            class_name: string;
+        };
+        AssistStudentsEnvelope: {
+            data: components["schemas"]["AssistStudent"][];
+        };
+        /** @enum {string} */
+        AssistReason: "card_forgotten" | "card_damaged" | "early_leave" | "other";
+        AssistedAttendanceRequest: {
+            /** Format: uuid */
+            student_id: string;
+            reason_code: components["schemas"]["AssistReason"];
+            /** @description Wajib untuk reason_code other. */
+            note?: string | null;
+            /**
+             * @description Petugas mengonfirmasi verifikasi visual.
+             * @enum {boolean}
+             */
+            verified: true;
+            /**
+             * @description Kosong = otomatis (check_out bila early_leave).
+             * @enum {string|null}
+             */
+            event_type?: "check_in" | "check_out" | null;
+            /** Format: uuid */
+            idempotency_key: string;
+        };
+        ReviewQueueItem: {
+            /** Format: uuid */
+            event_id: string;
+            /** Format: date */
+            attendance_date: string;
+            student_name: string;
+            class_name: string | null;
+            event_type: string | null;
+            reason_code: string | null;
+            recorded_at_local: string;
+        };
+        ReviewQueueEnvelope: {
+            data: components["schemas"]["ReviewQueueItem"][];
+        };
+        ResolveReviewRequest: {
+            /** @enum {string} */
+            decision: "accept" | "reject";
+            reason: string;
+        };
+        ResolveReviewEnvelope: {
+            data: {
+                /** Format: uuid */
+                event_id: string;
+                /** @enum {string} */
+                decision: "accept" | "reject";
+                /** Format: uuid */
+                adjustment_id: string;
+            };
+        };
+        AssistReportEnvelope: {
+            data: {
+                /** Format: date */
+                from: string;
+                /** Format: date */
+                to: string;
+                total: number;
+                by_officer: {
+                    officer_name: string;
+                    total: number;
+                    check_outs: number;
+                }[];
+                by_student: {
+                    student_name: string;
+                    total: number;
+                }[];
+                by_reason: {
+                    reason_code: string;
+                    total: number;
+                }[];
+            };
+        };
     };
     responses: {
         /** @description Belum login atau sesi berakhir (`UNAUTHENTICATED`, `LOGIN_REQUIRED`). */
@@ -2366,6 +2658,8 @@ export interface components {
         ScheduleId: string;
         CredentialId: string;
         DeviceId: string;
+        /** @description Token sesi bantuan dari /terminal/assist/session. */
+        AssistSessionHeader: string;
         /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
         TerminalHeader: "1";
     };
@@ -4776,6 +5070,39 @@ export interface operations {
             409: components["responses"]["Conflict"];
         };
     };
+    registerStudentRfid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RfidRegistration"];
+            };
+        };
+        responses: {
+            /** @description Kartu terdaftar. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
     issueClassQr: {
         parameters: {
             query?: never;
@@ -5227,6 +5554,280 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             429: components["responses"]["TooManyRequests"];
+        };
+    };
+    startAssistSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+                "X-Sentra-Terminal": components["parameters"]["TerminalHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Sesi dibuka. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistSessionEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    endAssistSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+                "X-Sentra-Terminal": components["parameters"]["TerminalHeader"];
+                /** @description Token sesi bantuan dari /terminal/assist/session. */
+                "X-Assist-Session": components["parameters"]["AssistSessionHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistEndedEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    searchAssistStudents: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header: {
+                /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+                "X-Sentra-Terminal": components["parameters"]["TerminalHeader"];
+                /** @description Token sesi bantuan dari /terminal/assist/session. */
+                "X-Assist-Session": components["parameters"]["AssistSessionHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistStudentsEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    recordAssistedAttendanceTerminal: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Wajib bernilai 1. Memaksa preflight CORS sehingga halaman origin lain tidak dapat memicu endpoint terminal. */
+                "X-Sentra-Terminal": components["parameters"]["TerminalHeader"];
+                /** @description Token sesi bantuan dari /terminal/assist/session. */
+                "X-Assist-Session": components["parameters"]["AssistSessionHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistedAttendanceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TerminalScanEnvelope"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    searchAssistStudentsDashboard: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Siswa yang cocok. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistStudentsEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    recordAssistedAttendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistedAttendanceRequest"];
+            };
+        };
+        responses: {
+            /** @description Hasil pencatatan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TerminalScanEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listReviewQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Antrean. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewQueueEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    resolveReviewEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                event: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Terselesaikan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveReviewEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getAssistReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Laporan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistReportEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
 }

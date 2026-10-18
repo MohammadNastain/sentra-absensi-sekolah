@@ -152,4 +152,19 @@ class ApiProblem extends HttpException
     {
         return new self(409, 'INVALID_STATE_TRANSITION', 'Perubahan status tidak diizinkan.', $detail);
     }
+
+    public static function credentialInUse(string $detail): self
+    {
+        return new self(409, 'CREDENTIAL_IN_USE', 'Kartu sudah terdaftar.', $detail);
+    }
+
+    public static function assistLoginFailed(): self
+    {
+        return new self(401, 'ASSIST_LOGIN_FAILED', 'Login petugas gagal.', 'Email, password, atau kode verifikasi salah, atau akun tidak berwenang membantu absensi.');
+    }
+
+    public static function assistSessionInvalid(): self
+    {
+        return new self(401, 'ASSIST_SESSION_INVALID', 'Sesi bantuan berakhir.', 'Masuk kembali sebagai petugas untuk melanjutkan.');
+    }
 }

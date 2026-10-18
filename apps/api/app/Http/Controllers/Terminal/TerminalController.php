@@ -48,7 +48,7 @@ final class TerminalController extends Controller
             'school' => ['name' => $school->name, 'timezone' => $school->timezone],
             'device' => ['id' => $device->id, 'name' => $device->name],
             'server_time' => Carbon::now()->toIso8601String(),
-            'methods' => ['qr'],
+            'methods' => ['qr', 'rfid'],
             'show_photo' => false,
         ]]);
     }

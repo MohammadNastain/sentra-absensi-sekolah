@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsureUserActive;
+use App\Http\Middleware\RequireAssistSession;
 use App\Http\Middleware\RequireSchoolPermission;
 use App\Http\Middleware\RequireTerminalHeader;
 use App\Http\Middleware\ResetDatabaseContext;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             RequireSchoolPermission::ALIAS => RequireSchoolPermission::class,
             EnsureEmailTransportReady::ALIAS => EnsureEmailTransportReady::class,
             RequireTerminalHeader::ALIAS => RequireTerminalHeader::class,
+            'assist.session' => RequireAssistSession::class,
         ]);
         // Tanpa halaman login di API: tamu selalu mendapat 401 problem+json.
         $middleware->redirectGuestsTo(fn () => null);

@@ -112,7 +112,7 @@ it('guard device: tanpa header, tanpa cookie, token acak ditolak; token valid me
     term('/config', 'getJson', [], $device['token'])->assertOk()
         ->assertJsonPath('data.school.name', 'SMP Contoh')
         ->assertJsonPath('data.device.name', 'Gerbang Utama')
-        ->assertJsonPath('data.methods', ['qr']);
+        ->assertJsonPath('data.methods', ['qr', 'rfid']);
     term('/heartbeat', 'postJson', [], $device['token'])->assertOk()->assertJsonStructure(['data' => ['server_time']]);
 });
 

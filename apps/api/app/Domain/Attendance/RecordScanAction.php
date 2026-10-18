@@ -2,8 +2,10 @@
 
 namespace App\Domain\Attendance;
 
+use App\Domain\Audit\AuditLogger;
 use App\Domain\Credentials\CredentialHasher;
 use App\Domain\Credentials\QrToken;
+use App\Domain\Credentials\RfidUid;
 use App\Domain\Scheduling\ScheduleResolver;
 use App\Domain\Tenancy\DatabaseContext;
 use App\Models\ClassEnrollment;
@@ -12,6 +14,7 @@ use App\Models\Schedule;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +32,7 @@ final class RecordScanAction
         private readonly CredentialHasher $hasher,
         private readonly ScheduleResolver $resolver,
         private readonly AttendanceStateMachine $machine,
+        private readonly AuditLogger $audit,
     ) {}
 
     /**
@@ -38,18 +42,49 @@ final class RecordScanAction
     {
         $now = Carbon::now();
 
-        // Percobaan kedua hanya terjadi bila dua request dengan kunci idempotensi sama berlomba: yang kalah membaca
-        // snapshot milik pemenang.
+        return $this->idempotent($school, $idempotencyKey, fn () => $this->process($school, $device, $rawValue, $idempotencyKey, $clientCapturedAt, $now));
+    }
+
+    /**
+     * Pencatatan bantuan petugas (kartu tertinggal, pulang awal). Pipeline yang sama dengan scan mulai dari
+     * pemeriksaan siswa; metode `assisted_manual`, waktu tetap waktu server, dan selalu diaudit.
+     * `$eventType` null = otomatis (masuk bila belum ada catatan masuk); `check_out` dapat dicatat kapan pun setelah masuk.
+     *
+     * @return array<string, mixed>
+     */
+    public function recordAssisted(School $school, ?Device $device, User $actor, Student $student, string $reasonCode, ?string $note, ?string $eventType, string $idempotencyKey): array
+    {
+        $now = Carbon::now();
+
+        return $this->idempotent($school, $idempotencyKey, function () use ($school, $device, $actor, $student, $reasonCode, $note, $eventType, $idempotencyKey, $now) {
+            $local = $now->copy()->setTimezone($school->timezone);
+            $base = [
+                'method' => 'assisted_manual', 'school_id' => $school->id, 'attendance_date' => $local->toDateString(), 'device_id' => $device?->id,
+                'idempotency_key' => $idempotencyKey, 'occurred_at_server' => $now->toIso8601String(), 'client_captured_at' => null,
+                'student_id' => $student->id, 'created_by_user_id' => $actor->id, 'assist_reason_code' => $reasonCode, 'assist_note' => $note,
+            ];
+
+            return $this->recordForStudent($school, $base, $student, $now, $local, ['actor' => $actor, 'event_type' => $eventType]);
+        });
+    }
+
+    /**
+     * Kunci idempotensi yang sama mengembalikan hasil pertama. Percobaan kedua hanya terjadi bila dua request dengan
+     * kunci sama berlomba: yang kalah membaca snapshot milik pemenang.
+     *
+     * @param  callable(): array<string, mixed>  $work
+     * @return array<string, mixed>
+     */
+    private function idempotent(School $school, string $key, callable $work): array
+    {
         for ($attempt = 0; $attempt < 2; $attempt++) {
-            $existing = $this->database->runInSchool($school->id, fn () => $this->existingSnapshot($school->id, $idempotencyKey));
+            $existing = $this->database->runInSchool($school->id, fn () => $this->existingSnapshot($school->id, $key));
             if ($existing !== null) {
                 return $existing;
             }
 
             try {
-                return $this->database->runInSchool($school->id, fn () => DB::transaction(
-                    fn () => $this->process($school, $device, $rawValue, $idempotencyKey, $clientCapturedAt, $now),
-                ));
+                return $this->database->runInSchool($school->id, fn () => DB::transaction(fn () => $work()));
             } catch (QueryException $e) {
                 $message = (string) ($e->errorInfo[2] ?? '');
                 if (($e->errorInfo[0] ?? null) !== '23505' || ! str_contains($message, 'attendance_events_')) {
@@ -58,7 +93,7 @@ final class RecordScanAction
             }
         }
 
-        throw new \RuntimeException('Scan tidak dapat diproses karena konflik berulang.');
+        throw new \RuntimeException('Pencatatan tidak dapat diproses karena konflik berulang.');
     }
 
     /**
@@ -68,15 +103,20 @@ final class RecordScanAction
     {
         $local = $now->copy()->setTimezone($school->timezone);
         $date = $local->toDateString();
-        $normalized = QrToken::normalize($rawValue);
+        // Klasifikasi input: token QR (awalan SA1.) atau UID RFID; selain itu tidak dikenal.
+        $qr = QrToken::looksLikeToken($rawValue);
+        $uid = $qr ? null : RfidUid::normalize($rawValue);
+        $type = $qr ? 'qr' : ($uid !== null ? 'rfid' : null);
+        $normalized = $qr ? QrToken::normalize($rawValue) : ($uid ?? QrToken::normalize($rawValue));
+        $hashKey = $type === 'rfid' ? RfidUid::hashKey((string) $uid) : $normalized;
         $fingerprint = substr($this->hasher->hashHex('fp:'.$normalized), 0, 16);
 
         $base = [
-            'school_id' => $school->id, 'attendance_date' => $date, 'device_id' => $device->id, 'idempotency_key' => $key,
+            'method' => $type ?? 'qr', 'school_id' => $school->id, 'attendance_date' => $date, 'device_id' => $device->id, 'idempotency_key' => $key,
             'occurred_at_server' => $now->toIso8601String(), 'client_captured_at' => $clientAt?->toIso8601String(),
         ];
 
-        $credential = QrToken::looksLikeToken($rawValue) ? $this->findCredential($school->id, $normalized) : null;
+        $credential = $type !== null ? $this->findCredential($school->id, $type, $hashKey) : null;
         if ($credential === null) {
             return $this->finish($base + ['credential_fingerprint' => $fingerprint], new ScanDecision('rejected', 'UNKNOWN_CREDENTIAL', null), null, $now, $local);
         }
@@ -87,6 +127,20 @@ final class RecordScanAction
         }
 
         $student = Student::query()->where('school_id', $school->id)->where('id', (string) $credential->student_id)->first();
+
+        return $this->recordForStudent($school, $base, $student, $now, $local, null);
+    }
+
+    /**
+     * Dari siswa yang sudah teridentifikasi: penempatan kelas, hari libur, jadwal, kunci harian, keputusan, event, proyeksi.
+     *
+     * @param  array<string, mixed>  $base
+     * @param  array{actor: User, event_type: string|null}|null  $assist
+     * @return array<string, mixed>
+     */
+    private function recordForStudent(School $school, array $base, ?Student $student, Carbon $now, Carbon $local, ?array $assist): array
+    {
+        $date = $local->toDateString();
         $enrollment = $student === null || $student->status !== Student::STATUS_ACTIVE ? null : ClassEnrollment::query()
             ->with('schoolClass')
             ->where('school_id', $school->id)
@@ -124,12 +178,23 @@ final class RecordScanAction
             $checkOutTime = Carbon::parse((string) DB::table('attendance_events')->where('id', $daily->check_out_event_id)->value('occurred_at_server'))->setTimezone($school->timezone);
         }
 
-        $decision = $this->machine->decide($window, (int) $local->secondsSinceMidnight(), $checkInAt, $daily->check_out_event_id !== null);
+        $nowSeconds = (int) $local->secondsSinceMidnight();
+        $hasCheckOut = $daily->check_out_event_id !== null;
+        $decision = $assist === null
+            ? $this->machine->decide($window, $nowSeconds, $checkInAt, $hasCheckOut)
+            : $this->machine->decideAssisted($window, $nowSeconds, $checkInAt, $hasCheckOut, $assist['event_type']);
         $extra = $who + ['existing_check_in' => $checkInTime, 'existing_check_out' => $checkOutTime, 'window' => $window];
         $event = $this->finish($base + ['attendance_session_id' => $sessionId], $decision, $extra, $now, $local, returnId: true);
 
         if ($decision->isAccepted()) {
             $this->project($school->id, $daily->id, $decision, $event['id'], $sessionId, $class->id);
+        }
+
+        if ($assist !== null && $decision->isAccepted()) {
+            $this->audit->record('school.attendance.assisted', $school->id, 'attendance_event', $event['id'], null, [
+                'student_id' => $student->id, 'event_type' => $decision->eventType, 'result' => $decision->result, 'reason_code' => $decision->code,
+                'assist_reason_code' => $base['assist_reason_code'] ?? null, 'device_id' => $base['device_id'] ?? null, 'method' => 'assisted_manual',
+            ], $base['assist_note'] ?? null, $assist['actor']);
         }
 
         return $event['response'];
@@ -146,13 +211,15 @@ final class RecordScanAction
 
         $id = (string) DB::scalar(
             "INSERT INTO attendance_events (school_id, student_id, credential_id, attendance_session_id, attendance_date, event_type, method, result, reason_code,
-                    occurred_at_server, client_captured_at, device_id, is_late, late_minutes, is_early_leave, idempotency_key, credential_fingerprint, response_snapshot)
-             VALUES (?, ?, ?, ?, ?, ?, 'qr', ?, ?, ?, ?, ?, ?, ?, ?, ?, decode(?, 'hex'), ?::jsonb) RETURNING id",
+                    occurred_at_server, client_captured_at, device_id, is_late, late_minutes, is_early_leave, idempotency_key, credential_fingerprint, response_snapshot,
+                    created_by_user_id, assist_reason_code, assist_note)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, decode(?, 'hex'), ?::jsonb, ?, ?, ?) RETURNING id",
             [
                 $row['school_id'], $row['student_id'] ?? null, $row['credential_id'] ?? null, $row['attendance_session_id'] ?? null, $row['attendance_date'],
-                $decision->eventType, $decision->result, $decision->code, $row['occurred_at_server'], $row['client_captured_at'], $row['device_id'],
+                $decision->eventType, $row['method'] ?? 'qr', $decision->result, $decision->code, $row['occurred_at_server'], $row['client_captured_at'], $row['device_id'] ?? null,
                 $decision->isLate, $decision->lateMinutes, $decision->isEarlyLeave, $row['idempotency_key'], $row['credential_fingerprint'] ?? null,
                 json_encode($response, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+                $row['created_by_user_id'] ?? null, $row['assist_reason_code'] ?? null, $row['assist_note'] ?? null,
             ],
         );
 
@@ -191,6 +258,7 @@ final class RecordScanAction
             'ALREADY_CHECKED_OUT' => "Absensi pulang sudah tercatat pukul {$t}.",
             'TOO_EARLY' => 'Absensi masuk dibuka pukul '.($window === null ? '' : gmdate('H.i', $window->checkInStart)).'.',
             'CHECKOUT_WITHOUT_CHECKIN' => 'Belum ada catatan masuk hari ini. Hubungi petugas.',
+            'CHECKIN_REQUIRED' => 'Belum ada catatan masuk hari ini. Catat masuk lebih dulu.',
             'UNKNOWN_CREDENTIAL' => 'Kartu tidak dikenali.',
             'CREDENTIAL_BLOCKED' => 'Kartu diblokir. Hubungi petugas.',
             'STUDENT_INACTIVE' => 'Siswa tidak aktif atau belum memiliki kelas.',
@@ -222,13 +290,13 @@ final class RecordScanAction
     }
 
     /** @return object{id: string, student_id: string, status: string}|null */
-    private function findCredential(string $schoolId, string $normalized): ?object
+    private function findCredential(string $schoolId, string $type, string $hashKey): ?object
     {
         return DB::selectOne(
             "SELECT id, student_id, status FROM student_credentials
-             WHERE school_id = ? AND credential_type = 'qr' AND value_hash = decode(?, 'hex')
+             WHERE school_id = ? AND credential_type = ? AND value_hash = decode(?, 'hex')
              ORDER BY (status = 'revoked') ASC LIMIT 1",
-            [$schoolId, $this->hasher->hashHex($normalized)],
+            [$schoolId, $type, $this->hasher->hashHex($hashKey)],
         );
     }
 

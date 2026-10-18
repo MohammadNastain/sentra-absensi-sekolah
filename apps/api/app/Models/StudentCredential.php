@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
  * @property string $school_id
  * @property string $student_id
  * @property string $credential_type
+ * @property string|null $value_hint
  * @property string $status
  * @property string|null $status_reason
  * @property Carbon $issued_at
@@ -26,6 +27,8 @@ class StudentCredential extends Model
     use BelongsToSchool, HasUuids;
 
     public const TYPE_QR = 'qr';
+
+    public const TYPE_RFID = 'rfid';
 
     public const STATUS_ACTIVE = 'active';
 

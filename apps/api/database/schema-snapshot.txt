@@ -6,6 +6,32 @@ column academic_years.name text nullable=NO
 column academic_years.school_id uuid nullable=NO
 column academic_years.start_date date nullable=NO
 column academic_years.updated_at timestamp with time zone nullable=NO
+column assist_sessions.created_at timestamp with time zone nullable=NO
+column assist_sessions.device_id uuid nullable=NO
+column assist_sessions.ended_at timestamp with time zone nullable=YES
+column assist_sessions.ended_reason text nullable=YES
+column assist_sessions.expires_at timestamp with time zone nullable=NO
+column assist_sessions.id uuid nullable=NO
+column assist_sessions.last_activity_at timestamp with time zone nullable=NO
+column assist_sessions.school_id uuid nullable=NO
+column assist_sessions.started_at timestamp with time zone nullable=NO
+column assist_sessions.token_hash bytea nullable=NO
+column assist_sessions.user_id uuid nullable=NO
+column attendance_adjustments.adjustment_type text nullable=NO
+column attendance_adjustments.attendance_date date nullable=NO
+column attendance_adjustments.created_at timestamp with time zone nullable=NO
+column attendance_adjustments.daily_attendance_id uuid nullable=NO
+column attendance_adjustments.decided_at timestamp with time zone nullable=YES
+column attendance_adjustments.decided_by_user_id uuid nullable=YES
+column attendance_adjustments.from_value jsonb nullable=YES
+column attendance_adjustments.id uuid nullable=NO
+column attendance_adjustments.reason text nullable=NO
+column attendance_adjustments.requested_by_user_id uuid nullable=NO
+column attendance_adjustments.school_id uuid nullable=NO
+column attendance_adjustments.source_event_id uuid nullable=YES
+column attendance_adjustments.status text nullable=NO
+column attendance_adjustments.student_id uuid nullable=NO
+column attendance_adjustments.to_value jsonb nullable=YES
 column attendance_events.assist_note text nullable=YES
 column attendance_events.assist_reason_code text nullable=YES
 column attendance_events.attendance_date date nullable=YES
@@ -258,6 +284,8 @@ column users.two_factor_recovery_codes text nullable=YES
 column users.two_factor_secret text nullable=YES
 column users.updated_at timestamp with time zone nullable=NO
 index CREATE INDEX academic_years_no_overlap ON public.academic_years USING gist (school_id, daterange(start_date, end_date, '[]'::text))
+index CREATE INDEX assist_sessions_active_index ON public.assist_sessions USING btree (school_id, device_id) WHERE (ended_at IS NULL)
+index CREATE INDEX attendance_adjustments_date_index ON public.attendance_adjustments USING btree (school_id, attendance_date)
 index CREATE INDEX attendance_events_device_index ON public.attendance_events USING btree (school_id, device_id, occurred_at_server DESC)
 index CREATE INDEX attendance_events_issues_index ON public.attendance_events USING btree (school_id, result, occurred_at_server) WHERE (result <> 'accepted'::text)
 index CREATE INDEX attendance_events_recent_index ON public.attendance_events USING btree (school_id, occurred_at_server DESC)
@@ -288,6 +316,12 @@ index CREATE UNIQUE INDEX academic_years_one_active ON public.academic_years USI
 index CREATE UNIQUE INDEX academic_years_pkey ON public.academic_years USING btree (id)
 index CREATE UNIQUE INDEX academic_years_school_id_id_unique ON public.academic_years USING btree (school_id, id)
 index CREATE UNIQUE INDEX academic_years_school_name_unique ON public.academic_years USING btree (school_id, name)
+index CREATE UNIQUE INDEX assist_sessions_pkey ON public.assist_sessions USING btree (id)
+index CREATE UNIQUE INDEX assist_sessions_school_id_id_unique ON public.assist_sessions USING btree (school_id, id)
+index CREATE UNIQUE INDEX assist_sessions_token_hash_unique ON public.assist_sessions USING btree (token_hash)
+index CREATE UNIQUE INDEX attendance_adjustments_one_resolution_per_event ON public.attendance_adjustments USING btree (school_id, source_event_id) WHERE (adjustment_type = 'review_resolution'::text)
+index CREATE UNIQUE INDEX attendance_adjustments_pkey ON public.attendance_adjustments USING btree (id)
+index CREATE UNIQUE INDEX attendance_adjustments_school_id_id_unique ON public.attendance_adjustments USING btree (school_id, id)
 index CREATE UNIQUE INDEX attendance_events_idempotency_unique ON public.attendance_events USING btree (school_id, idempotency_key)
 index CREATE UNIQUE INDEX attendance_events_one_accepted ON public.attendance_events USING btree (school_id, student_id, attendance_date, event_type) WHERE (result = 'accepted'::text)
 index CREATE UNIQUE INDEX attendance_events_pkey ON public.attendance_events USING btree (id)
@@ -361,8 +395,48 @@ constraint academic_years academic_years_school_id_not_null NOT NULL school_id
 constraint academic_years academic_years_school_name_unique UNIQUE (school_id, name)
 constraint academic_years academic_years_start_date_not_null NOT NULL start_date
 constraint academic_years academic_years_updated_at_not_null NOT NULL updated_at
+constraint assist_sessions assist_sessions_created_at_not_null NOT NULL created_at
+constraint assist_sessions assist_sessions_device_fk FOREIGN KEY (school_id, device_id) REFERENCES devices(school_id, id)
+constraint assist_sessions assist_sessions_device_id_not_null NOT NULL device_id
+constraint assist_sessions assist_sessions_end_consistent CHECK (((ended_at IS NULL) = (ended_reason IS NULL)))
+constraint assist_sessions assist_sessions_ended_reason_check CHECK (((ended_reason IS NULL) OR (ended_reason = ANY (ARRAY['logout'::text, 'idle'::text, 'expired'::text, 'device_revoked'::text, 'replaced'::text]))))
+constraint assist_sessions assist_sessions_expires_at_not_null NOT NULL expires_at
+constraint assist_sessions assist_sessions_id_not_null NOT NULL id
+constraint assist_sessions assist_sessions_last_activity_at_not_null NOT NULL last_activity_at
+constraint assist_sessions assist_sessions_pkey PRIMARY KEY (id)
+constraint assist_sessions assist_sessions_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint assist_sessions assist_sessions_school_id_id_unique UNIQUE (school_id, id)
+constraint assist_sessions assist_sessions_school_id_not_null NOT NULL school_id
+constraint assist_sessions assist_sessions_started_at_not_null NOT NULL started_at
+constraint assist_sessions assist_sessions_token_hash_not_null NOT NULL token_hash
+constraint assist_sessions assist_sessions_token_hash_unique UNIQUE (token_hash)
+constraint assist_sessions assist_sessions_token_length CHECK ((octet_length(token_hash) = 32))
+constraint assist_sessions assist_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
+constraint assist_sessions assist_sessions_user_id_not_null NOT NULL user_id
+constraint attendance_adjustments attendance_adjustments_adjustment_type_not_null NOT NULL adjustment_type
+constraint attendance_adjustments attendance_adjustments_attendance_date_not_null NOT NULL attendance_date
+constraint attendance_adjustments attendance_adjustments_created_at_not_null NOT NULL created_at
+constraint attendance_adjustments attendance_adjustments_daily_attendance_id_not_null NOT NULL daily_attendance_id
+constraint attendance_adjustments attendance_adjustments_daily_fk FOREIGN KEY (school_id, daily_attendance_id) REFERENCES daily_attendance(school_id, id)
+constraint attendance_adjustments attendance_adjustments_decided_by_user_id_fkey FOREIGN KEY (decided_by_user_id) REFERENCES users(id)
+constraint attendance_adjustments attendance_adjustments_event_fk FOREIGN KEY (school_id, source_event_id) REFERENCES attendance_events(school_id, id)
+constraint attendance_adjustments attendance_adjustments_id_not_null NOT NULL id
+constraint attendance_adjustments attendance_adjustments_pkey PRIMARY KEY (id)
+constraint attendance_adjustments attendance_adjustments_reason_check CHECK ((length(TRIM(BOTH FROM reason)) >= 10))
+constraint attendance_adjustments attendance_adjustments_reason_not_null NOT NULL reason
+constraint attendance_adjustments attendance_adjustments_requested_by_user_id_fkey FOREIGN KEY (requested_by_user_id) REFERENCES users(id)
+constraint attendance_adjustments attendance_adjustments_requested_by_user_id_not_null NOT NULL requested_by_user_id
+constraint attendance_adjustments attendance_adjustments_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint attendance_adjustments attendance_adjustments_school_id_id_unique UNIQUE (school_id, id)
+constraint attendance_adjustments attendance_adjustments_school_id_not_null NOT NULL school_id
+constraint attendance_adjustments attendance_adjustments_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])))
+constraint attendance_adjustments attendance_adjustments_status_not_null NOT NULL status
+constraint attendance_adjustments attendance_adjustments_student_fk FOREIGN KEY (school_id, student_id) REFERENCES students(school_id, id)
+constraint attendance_adjustments attendance_adjustments_student_id_not_null NOT NULL student_id
+constraint attendance_adjustments attendance_adjustments_type_check CHECK ((adjustment_type = ANY (ARRAY['status_change'::text, 'check_in_time'::text, 'check_out_time'::text, 'early_leave_decision'::text, 'review_resolution'::text])))
 constraint attendance_events attendance_events_accepted_complete CHECK (((result <> 'accepted'::text) OR ((student_id IS NOT NULL) AND (event_type IS NOT NULL) AND (attendance_session_id IS NOT NULL) AND (attendance_date IS NOT NULL))))
 constraint attendance_events attendance_events_assist_complete CHECK (((method <> 'assisted_manual'::text) OR ((created_by_user_id IS NOT NULL) AND (assist_reason_code IS NOT NULL))))
+constraint attendance_events attendance_events_assist_reason_check CHECK (((assist_reason_code IS NULL) OR (assist_reason_code = ANY (ARRAY['card_forgotten'::text, 'card_damaged'::text, 'early_leave'::text, 'other'::text]))))
 constraint attendance_events attendance_events_created_at_not_null NOT NULL created_at
 constraint attendance_events attendance_events_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
 constraint attendance_events attendance_events_credential_fk FOREIGN KEY (school_id, credential_id) REFERENCES student_credentials(school_id, id)
@@ -699,6 +773,8 @@ constraint users users_status_not_null NOT NULL status
 constraint users users_two_factor_confirmed_requires_secret CHECK (((two_factor_confirmed_at IS NULL) OR (two_factor_secret IS NOT NULL)))
 constraint users users_updated_at_not_null NOT NULL updated_at
 policy academic_years tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy assist_sessions tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy attendance_adjustments tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy attendance_events tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy attendance_sessions tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy audit_logs audit_insert INSERT  ((school_id IS NULL) OR (school_id = app_school_id()))
@@ -728,6 +804,8 @@ policy student_credentials tenant_isolation ALL (school_id = app_school_id()) (s
 policy students tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy teachers tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 rls academic_years enabled=true forced=true
+rls assist_sessions enabled=true forced=true
+rls attendance_adjustments enabled=true forced=true
 rls attendance_events enabled=true forced=true
 rls attendance_sessions enabled=true forced=true
 rls audit_logs enabled=true forced=true

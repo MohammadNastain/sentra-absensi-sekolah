@@ -37,6 +37,8 @@ enum Role: string
                 Permission::SchoolDevicesView,
                 Permission::SchoolDevicesManage,
                 Permission::SchoolAttendanceView,
+                Permission::SchoolAttendanceAssist,
+                Permission::SchoolAttendanceReview,
             ],
             self::Principal => [
                 Permission::SchoolProfileView,
@@ -59,6 +61,8 @@ enum Role: string
             self::DutyOfficer => [
                 Permission::SchoolProfileView,
                 Permission::SchoolAttendanceView,
+                Permission::SchoolAttendanceAssist,
+                Permission::SchoolAttendanceReview,
             ],
             self::TerminalOperator => [
                 Permission::SchoolProfileView,
