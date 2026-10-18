@@ -2363,6 +2363,137 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/absence-settings:
+    get:
+      tags: [school]
+      operationId: getAbsenceSettings
+      summary: "Pengaturan aturan alpa"
+      description: "Izin: school.attendance.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AbsenceSettingsEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [school]
+      operationId: updateAbsenceSettings
+      summary: "Ubah pengaturan aturan alpa"
+      description: "Izin: school.profile.update. Jam batas harus setelah batas masuk + toleransi terlama jadwal aktif. Teraudit."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AbsenceSettings" }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AbsenceSettingsEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/absences:
+    get:
+      tags: [school]
+      operationId: listPendingAbsences
+      summary: "Daftar alpa sementara satu tanggal"
+      description: "Izin: school.attendance.verify. Wali kelas hanya melihat kelasnya. Menyertakan kesehatan hari."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: date, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PendingAbsencesEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/absences/verify:
+    post:
+      tags: [school]
+      operationId: verifyAbsences
+      summary: "Verifikasi alpa sementara menjadi alpa final"
+      description: "Izin: school.attendance.verify. Semua-atau-tidak-sama-sekali; siswa di luar jangkauan = 404. Menulis attendance_adjustments dan audit."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VerifyAbsencesRequest" }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VerifyAbsencesEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/days/{date}/disruption:
+    post:
+      tags: [school]
+      operationId: markDayDisrupted
+      summary: "Tandai hari bergangguan (tahan aturan alpa)"
+      description: "Izin: school.attendance.review. Menarik kembali alpa sementara otomatis hari itu. Alasan minimal 10 karakter."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: date, in: path, required: true, schema: { type: string, format: date } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequest" }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DayHoldEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/days/{date}/release:
+    post:
+      tags: [school]
+      operationId: releaseDayHold
+      summary: "Lepas penahanan aturan alpa"
+      description: "Izin: school.attendance.review. Menjalankan aturan alpa untuk hari itu setelah pemeriksaan. 409 bila hari tidak sedang ditahan."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: date, in: path, required: true, schema: { type: string, format: date } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequest" }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CloseDayEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
   /schools/{school}/attendance/assist-report:
     get:
       tags: [school]
@@ -2571,7 +2702,7 @@ components:
       enum: [school_admin, principal, homeroom_teacher, duty_officer, terminal_operator]
     Permission:
       type: string
-      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review]
+      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review, school.attendance.verify]
     SchoolStatus:
       type: string
       enum: [trial, active, suspended, terminated]
@@ -3465,6 +3596,87 @@ components:
         event_type: { type: [string, "null"] }
         reason_code: { type: [string, "null"] }
         recorded_at_local: { type: string }
+    ReasonRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 10, maxLength: 500 }
+    AbsenceSettings:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        cutoff_time: { type: [string, "null"], description: "HH:MM waktu lokal sekolah; wajib bila enabled." }
+    AbsenceSettingsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/AbsenceSettings" }
+    PendingAbsence:
+      type: object
+      required: [student_id, student_name, student_number, class_id, class_name, absence_basis]
+      properties:
+        student_id: { type: string, format: uuid }
+        student_name: { type: string }
+        student_number: { type: string }
+        class_id: { type: [string, "null"], format: uuid }
+        class_name: { type: [string, "null"] }
+        absence_basis: { type: string, enum: [rule, manual] }
+    PendingAbsencesEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [date, health, items]
+          properties:
+            date: { type: string, format: date }
+            health:
+              type: object
+              required: [status, reasons]
+              properties:
+                status: { type: [string, "null"], enum: [ok, perlu_pemeriksaan, dilepas, null] }
+                reasons: { type: array, items: { type: string, enum: [NO_SCANS, MANUAL] } }
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/PendingAbsence" }
+    VerifyAbsencesRequest:
+      type: object
+      required: [date, student_ids, reason]
+      properties:
+        date: { type: string, format: date }
+        student_ids: { type: array, minItems: 1, maxItems: 500, items: { type: string, format: uuid } }
+        reason: { type: string, minLength: 10, maxLength: 500 }
+    VerifyAbsencesEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [verified]
+          properties:
+            verified: { type: integer }
+    DayHoldEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [date, status]
+          properties:
+            date: { type: string, format: date }
+            status: { type: string, enum: [perlu_pemeriksaan] }
+    CloseDayEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [required, marked_absent, health]
+          properties:
+            required: { type: integer }
+            marked_absent: { type: integer }
+            health: { type: [string, "null"] }
     ReviewQueueEnvelope:
       type: object
       required: [data]

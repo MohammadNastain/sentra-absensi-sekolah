@@ -26,6 +26,7 @@ enum Permission: string
     case SchoolAttendanceView = 'school.attendance.view';
     case SchoolAttendanceAssist = 'school.attendance.assist';
     case SchoolAttendanceReview = 'school.attendance.review';
+    case SchoolAttendanceVerify = 'school.attendance.verify';
 
     /**
      * @param  iterable<Role>  $roles

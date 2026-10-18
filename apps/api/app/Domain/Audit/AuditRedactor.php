@@ -24,6 +24,8 @@ final class AuditRedactor
         'import_batch' => ['type', 'original_filename', 'file_sha256', 'total_rows', 'valid_rows', 'invalid_rows', 'committed_rows', 'status'],
         'student_credential' => ['student_id', 'credential_type', 'status', 'status_reason', 'replaces_credential_id'],
         'attendance_event' => ['student_id', 'event_type', 'result', 'reason_code', 'assist_reason_code', 'device_id', 'method'],
+        'attendance_day' => ['date', 'reverted', 'count'],
+        'attendance_settings' => ['absence_rule_enabled', 'absence_cutoff_time'],
         'device' => ['name', 'device_type', 'status', 'revoked_reason'],
         'holiday' => ['name', 'start_date', 'end_date'],
         'schedule' => ['scope_type', 'grade_level', 'class_id', 'day_of_week', 'check_in_start', 'check_in_deadline', 'late_grace_minutes', 'check_out_start', 'scheduled_check_out', 'effective_from', 'effective_until', 'is_active'],
