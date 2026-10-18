@@ -108,6 +108,21 @@ class ApiProblem extends HttpException
         return new self(409, 'DUPLICATE_VALUE', 'Data yang sama sudah ada.', $detail);
     }
 
+    public static function scheduleConflict(string $detail): self
+    {
+        return new self(409, 'SCHEDULE_CONFLICT', 'Jadwal bentrok.', $detail);
+    }
+
+    public static function enrollmentConflict(string $detail): self
+    {
+        return new self(409, 'ENROLLMENT_CONFLICT', 'Penempatan kelas bentrok.', $detail);
+    }
+
+    public static function resetThrottled(): self
+    {
+        return new self(429, 'RESET_THROTTLED', 'Tautan reset baru saja dikirim.', 'Tunggu sebentar sebelum meminta tautan reset lagi untuk anggota ini.');
+    }
+
     public static function invalidStateTransition(string $detail): self
     {
         return new self(409, 'INVALID_STATE_TRANSITION', 'Perubahan status tidak diizinkan.', $detail);

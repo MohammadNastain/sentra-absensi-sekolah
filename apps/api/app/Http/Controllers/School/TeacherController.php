@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\School;
 
 use App\Domain\Academic\Actions\ManageTeachers;
+use App\Domain\Tenancy\ClassScope;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TeacherRequest;
@@ -15,7 +16,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class TeacherController extends Controller
 {
-    public function __construct(private readonly TenantContext $tenant, private readonly ManageTeachers $teachers) {}
+    public function __construct(private readonly TenantContext $tenant, private readonly ManageTeachers $teachers, private readonly ClassScope $scope) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -24,6 +25,7 @@ final class TeacherController extends Controller
 
         $page = Teacher::query()
             ->with('membership.user')
+            ->when($this->scope->isRestricted(), fn ($q) => $q->where('membership_id', $this->tenant->membership()->id))
             ->when(is_string($status) && $status !== '', fn ($q) => $q->where('status', $status))
             ->when(is_string($search) && trim($search) !== '', function ($q) use ($search) {
                 $like = '%'.addcslashes(trim($search), '\\%_').'%';
@@ -43,6 +45,10 @@ final class TeacherController extends Controller
     public function show(School $school, string $teacher): JsonResponse
     {
         $found = Teacher::query()->with('membership.user')->find($teacher) ?? throw new NotFoundHttpException;
+        // Pengguna yang dibatasi hanya melihat data gurunya sendiri.
+        if ($this->scope->isRestricted() && $found->membership_id !== $this->tenant->membership()->id) {
+            throw new NotFoundHttpException;
+        }
 
         return response()->json(['data' => self::present($found)]);
     }

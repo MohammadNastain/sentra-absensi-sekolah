@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Domain\Identity\Listeners\RecordAuthenticationEvents;
 use App\Domain\Identity\PasswordRules;
+use App\Domain\Tenancy\ClassScope;
 use App\Domain\Tenancy\DatabaseContext;
 use App\Domain\Tenancy\TenantContext;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -21,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(DatabaseContext::class);
         // Satu konteks per request (dan per job); dibersihkan oleh ResetDatabaseContext.
         $this->app->scoped(TenantContext::class);
+        $this->app->scoped(ClassScope::class);
     }
 
     public function boot(): void

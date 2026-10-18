@@ -28,15 +28,26 @@ enum Role: string
                 Permission::SchoolAuditView,
                 Permission::SchoolAcademicView,
                 Permission::SchoolAcademicManage,
+                Permission::SchoolStudentsView,
+                Permission::SchoolStudentsManage,
+                Permission::SchoolScheduleView,
+                Permission::SchoolScheduleManage,
             ],
             self::Principal => [
                 Permission::SchoolProfileView,
                 Permission::SchoolMembersView,
                 Permission::SchoolAuditView,
                 Permission::SchoolAcademicView,
+                Permission::SchoolStudentsView,
+                Permission::SchoolScheduleView,
             ],
-            // Wali kelas baru mendapat akses data kelasnya sendiri setelah scope kelas ada (Tahap 2E).
-            self::HomeroomTeacher,
+            // Data akademik wali kelas dibatasi ke kelas yang ia ampu oleh ClassScope.
+            self::HomeroomTeacher => [
+                Permission::SchoolProfileView,
+                Permission::SchoolAcademicView,
+                Permission::SchoolStudentsView,
+                Permission::SchoolScheduleView,
+            ],
             self::DutyOfficer,
             self::TerminalOperator => [
                 Permission::SchoolProfileView,

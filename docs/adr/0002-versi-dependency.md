@@ -17,6 +17,7 @@ Versi diperiksa langsung ke Docker Hub, Packagist, npm, dan GitHub Releases pada
 | predis | **3.6.1** (`~3.6.1`) | Tahap 1 | ADR 0007 D-40. 3.7.0 berumur 9 hari. |
 | Pest | **5.2.1** (`~5.2.1`) + pest-plugin-laravel 5.0.1 | Tahap 1 | Menarik PHPUnit 13.3.4. Pest 5.3.x berumur < 2 minggu. |
 | Larastan | **3.12.3** (`~3.12.2`) + PHPStan 2.3.1 | Tahap 1 | Patch 3.12.3 (13 hari) diambil Composer; level 8 untuk `app/`, `database/`, `routes/`. |
+| OpenSpout | **5.12.0** (24 Sep 2026) | Tahap 2C | Pembaca CSV/XLSX streaming untuk impor siswa. 5.12.1–5.12.2 (12–13 Okt) berumur < 2 minggu. |
 | Composer | **2.10.3** | Tahap 0 | |
 | docker-php-extension-installer | **2.12.0** (24 Sep 2026) | Tahap 0 | 2.12.1 baru berumur 2 hari, jadi belum dipakai. |
 | PostgreSQL | **18.6** (`postgres:18.6-alpine3.23`) | Tahap 0 | Major terbaru. Volume di `/var/lib/postgresql` sesuai perubahan image 18+. |

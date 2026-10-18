@@ -5,7 +5,9 @@ use App\Domain\Identity\Role;
 use App\Models\School;
 use App\Models\SchoolMembership;
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 // R01–R03, T05–T07, U01 — TAHAP_1_FONDASI §8
 
@@ -225,4 +227,47 @@ it('error 500 tidak membocorkan pesan internal bila debug mati', function () {
     $response = members("/{$this->guruMembership->id}/suspend", 'postJson', ['reason' => 'Cuti panjang'])->assertStatus(500);
 
     expect($response->getContent())->not->toContain('rahasia-internal-xyz');
+});
+
+// Tahap 2E — admin memicu reset password; tautan hanya dikirim ke email pemilik akun (ADR 0007)
+
+it('admin mengirim tautan reset ke email anggota dan tercatat di audit tanpa token', function () {
+    Notification::fake();
+
+    members("/{$this->guruMembership->id}/password-reset", 'postJson', ['reason' => 'Anggota lupa password'])
+        ->assertStatus(202);
+
+    Notification::assertSentTo($this->guru, ResetPassword::class);
+    $this->useSchool($this->school);
+    $log = DB::table('audit_logs')->where('action', 'school.member.password_reset_requested')->where('entity_id', $this->guruMembership->id)->first();
+    expect($log)->not->toBeNull()
+        ->and($log->reason)->toBe('Anggota lupa password')
+        ->and(json_encode($log))->not->toContain('token');
+});
+
+it('reset oleh admin ditolak: tanpa alasan, akun sendiri, anggota tidak aktif, atau akun nonaktif', function () {
+    Notification::fake();
+
+    members("/{$this->guruMembership->id}/password-reset", 'postJson', [])->assertJsonValidationErrors(['reason']);
+    members("/{$this->adminMembership->id}/password-reset", 'postJson', ['reason' => 'Uji coba reset'])->assertStatus(409);
+
+    $suspended = $this->addMember($this->school, User::factory()->create(), [Role::Principal], SchoolMembership::STATUS_SUSPENDED);
+    members("/{$suspended->id}/password-reset", 'postJson', ['reason' => 'Uji coba reset'])->assertStatus(409);
+
+    $disabledUser = User::factory()->disabled()->create();
+    $disabled = $this->addMember($this->school, $disabledUser, [Role::Principal]);
+    members("/{$disabled->id}/password-reset", 'postJson', ['reason' => 'Uji coba reset'])->assertStatus(409);
+
+    Notification::assertNothingSent();
+});
+
+it('permintaan reset berulang dibatasi broker dan non-admin ditolak', function () {
+    Notification::fake();
+
+    members("/{$this->guruMembership->id}/password-reset", 'postJson', ['reason' => 'Percobaan pertama'])->assertStatus(202);
+    members("/{$this->guruMembership->id}/password-reset", 'postJson', ['reason' => 'Percobaan kedua'])
+        ->assertStatus(429)->assertJsonPath('code', 'RESET_THROTTLED');
+
+    $this->actingAs($this->guru)->postJson("/api/v1/schools/sekolah-a/members/{$this->adminMembership->id}/password-reset", ['reason' => 'Bukan admin'])
+        ->assertForbidden();
 });

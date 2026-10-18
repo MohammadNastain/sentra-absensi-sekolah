@@ -326,7 +326,7 @@ function ClassForm({
           required
         >
           <option value="" disabled>
-            Pilih tahun ajaran
+            {years.length === 0 ? "Memuat tahun ajaran…" : "Pilih tahun ajaran"}
           </option>
           {years.map((year) => (
             <option key={year.id} value={year.id}>
@@ -375,7 +375,7 @@ function ClassForm({
         <SecondaryButton type="button" onClick={onCancel}>
           Batal
         </SecondaryButton>
-        <PrimaryButton type="submit" pending={pending}>
+        <PrimaryButton type="submit" pending={pending} disabled={!current && years.length === 0}>
           Simpan
         </PrimaryButton>
       </div>

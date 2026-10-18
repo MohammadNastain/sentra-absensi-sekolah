@@ -107,17 +107,47 @@ Aturan umum untuk setiap tahap:
 
 **Progres Tahap 2** (dikerjakan per irisan, tiap irisan: migrasi + RLS → API + test → kontrak OpenAPI → UI → E2E):
 - [x] **2A — Tahun ajaran, guru, kelas.** Tabel `teachers`, `academic_years`, `classes` (FK komposit, exclusion tumpang tindih tanggal, satu tahun aktif, RLS dipaksa); API `academic-years` (+ aktivasi), `teachers`, `classes`; UI `/schools/[code]/{academic-years,teachers,classes}`; izin `school.academic.view|manage`; data demo di `DemoSeeder`; E2E `tahap2-akademik.spec.ts`. Lokalisasi pesan validasi/autentikasi ke bahasa Indonesia (`apps/api/lang/id`) ikut selesai.
-- [ ] 2B — Siswa (cari trigram, filter, status), enrollment dan pindah kelas.
-- [ ] 2C — Impor CSV/XLSX (upload → validasi async → preview → commit baris valid, D-15) dan templat.
-- [ ] 2D — Hari libur, jadwal berversi, `ScheduleResolver`, tampilan kalender.
-- [ ] 2E — Scope wali kelas pada daftar siswa/kelas; reset password oleh admin; foto siswa (butuh keputusan penyimpanan objek).
+- [x] **2B — Siswa, penempatan, pindah kelas.** Tabel `students` (NIS unik, NISN 10 digit unik, indeks trigram nama) dan `class_enrollments` (exclusion: satu siswa tidak di dua kelas pada tanggal yang sama); API `students` (daftar dengan pencarian/filter status/kelas, detail beserta riwayat, ubah) dan `POST students/{id}/enrollments`; UI `/schools/[code]/students`; izin `school.students.view|manage`; E2E `tahap2-siswa.spec.ts`.
+- [x] **2C — Impor siswa CSV/XLSX.** Unggah → validasi async lewat job antrean → preview baris valid/gagal → commit baris valid saja dalam satu transaksi (D-15); templat CSV; unduh baris gagal sebagai file perbaikan; tabel staging `import_batches`/`import_rows` (RLS); UI `/schools/[code]/students/import`; E2E `tahap2-impor.spec.ts`.
+- [x] **2D — Libur, jadwal berversi, kalender.** Tabel `holidays` dan `schedules` (scope sekolah/tingkat/kelas, exclusion: satu jadwal aktif per scope+hari pada tanggal mana pun, urutan jam dan konsistensi scope di CHECK); API `holidays`, `schedules` (terbit versi baru), `calendar`; `ScheduleResolver` (libur > kelas > tingkat > sekolah, dimuat dua query per rentang); UI `/schools/[code]/{schedules,holidays,calendar}`; izin `school.schedule.view|manage`; E2E `tahap2-jadwal.spec.ts`.
+- [x] **2E — Scope wali kelas dan reset password oleh admin.** `ClassScope` (scoped per request): wali kelas (tanpa peran Admin/Kepala Sekolah) hanya melihat kelas yang diampu guru aktif yang tertaut ke keanggotaannya, siswa dengan penempatan berjalan di kelas itu, dan kalender kelas itu; kelas/siswa lain 404, daftar guru hanya dirinya. Izin lihat akademik/siswa/jadwal diberikan ke wali kelas. `POST members/{membership}/password-reset` (izin `school.members.manage`, alasan wajib, diaudit): mengirim tautan reset ke email pemilik akun; UI di halaman Anggota; akun demo `wali@demo.test`; E2E `tahap2-wali-kelas.spec.ts`.
+- [x] **2F-a — Pembersihan staging impor (D-26).** `imports:purge` (default 30 hari, `--days`) menghapus batch, baris (cascade), dan file unggahan per sekolah di bawah RLS; terjadwal harian 02:30 lewat service `scheduler` (`schedule:work`) di `compose.yaml`; data siswa dan audit tidak tersentuh.
+- [ ] 2F-b — Foto siswa (butuh keputusan penyimpanan objek: disk privat vs S3/R2). **Ditunda keluar dari penutupan Tahap 2**; dikerjakan setelah keputusan penyimpanan.
+- [ ] Penutupan Tahap 2: PR `tahap-2/data-sekolah` → `main` dengan CI hijau (API, web, Docker, hygiene, E2E). Verifikasi lokal: 580 test API, Larastan, typecheck, lint, `build` web, 6 E2E.
 
 Keputusan 2A (sudah diterapkan, tercatat agar tidak ditebak ulang):
 - Tanpa endpoint DELETE untuk data akademik: guru dinonaktifkan, kelas diarsipkan, tahun ajaran dinonaktifkan lewat aktivasi tahun lain (konvensi "data inti tidak di-hard-delete").
 - Guru yang masih menjadi wali kelas **aktif** tidak bisa dinonaktifkan (409); kelas harus dialihkan/diarsipkan dulu.
 - Tahun ajaran sebuah kelas tidak bisa diganti setelah dibuat (penempatan siswa dan absensi menempel padanya).
-- Wali kelas (`homeroom_teacher`) belum diberi izin `school.academic.view` sampai scope kelas ada di 2E, agar tidak melihat data kelas lain. Kepala Sekolah hanya melihat.
+- Wali kelas (`homeroom_teacher`) melihat data akademik hanya untuk kelasnya (2E). Kepala Sekolah hanya melihat.
 - Penautan guru ke akun login (`membership_id`) opsional dan harus keanggotaan sekolah yang belum berakhir (D-07).
+
+Keputusan 2B:
+- Pindah kelas menutup penempatan lama sehari sebelum tanggal mulai yang baru; tanggal mulai harus dalam tahun ajaran kelas tujuan dan setelah mulai penempatan sebelumnya. Kelas tujuan harus aktif.
+- Tabel `class_enrollments` tidak punya kolom `status` (berbeda dari DATABASE_DESIGN): status penempatan diturunkan dari `end_date` (kosong = berjalan), agar tidak ada dua sumber kebenaran.
+- Siswa yang diubah menjadi nonaktif/lulus/pindah sekolah otomatis ditutup penempatannya (hari ini); siswa tidak aktif tidak bisa ditempatkan. Siswa tidak pernah dihapus.
+- `current_class` memakai tanggal hari ini di zona waktu sekolah. Penempatan dibuat lewat `POST /students/{id}/enrollments` (bukan `POST /enrollments` seperti di ARCHITECTURE) karena selalu terikat satu siswa.
+- Foto siswa ditunda (2F).
+
+Keputusan 2E:
+- Admin tidak pernah menetapkan password (ADR 0007/D-37): "reset oleh admin" berarti admin memicu email tautan reset ke pemilik akun. Hanya untuk anggota aktif berakun aktif, bukan diri sendiri; broker membatasi satu tautan per menit per akun (429 `RESET_THROTTLED`); audit `school.member.password_reset_requested` tanpa token.
+- Pembatasan kelas berlaku untuk peran wali kelas saja; bila pengguna juga Admin/Kepala Sekolah, tidak dibatasi. Guru nonaktif atau tanpa tautan akun tidak membuka kelas apa pun. Jadwal dan hari libur tetap terlihat seluruhnya (matriks ARCHITECTURE §7).
+- Penempatan yang sudah berakhir (siswa pindah/lulus) menutup akses wali kelas ke siswa itu; riwayat kelas lama hanya terlihat lewat detail siswa yang masih dalam kelasnya.
+- Peran petugas piket ("cari minimal") belum diberi akses data; menunggu Tahap 3-4.
+
+Keputusan 2D:
+- Menerbitkan jadwal = `POST /schedules` dengan `effective_from`: versi sebelumnya yang masih berlaku ditutup sehari sebelumnya, semua hari dalam satu transaksi (gagal satu, gagal semua). Ditolak (409 `SCHEDULE_CONFLICT`) bila sudah ada versi yang berlaku mulai tanggal itu atau setelahnya. Jam tidak pernah diubah; `PATCH` hanya menutup (`effective_until`) atau menonaktifkan sebuah baris. Trigger imutabilitas "jadwal yang dirujuk sesi" menunggu tabel sesi (Tahap 3-4).
+- Jadwal tidak boleh melewati tengah malam; `late_grace_minutes` 0–120. Jadwal tingkat/kelas hanya berlaku bila ada jadwal itu; tanpa jadwal pada suatu hari = tidak ada sesi.
+- Libur berlaku seluruh sekolah (D-24) dan boleh dihapus (diaudit dengan isinya); libur yang beririsan dibiarkan.
+- Kalender tanpa `class_id` hanya menghitung jadwal sekolah; dengan `class_id` memakai prioritas kelas > tingkat > sekolah. Hanya yang punya izin melihat data akademik bisa memilih kelas di UI.
+- Wali kelas kini boleh melihat jadwal (2E); petugas belum.
+
+Keputusan 2C:
+- Batas file: 5 MB, 5.000 baris, XLSX maks 50 MB terdekompresi dan 200 komponen (anti zip bomb); isi file diperiksa (XLSX harus ZIP, CSV tidak boleh berisi byte NUL atau ZIP). Sel selalu dibaca sebagai teks; rumus tidak dievaluasi. Hanya lembar pertama XLSX yang dibaca.
+- Pemisah CSV (`,` atau `;`) dideteksi otomatis; tanggal lahir menerima `TTTT-BB-HH` dan `HH/BB/TTTT`; nama kolom dikanonikalkan (mis. "Nomor Induk", `NIS` → `nomor_induk`).
+- Kolom `kelas` opsional: dicocokkan dengan kelas aktif di tahun ajaran aktif; penempatan mulai tanggal mulai tahun ajaran itu.
+- Commit memvalidasi ulang tiap baris (data bisa berubah sejak preview); baris yang bentrok menjadi `skipped`. Satu audit tingkat batch (`school.import.committed`: jumlah, nama file, hash); siswa hasil impor tidak diaudit satu per satu.
+- File unggahan disimpan di disk privat `local` (`storage/app/private/imports/{school}/`); migrasi ke object storage mengikuti keputusan penyimpanan objek. Penghapusan terjadwal staging dan file (D-26, 30 hari) ada di 2F-a. **Belum ada**: pembatalan impor; dicatat untuk tahap hardening.
 
 ---
 

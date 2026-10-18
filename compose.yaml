@@ -126,6 +126,15 @@ services:
     ports: !reset []
     command: ["php", "artisan", "queue:work", "--tries=1", "--sleep=1", "--max-time=3600"]
 
+  # Penjadwal tugas berkala (mis. imports:purge, retensi staging impor D-26).
+  scheduler:
+    profiles: ["api"]
+    restart: unless-stopped
+    extends:
+      service: api
+    ports: !reset []
+    command: ["php", "artisan", "schedule:work"]
+
 volumes:
   postgres-data:
   redis-data:

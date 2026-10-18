@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\School;
 
 use App\Domain\Academic\Actions\ManageClasses;
+use App\Domain\Tenancy\ClassScope;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SchoolClassRequest;
@@ -16,7 +17,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class SchoolClassController extends Controller
 {
-    public function __construct(private readonly TenantContext $tenant, private readonly ManageClasses $classes) {}
+    public function __construct(private readonly TenantContext $tenant, private readonly ManageClasses $classes, private readonly ClassScope $scope) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -24,8 +25,11 @@ final class SchoolClassController extends Controller
         $year = $request->query('academic_year_id');
         $grade = $request->query('grade_level');
 
+        $visible = $this->scope->classIds();
+
         $page = SchoolClass::query()
             ->with(['academicYear', 'homeroomTeacher'])
+            ->when($visible !== null, fn ($q) => $q->whereIn('id', $visible ?? []))
             ->when(is_string($status) && $status !== '', fn ($q) => $q->where('status', $status))
             ->when(is_string($year) && Str::isUuid($year), fn ($q) => $q->where('academic_year_id', $year))
             ->when(is_numeric($grade), fn ($q) => $q->where('grade_level', (int) $grade))
@@ -43,6 +47,9 @@ final class SchoolClassController extends Controller
     public function show(School $school, string $schoolClass): JsonResponse
     {
         $found = SchoolClass::query()->with(['academicYear', 'homeroomTeacher'])->find($schoolClass) ?? throw new NotFoundHttpException;
+        if (! $this->scope->allows($found->id)) {
+            throw new NotFoundHttpException;
+        }
 
         return response()->json(['data' => self::present($found)]);
     }

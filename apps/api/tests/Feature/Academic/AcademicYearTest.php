@@ -156,8 +156,8 @@ it('kepala sekolah boleh melihat tetapi tidak boleh mengubah', function () {
     yearsApi("/{$id}/activate", 'postJson', [], $principal)->assertForbidden();
 });
 
-it('wali kelas dan petugas belum punya akses data akademik', function () {
-    foreach ([Role::HomeroomTeacher, Role::DutyOfficer, Role::TerminalOperator] as $role) {
+it('petugas dan operator terminal belum punya akses data akademik', function () {
+    foreach ([Role::DutyOfficer, Role::TerminalOperator] as $role) {
         $user = User::factory()->create();
         $this->addMember($this->school, $user, [$role]);
 
