@@ -11,6 +11,7 @@
         "laravel/framework": "~13.34.0",
         "laravel/sanctum": "^4.3.3",
         "laravel/tinker": "^3.0",
+        "openspout/openspout": "5.12.0",
         "predis/predis": "~3.6.1"
     },
     "require-dev": {

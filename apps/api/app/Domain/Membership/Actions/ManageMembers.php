@@ -10,6 +10,7 @@ use App\Models\SchoolMembership;
 use App\Models\User;
 use App\Support\Http\ApiProblem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -77,6 +78,38 @@ final class ManageMembers
     public function end(School $school, User $actor, string $membershipId, string $reason): SchoolMembership
     {
         return $this->transition($school, $actor, $membershipId, [SchoolMembership::STATUS_ACTIVE, SchoolMembership::STATUS_SUSPENDED], SchoolMembership::STATUS_ENDED, 'school.member.ended', $reason, guardLastAdmin: true);
+    }
+
+    /**
+     * Mengirim tautan reset ke email pemilik akun (ADR 0007/D-37): admin tidak pernah melihat atau menetapkan
+     * password. Hanya anggota aktif milik orang lain; penerima tetap harus membuka tautan di emailnya.
+     */
+    public function requestPasswordReset(School $school, User $actor, string $membershipId, string $reason): void
+    {
+        $this->mutate($school, $membershipId, function (SchoolMembership $membership) use ($school, $actor, $reason) {
+            if ($membership->user_id === $actor->id) {
+                throw ApiProblem::invalidStateTransition('Gunakan "Lupa password" untuk akun Anda sendiri.');
+            }
+            if ($membership->status !== SchoolMembership::STATUS_ACTIVE) {
+                throw ApiProblem::invalidStateTransition('Hanya anggota aktif yang dapat dikirimi tautan reset.');
+            }
+
+            $user = User::query()->find($membership->user_id) ?? throw new NotFoundHttpException;
+            if (! $user->isActive()) {
+                throw ApiProblem::invalidStateTransition('Akun pengguna tidak aktif.');
+            }
+
+            $status = Password::sendResetLink(['email' => $user->email], function ($recipient, string $token) {
+                if ($recipient instanceof User) {
+                    $recipient->sendPasswordResetNotification($token);
+                }
+            });
+            if ($status === Password::RESET_THROTTLED) {
+                throw ApiProblem::resetThrottled();
+            }
+
+            $this->audit->record('school.member.password_reset_requested', $school->id, 'school_membership', $membership->id, null, null, $reason, $actor);
+        });
     }
 
     /**

@@ -6,3 +6,6 @@ use Illuminate\Support\Facades\Artisan;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+// Retensi staging impor (D-26): harian, tanpa tumpang tindih antar proses.
+Schedule::command('imports:purge')->dailyAt('02:30')->withoutOverlapping();

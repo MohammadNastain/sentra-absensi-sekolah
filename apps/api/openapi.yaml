@@ -771,6 +771,33 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/members/{membership}/password-reset:
+    post:
+      tags: [school]
+      operationId: requestMemberPasswordReset
+      summary: "Kirim tautan reset password ke email anggota (alasan wajib)"
+      description: "Izin: school.members.manage. Admin tidak pernah melihat atau menetapkan password; tautan dikirim ke email pemilik akun. Hanya anggota aktif milik orang lain dengan akun aktif (409 bila tidak). 429 RESET_THROTTLED bila tautan baru saja dikirim."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/MembershipId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequired" }
+      responses:
+        "202":
+          description: "Tautan dikirim."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/EmailNotConfigured" }
   /schools/{school}/invitations:
     get:
       tags: [school]
@@ -907,6 +934,830 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
 
+  /schools/{school}/academic-years:
+    get:
+      tags: [school]
+      operationId: listAcademicYears
+      summary: "Daftar tahun ajaran (terbaru dulu)"
+      description: "Izin: school.academic.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman tahun ajaran."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AcademicYear" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [school]
+      operationId: createAcademicYear
+      summary: "Buat tahun ajaran (belum aktif)"
+      description: "Izin: school.academic.manage. Tanggal tidak boleh tumpang tindih (409 ACADEMIC_YEAR_OVERLAP)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AcademicYearCreate" }
+      responses:
+        "201":
+          description: "Dibuat."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcademicYearEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/academic-years/{academicYear}:
+    get:
+      tags: [school]
+      operationId: getAcademicYear
+      summary: "Detail tahun ajaran"
+      description: "Izin: school.academic.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/AcademicYearId"
+      responses:
+        "200":
+          description: "Tahun ajaran."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcademicYearEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [school]
+      operationId: updateAcademicYear
+      summary: "Ubah nama atau tanggal tahun ajaran"
+      description: "Izin: school.academic.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/AcademicYearId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AcademicYearUpdate" }
+      responses:
+        "200":
+          description: "Diubah."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcademicYearEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/academic-years/{academicYear}/activate:
+    post:
+      tags: [school]
+      operationId: activateAcademicYear
+      summary: "Jadikan tahun ajaran ini satu-satunya yang aktif (idempoten)"
+      description: "Izin: school.academic.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/AcademicYearId"
+      responses:
+        "200":
+          description: "Aktif."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcademicYearEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/teachers:
+    get:
+      tags: [school]
+      operationId: listTeachers
+      summary: "Daftar guru"
+      description: "Izin: school.academic.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/TeacherStatus" }
+        - name: q
+          in: query
+          description: "Cari nama atau nomor pegawai (tidak peka huruf besar/kecil)."
+          schema: { type: string }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman guru."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Teacher" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [school]
+      operationId: createTeacher
+      summary: "Tambah guru (akun login opsional)"
+      description: "Izin: school.academic.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeacherCreate" }
+      responses:
+        "201":
+          description: "Dibuat."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TeacherEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/teachers/{teacher}:
+    get:
+      tags: [school]
+      operationId: getTeacher
+      summary: "Detail guru"
+      description: "Izin: school.academic.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/TeacherId"
+      responses:
+        "200":
+          description: "Guru."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TeacherEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [school]
+      operationId: updateTeacher
+      summary: "Ubah guru, tautan akun, atau status"
+      description: "Izin: school.academic.manage. Guru yang masih wali kelas aktif tidak bisa dinonaktifkan (409 INVALID_STATE_TRANSITION)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/TeacherId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeacherUpdate" }
+      responses:
+        "200":
+          description: "Diubah."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TeacherEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/classes:
+    get:
+      tags: [school]
+      operationId: listClasses
+      summary: "Daftar kelas"
+      description: "Izin: school.academic.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: academic_year_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: grade_level
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 13 }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/ClassStatus" }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman kelas."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/SchoolClass" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [school]
+      operationId: createClass
+      summary: "Buat kelas pada satu tahun ajaran"
+      description: "Izin: school.academic.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClassCreate" }
+      responses:
+        "201":
+          description: "Dibuat."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/classes/{schoolClass}:
+    get:
+      tags: [school]
+      operationId: getClass
+      summary: "Detail kelas"
+      description: "Izin: school.academic.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/ClassId"
+      responses:
+        "200":
+          description: "Kelas."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [school]
+      operationId: updateClass
+      summary: "Ubah kelas, wali kelas, atau arsipkan"
+      description: "Izin: school.academic.manage. Tahun ajaran kelas tidak dapat diubah."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/ClassId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClassUpdate" }
+      responses:
+        "200":
+          description: "Diubah."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+  /schools/{school}/students:
+    get:
+      tags: [school]
+      operationId: listStudents
+      summary: "Daftar siswa beserta kelas saat ini"
+      description: "Izin: school.students.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/StudentStatus" }
+        - name: q
+          in: query
+          description: "Cari sebagian nama, nomor induk, atau NISN (tidak peka huruf besar/kecil)."
+          schema: { type: string }
+        - name: class_id
+          in: query
+          description: "Hanya siswa yang hari ini berada di kelas ini."
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman siswa."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Student" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [school]
+      operationId: createStudent
+      summary: "Tambah siswa (belum punya kelas)"
+      description: "Izin: school.students.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudentCreate" }
+      responses:
+        "201":
+          description: "Dibuat."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudentDetailEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/students/{student}:
+    get:
+      tags: [school]
+      operationId: getStudent
+      summary: "Detail siswa beserta riwayat penempatan kelas"
+      description: "Izin: school.students.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+      responses:
+        "200":
+          description: "Siswa."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudentDetailEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [school]
+      operationId: updateStudent
+      summary: "Ubah data atau status siswa"
+      description: "Izin: school.students.manage. Siswa yang keluar (inactive, graduated, transferred) otomatis ditutup penempatan kelasnya; data tidak pernah dihapus."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudentUpdate" }
+      responses:
+        "200":
+          description: "Diubah."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudentDetailEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/students/{student}/enrollments:
+    post:
+      tags: [school]
+      operationId: enrollStudent
+      summary: "Tempatkan siswa di kelas, atau pindahkan dari kelas sebelumnya"
+      description: "Izin: school.students.manage. Penempatan berjalan ditutup sehari sebelum start_date. 409 ENROLLMENT_CONFLICT bila tanggal bentrok atau siswa sudah di kelas itu; 409 INVALID_STATE_TRANSITION bila siswa tidak aktif."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EnrollmentCreate" }
+      responses:
+        "201":
+          description: "Penempatan dibuat; respons memuat riwayat terbaru."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudentDetailEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+  /schools/{school}/imports:
+    get:
+      tags: [school]
+      operationId: listImports
+      summary: "Daftar impor terbaru (terbaru dulu)"
+      description: "Izin: school.students.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman impor."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/ImportBatch" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/imports/students:
+    post:
+      tags: [school]
+      operationId: uploadStudentImport
+      summary: "Unggah file impor siswa (CSV atau XLSX, maks 5 MB dan 5000 baris)"
+      description: "Izin: school.students.manage. Validasi berjalan di latar belakang; pantau lewat getImport sampai status validated atau failed. Kolom: nomor_induk, nama_lengkap (wajib); nisn, tanggal_lahir, kelas (opsional)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "202":
+          description: "File diterima dan sedang divalidasi."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportBatchEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/imports/template:
+    get:
+      tags: [school]
+      operationId: downloadStudentImportTemplate
+      summary: "Unduh templat CSV impor siswa"
+      description: "Izin: school.students.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Berkas CSV (UTF-8 dengan BOM)."
+          content:
+            text/csv:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/imports/{import}:
+    get:
+      tags: [school]
+      operationId: getImport
+      summary: "Status dan ringkasan satu impor"
+      description: "Izin: school.students.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/ImportId"
+      responses:
+        "200":
+          description: "Impor."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportBatchEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/imports/{import}/rows:
+    get:
+      tags: [school]
+      operationId: listImportRows
+      summary: "Baris impor (preview), dapat difilter menurut status"
+      description: "Izin: school.students.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/ImportId"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/ImportRowStatus" }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman baris."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/ImportRow" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/imports/{import}/failed-rows:
+    get:
+      tags: [school]
+      operationId: downloadImportFailedRows
+      summary: "Unduh baris yang gagal (atau dilewati) beserta kesalahannya sebagai CSV perbaikan"
+      description: "Izin: school.students.manage. Sel yang diawali = + - @ diberi apostrof agar tidak dibaca sebagai rumus."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/ImportId"
+      responses:
+        "200":
+          description: "Berkas CSV (UTF-8 dengan BOM)."
+          content:
+            text/csv:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/imports/{import}/commit:
+    post:
+      tags: [school]
+      operationId: commitImport
+      summary: "Simpan semua baris valid sebagai siswa (baris gagal dilewati)"
+      description: "Izin: school.students.manage. Hanya untuk status validated (409 INVALID_STATE_TRANSITION bila tidak). Satu transaksi; nomor yang direbut sejak preview dilewati."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/ImportId"
+      responses:
+        "200":
+          description: "Di-commit."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ImportBatchEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /schools/{school}/holidays:
+    get:
+      tags: [school]
+      operationId: listHolidays
+      summary: "Daftar hari libur (urut tanggal)"
+      description: "Izin: school.schedule.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: from
+          in: query
+          description: "Hanya libur yang berakhir pada atau setelah tanggal ini."
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          description: "Hanya libur yang mulai pada atau sebelum tanggal ini."
+          schema: { type: string, format: date }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman hari libur."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Holiday" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [school]
+      operationId: createHoliday
+      summary: "Tambah hari libur (rentang tanggal inklusif)"
+      description: "Izin: school.schedule.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HolidayCreate" }
+      responses:
+        "201":
+          description: "Dibuat."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HolidayEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/holidays/{holiday}:
+    get:
+      tags: [school]
+      operationId: getHoliday
+      summary: "Detail hari libur"
+      description: "Izin: school.schedule.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/HolidayId"
+      responses:
+        "200":
+          description: "Hari libur."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HolidayEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [school]
+      operationId: updateHoliday
+      summary: "Ubah hari libur"
+      description: "Izin: school.schedule.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/HolidayId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HolidayUpdate" }
+      responses:
+        "200":
+          description: "Diubah."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HolidayEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    delete:
+      tags: [school]
+      operationId: deleteHoliday
+      summary: "Hapus hari libur (diaudit)"
+      description: "Izin: school.schedule.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/HolidayId"
+      responses:
+        "204": { description: "Dihapus." }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/schedules:
+    get:
+      tags: [school]
+      operationId: listSchedules
+      summary: "Daftar baris jadwal (satu baris per scope dan hari), semua versi"
+      description: "Izin: school.schedule.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: scope_type
+          in: query
+          schema: { $ref: "#/components/schemas/ScheduleScope" }
+        - name: grade_level
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 13 }
+        - name: class_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman jadwal (maks 100 baris)."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Schedule" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [school]
+      operationId: publishSchedule
+      summary: "Terbitkan versi jadwal baru untuk satu scope dan beberapa hari"
+      description: "Izin: school.schedule.manage. Versi sebelumnya yang masih berlaku pada effective_from ditutup sehari sebelumnya. 409 SCHEDULE_CONFLICT bila sudah ada versi yang berlaku mulai tanggal itu atau setelahnya; semua hari dibatalkan bersama."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SchedulePublish" }
+      responses:
+        "201":
+          description: "Versi baru dibuat, satu baris per hari."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScheduleListEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/schedules/{schedule}:
+    get:
+      tags: [school]
+      operationId: getSchedule
+      summary: "Detail satu baris jadwal"
+      description: "Izin: school.schedule.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/ScheduleId"
+      responses:
+        "200":
+          description: "Jadwal."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScheduleEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [school]
+      operationId: updateSchedule
+      summary: "Tutup (effective_until) atau nonaktifkan satu baris jadwal"
+      description: "Izin: school.schedule.manage. Jam dan scope tidak dapat diubah; buat versi baru."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/ScheduleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScheduleUpdate" }
+      responses:
+        "200":
+          description: "Diubah."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScheduleEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/calendar:
+    get:
+      tags: [school]
+      operationId: getCalendar
+      summary: "Kalender satu bulan: libur atau jadwal yang berlaku per tanggal"
+      description: "Izin: school.schedule.view."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: month
+          in: query
+          required: true
+          description: "Format TTTT-BB."
+          schema: { type: string, pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$" }
+        - name: class_id
+          in: query
+          description: "Hitung prioritas kelas > jenjang > sekolah untuk kelas ini; tanpa ini hanya jadwal sekolah."
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: "Kalender."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CalendarEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
 components:
   securitySchemes:
     sessionCookie:
@@ -941,6 +1792,41 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    AcademicYearId:
+      name: academicYear
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TeacherId:
+      name: teacher
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ClassId:
+      name: schoolClass
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    StudentId:
+      name: student
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ImportId:
+      name: import
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    HolidayId:
+      name: holiday
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ScheduleId:
+      name: schedule
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
   responses:
     Unauthenticated:
       description: "Belum login atau sesi berakhir (`UNAUTHENTICATED`, `LOGIN_REQUIRED`)."
@@ -961,7 +1847,8 @@ components:
           schema: { $ref: "#/components/schemas/Problem" }
     Conflict:
       description: |
-        Konflik. `code`: LAST_SCHOOL_ADMIN, INVALID_STATE_TRANSITION, INVITATION_ALREADY_PENDING, ALREADY_MEMBER.
+        Konflik. `code`: LAST_SCHOOL_ADMIN, INVALID_STATE_TRANSITION, INVITATION_ALREADY_PENDING, ALREADY_MEMBER,
+        ACADEMIC_YEAR_OVERLAP, DUPLICATE_VALUE, ENROLLMENT_CONFLICT, SCHEDULE_CONFLICT.
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/Problem" }
@@ -1026,7 +1913,7 @@ components:
       enum: [school_admin, principal, homeroom_teacher, duty_officer, terminal_operator]
     Permission:
       type: string
-      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view]
+      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage]
     SchoolStatus:
       type: string
       enum: [trial, active, suspended, terminated]
@@ -1252,6 +2139,346 @@ components:
             name: { type: [string, "null"] }
         request_id: { type: [string, "null"] }
         created_at: { type: string, format: date-time }
+    TeacherStatus:
+      type: string
+      enum: [active, inactive]
+    ClassStatus:
+      type: string
+      enum: [active, archived]
+    AcademicYear:
+      type: object
+      required: [id, name, start_date, end_date, is_active]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        is_active: { type: boolean }
+    AcademicYearEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/AcademicYear" }
+    AcademicYearCreate:
+      type: object
+      required: [name, start_date, end_date]
+      properties:
+        name: { type: string, maxLength: 100 }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date, description: "Harus setelah start_date." }
+    AcademicYearUpdate:
+      type: object
+      properties:
+        name: { type: string, maxLength: 100 }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+    Teacher:
+      type: object
+      required: [id, full_name, employee_number, status, account]
+      properties:
+        id: { type: string, format: uuid }
+        full_name: { type: string }
+        employee_number: { type: [string, "null"] }
+        status: { $ref: "#/components/schemas/TeacherStatus" }
+        account:
+          description: "Akun login guru; null bila guru tidak punya akun."
+          type: [object, "null"]
+          required: [membership_id, name, email, status]
+          properties:
+            membership_id: { type: string, format: uuid }
+            name: { type: string }
+            email: { type: string, format: email }
+            status: { $ref: "#/components/schemas/MembershipStatus" }
+    TeacherEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Teacher" }
+    TeacherCreate:
+      type: object
+      required: [full_name]
+      properties:
+        full_name: { type: string, maxLength: 200 }
+        employee_number: { type: [string, "null"], maxLength: 50 }
+        membership_id: { type: [string, "null"], format: uuid, description: "Keanggotaan sekolah yang belum berakhir; satu akun untuk satu guru." }
+    TeacherUpdate:
+      type: object
+      properties:
+        full_name: { type: string, maxLength: 200 }
+        employee_number: { type: [string, "null"], maxLength: 50 }
+        membership_id: { type: [string, "null"], format: uuid }
+        status: { $ref: "#/components/schemas/TeacherStatus" }
+    SchoolClass:
+      type: object
+      required: [id, name, grade_level, status, academic_year, homeroom_teacher]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        grade_level: { type: integer, minimum: 1, maximum: 13 }
+        status: { $ref: "#/components/schemas/ClassStatus" }
+        academic_year:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+        homeroom_teacher:
+          type: [object, "null"]
+          required: [id, full_name]
+          properties:
+            id: { type: string, format: uuid }
+            full_name: { type: string }
+    ClassEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/SchoolClass" }
+    ClassCreate:
+      type: object
+      required: [academic_year_id, name, grade_level]
+      properties:
+        academic_year_id: { type: string, format: uuid }
+        name: { type: string, maxLength: 100 }
+        grade_level: { type: integer, minimum: 1, maximum: 13 }
+        homeroom_teacher_id: { type: [string, "null"], format: uuid, description: "Harus guru aktif di sekolah ini." }
+    ClassUpdate:
+      type: object
+      properties:
+        name: { type: string, maxLength: 100 }
+        grade_level: { type: integer, minimum: 1, maximum: 13 }
+        homeroom_teacher_id: { type: [string, "null"], format: uuid }
+        status: { $ref: "#/components/schemas/ClassStatus" }
+    StudentStatus:
+      type: string
+      enum: [active, inactive, graduated, transferred]
+    Student:
+      type: object
+      required: [id, student_number, nisn, full_name, date_of_birth, status, current_class]
+      properties:
+        id: { type: string, format: uuid }
+        student_number: { type: string, description: "Nomor induk siswa (NIS), unik per sekolah." }
+        nisn: { type: [string, "null"], description: "10 digit angka." }
+        full_name: { type: string }
+        date_of_birth: { type: [string, "null"], format: date }
+        status: { $ref: "#/components/schemas/StudentStatus" }
+        current_class:
+          description: "Kelas yang berlaku hari ini (zona waktu sekolah); null bila tidak ada."
+          type: [object, "null"]
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+    Enrollment:
+      type: object
+      required: [id, class, start_date, end_date]
+      properties:
+        id: { type: string, format: uuid }
+        class:
+          type: object
+          required: [id, name, academic_year]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+            academic_year: { type: string }
+        start_date: { type: string, format: date }
+        end_date: { type: [string, "null"], format: date, description: "Null = masih berlangsung." }
+    StudentDetail:
+      allOf:
+        - $ref: "#/components/schemas/Student"
+        - type: object
+          required: [enrollments]
+          properties:
+            enrollments:
+              type: array
+              description: "Riwayat penempatan, terlama dulu."
+              items: { $ref: "#/components/schemas/Enrollment" }
+    StudentDetailEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/StudentDetail" }
+    StudentCreate:
+      type: object
+      required: [student_number, full_name]
+      properties:
+        student_number: { type: string, maxLength: 50 }
+        nisn: { type: [string, "null"], pattern: "^[0-9]{10}$" }
+        full_name: { type: string, maxLength: 200 }
+        date_of_birth: { type: [string, "null"], format: date }
+    StudentUpdate:
+      type: object
+      properties:
+        student_number: { type: string, maxLength: 50 }
+        nisn: { type: [string, "null"], pattern: "^[0-9]{10}$" }
+        full_name: { type: string, maxLength: 200 }
+        date_of_birth: { type: [string, "null"], format: date }
+        status: { $ref: "#/components/schemas/StudentStatus" }
+    EnrollmentCreate:
+      type: object
+      required: [class_id, start_date]
+      properties:
+        class_id: { type: string, format: uuid, description: "Kelas aktif di sekolah ini." }
+        start_date: { type: string, format: date, description: "Harus dalam tahun ajaran kelas dan setelah mulai penempatan sebelumnya." }
+    ImportStatus:
+      type: string
+      enum: [uploaded, validating, validated, committing, committed, failed, cancelled]
+    ImportRowStatus:
+      type: string
+      enum: [valid, invalid, committed, skipped]
+    ImportBatch:
+      type: object
+      required: [id, status, original_filename, total_rows, valid_rows, invalid_rows, committed_rows, error_message, created_at, committed_at]
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/ImportStatus" }
+        original_filename: { type: string }
+        total_rows: { type: integer }
+        valid_rows: { type: integer }
+        invalid_rows: { type: integer }
+        committed_rows: { type: integer }
+        error_message: { type: [string, "null"], description: "Alasan bila status failed." }
+        created_at: { type: string, format: date-time }
+        committed_at: { type: [string, "null"], format: date-time }
+    ImportBatchEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/ImportBatch" }
+    ImportRow:
+      type: object
+      required: [row_number, status, values, errors]
+      properties:
+        row_number: { type: integer, description: "Nomor baris di file (header = 1)." }
+        status: { $ref: "#/components/schemas/ImportRowStatus" }
+        values:
+          type: object
+          description: "Isi sel asli per kolom."
+          additionalProperties: { type: [string, "null"] }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }
+    Holiday:
+      type: object
+      required: [id, name, start_date, end_date]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date, description: "Inklusif." }
+    HolidayEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Holiday" }
+    HolidayCreate:
+      type: object
+      required: [name, start_date, end_date]
+      properties:
+        name: { type: string, maxLength: 150 }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date, description: "Tidak boleh sebelum start_date." }
+    HolidayUpdate:
+      type: object
+      properties:
+        name: { type: string, maxLength: 150 }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+    ScheduleScope:
+      type: string
+      enum: [school, grade_level, class]
+    Schedule:
+      type: object
+      required: [id, scope_type, grade_level, class, day_of_week, check_in_start, check_in_deadline, late_grace_minutes, check_out_start, scheduled_check_out, effective_from, effective_until, is_active]
+      properties:
+        id: { type: string, format: uuid }
+        scope_type: { $ref: "#/components/schemas/ScheduleScope" }
+        grade_level: { type: [integer, "null"] }
+        class:
+          type: [object, "null"]
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+        day_of_week: { type: integer, minimum: 1, maximum: 7, description: "ISO: 1 = Senin … 7 = Minggu." }
+        check_in_start: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        check_in_deadline: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        late_grace_minutes: { type: integer, minimum: 0, maximum: 120 }
+        check_out_start: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        scheduled_check_out: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        effective_from: { type: string, format: date }
+        effective_until: { type: [string, "null"], format: date, description: "Null = tanpa batas akhir." }
+        is_active: { type: boolean }
+    ScheduleEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Schedule" }
+    ScheduleListEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Schedule" }
+    SchedulePublish:
+      type: object
+      required: [scope_type, days, check_in_start, check_in_deadline, late_grace_minutes, check_out_start, scheduled_check_out, effective_from]
+      properties:
+        scope_type: { $ref: "#/components/schemas/ScheduleScope" }
+        grade_level: { type: integer, minimum: 1, maximum: 13, description: "Wajib untuk scope grade_level; dilarang untuk scope lain." }
+        class_id: { type: string, format: uuid, description: "Wajib untuk scope class (kelas aktif); dilarang untuk scope lain." }
+        days:
+          type: array
+          minItems: 1
+          maxItems: 7
+          uniqueItems: true
+          items: { type: integer, minimum: 1, maximum: 7 }
+        check_in_start: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        check_in_deadline: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        late_grace_minutes: { type: integer, minimum: 0, maximum: 120 }
+        check_out_start: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        scheduled_check_out: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        effective_from: { type: string, format: date }
+    ScheduleUpdate:
+      type: object
+      properties:
+        effective_until: { type: [string, "null"], format: date }
+        is_active: { type: boolean }
+    CalendarDay:
+      type: object
+      required: [date, day_of_week, holiday, schedule]
+      properties:
+        date: { type: string, format: date }
+        day_of_week: { type: integer, minimum: 1, maximum: 7 }
+        holiday:
+          type: [object, "null"]
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+        schedule:
+          description: "Jadwal yang berlaku; null pada hari libur atau hari tanpa jadwal."
+          oneOf:
+            - { $ref: "#/components/schemas/Schedule" }
+            - { type: "null" }
+    CalendarEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [month, class_id, days]
+          properties:
+            month: { type: string }
+            class_id: { type: [string, "null"], format: uuid }
+            days:
+              type: array
+              items: { $ref: "#/components/schemas/CalendarDay" }
 
 security:
   - sessionCookie: []

@@ -93,7 +93,7 @@ function concreteUri(string $uri): string
 {
     $uri = str_replace('{school}', 'sekolah-a', $uri);
 
-    return (string) preg_replace('/\{[a-z]+\}/', SAMPLE_UUID, $uri);
+    return (string) preg_replace('/\{[A-Za-z]+\}/', SAMPLE_UUID, $uri);
 }
 
 /**
@@ -124,9 +124,9 @@ it('T09: setiap peran mendapat akses sesuai izinnya pada setiap rute sekolah', f
 
     if (in_array($permission, $role->permissions(), true)) {
         // Diizinkan: tidak boleh ditolak otorisasi. 404 hanya wajar bila ada ID anak yang memang tidak ada.
-        expect($response->status())->not->toBeIn([401, 403], "{$role->value} seharusnya diizinkan pada {$key}");
-        if (! preg_match('/\{(?!school\})[a-z]+\}/', $uri)) {
-            expect($response->status())->not->toBe(404, "{$key} tidak boleh 404 bagi {$role->value}");
+        expect($response->getStatusCode())->not->toBeIn([401, 403], "{$role->value} seharusnya diizinkan pada {$key}");
+        if (! preg_match('/\{(?!school\})[A-Za-z]+\}/', $uri)) {
+            expect($response->getStatusCode())->not->toBe(404, "{$key} tidak boleh 404 bagi {$role->value}");
         }
     } else {
         $response->assertForbidden()->assertJsonPath('code', 'PERMISSION_DENIED');

@@ -63,6 +63,13 @@ final class MemberController extends Controller
         return $this->respond($this->members->end($this->tenant->school(), $this->actor($request), $membership, $request->reason()));
     }
 
+    public function requestPasswordReset(ReasonRequest $request, School $school, string $membership): JsonResponse
+    {
+        $this->members->requestPasswordReset($this->tenant->school(), $this->actor($request), $membership, $request->reason());
+
+        return response()->json(['message' => 'Tautan reset password telah dikirim ke email anggota.'], 202);
+    }
+
     private function respond(SchoolMembership $membership): JsonResponse
     {
         return response()->json(['data' => self::present($membership)]);

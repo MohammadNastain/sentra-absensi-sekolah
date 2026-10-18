@@ -20,6 +20,7 @@ type PendingAction =
   | { kind: "roles"; member: Member }
   | { kind: "suspend"; member: Member }
   | { kind: "end"; member: Member }
+  | { kind: "reset"; member: Member }
   | { kind: "reactivate"; member: Member };
 
 const STATUS_LABELS: Record<Schemas["MembershipStatus"], string> = {
@@ -32,6 +33,7 @@ const ACTION_TITLES: Record<PendingAction["kind"], string> = {
   roles: "Ubah peran",
   suspend: "Tangguhkan anggota",
   end: "Akhiri keanggotaan",
+  reset: "Kirim tautan reset password",
   reactivate: "Aktifkan kembali anggota",
 };
 
@@ -44,6 +46,7 @@ export default function MembersPage() {
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [action, setAction] = useState<PendingAction | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -89,6 +92,11 @@ export default function MembersPage() {
       </div>
 
       {error ? <FormAlert>{error}</FormAlert> : null}
+      {notice ? (
+        <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+          {notice}
+        </p>
+      ) : null}
       {members === null && !error ? (
         <p role="status" className="text-zinc-600 dark:text-zinc-400">
           Memuat…
@@ -150,7 +158,12 @@ export default function MembersPage() {
             code={code}
             onCancel={() => setAction(null)}
             onDone={(updated) => {
-              setMembers((current) => (current ?? []).map((m) => (m.id === updated.id ? updated : m)));
+              if (updated) {
+                setNotice(null);
+                setMembers((current) => (current ?? []).map((m) => (m.id === updated.id ? updated : m)));
+              } else {
+                setNotice(`Tautan reset password dikirim ke ${action.member.user.email}.`);
+              }
               setAction(null);
             }}
           />
@@ -176,6 +189,11 @@ function RowActions({
       {!isSelf ? (
         <button type="button" className={link} onClick={() => onAction({ kind: "roles", member })}>
           Ubah peran
+        </button>
+      ) : null}
+      {member.status === "active" && !isSelf ? (
+        <button type="button" className={link} onClick={() => onAction({ kind: "reset", member })}>
+          Kirim reset password
         </button>
       ) : null}
       {member.status === "active" ? (
@@ -207,7 +225,7 @@ function ActionForm({
   action: PendingAction;
   code: string;
   onCancel: () => void;
-  onDone: (member: Member) => void;
+  onDone: (member: Member | null) => void;
 }) {
   const { member, kind } = action;
   const [roles, setRoles] = useState<Role[]>(member.roles);
@@ -230,6 +248,8 @@ function ActionForm({
           return api.POST("/schools/{school}/members/{membership}/suspend", { ...path, body: { reason } });
         case "end":
           return api.POST("/schools/{school}/members/{membership}/end", { ...path, body: { reason } });
+        case "reset":
+          return api.POST("/schools/{school}/members/{membership}/password-reset", { ...path, body: { reason } });
         case "reactivate":
           return api.POST("/schools/{school}/members/{membership}/reactivate", {
             ...path,
@@ -243,7 +263,8 @@ function ActionForm({
       setFailure(outcome.failure);
       return;
     }
-    if (outcome.result.data) onDone(outcome.result.data.data);
+    if (kind === "reset") onDone(null);
+    else if (outcome.result.data && "data" in outcome.result.data) onDone(outcome.result.data.data);
   }
 
   return (
@@ -251,6 +272,11 @@ function ActionForm({
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         {member.user.name} · {member.user.email}
       </p>
+      {kind === "reset" ? (
+        <p className="text-sm text-zinc-700 dark:text-zinc-300">
+          Tautan dikirim ke email anggota; hanya pemilik akun yang dapat menetapkan password baru. Anda tidak akan melihat password.
+        </p>
+      ) : null}
       {kind === "end" ? (
         <FormAlert>Keanggotaan yang diakhiri tidak dapat dibuka kembali; user harus diundang ulang.</FormAlert>
       ) : null}
@@ -267,7 +293,7 @@ function ActionForm({
           Batal
         </SecondaryButton>
         <PrimaryButton type="submit" pending={pending}>
-          Simpan
+          {kind === "reset" ? "Kirim tautan" : "Simpan"}
         </PrimaryButton>
       </div>
     </form>

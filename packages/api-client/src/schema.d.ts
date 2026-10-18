@@ -590,6 +590,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/members/{membership}/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Kirim tautan reset password ke email anggota (alasan wajib)
+         * @description Izin: school.members.manage. Admin tidak pernah melihat atau menetapkan password; tautan dikirim ke email pemilik akun. Hanya anggota aktif milik orang lain dengan akun aktif (409 bila tidak). 429 RESET_THROTTLED bila tautan baru saja dikirim.
+         */
+        post: operations["requestMemberPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/invitations": {
         parameters: {
             query?: never;
@@ -674,6 +694,498 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/academic-years": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar tahun ajaran (terbaru dulu)
+         * @description Izin: school.academic.view.
+         */
+        get: operations["listAcademicYears"];
+        put?: never;
+        /**
+         * Buat tahun ajaran (belum aktif)
+         * @description Izin: school.academic.manage. Tanggal tidak boleh tumpang tindih (409 ACADEMIC_YEAR_OVERLAP).
+         */
+        post: operations["createAcademicYear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/academic-years/{academicYear}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail tahun ajaran
+         * @description Izin: school.academic.view.
+         */
+        get: operations["getAcademicYear"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah nama atau tanggal tahun ajaran
+         * @description Izin: school.academic.manage.
+         */
+        patch: operations["updateAcademicYear"];
+        trace?: never;
+    };
+    "/schools/{school}/academic-years/{academicYear}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Jadikan tahun ajaran ini satu-satunya yang aktif (idempoten)
+         * @description Izin: school.academic.manage.
+         */
+        post: operations["activateAcademicYear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/teachers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar guru
+         * @description Izin: school.academic.view.
+         */
+        get: operations["listTeachers"];
+        put?: never;
+        /**
+         * Tambah guru (akun login opsional)
+         * @description Izin: school.academic.manage.
+         */
+        post: operations["createTeacher"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/teachers/{teacher}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail guru
+         * @description Izin: school.academic.view.
+         */
+        get: operations["getTeacher"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah guru, tautan akun, atau status
+         * @description Izin: school.academic.manage. Guru yang masih wali kelas aktif tidak bisa dinonaktifkan (409 INVALID_STATE_TRANSITION).
+         */
+        patch: operations["updateTeacher"];
+        trace?: never;
+    };
+    "/schools/{school}/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar kelas
+         * @description Izin: school.academic.view.
+         */
+        get: operations["listClasses"];
+        put?: never;
+        /**
+         * Buat kelas pada satu tahun ajaran
+         * @description Izin: school.academic.manage.
+         */
+        post: operations["createClass"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/classes/{schoolClass}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail kelas
+         * @description Izin: school.academic.view.
+         */
+        get: operations["getClass"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah kelas, wali kelas, atau arsipkan
+         * @description Izin: school.academic.manage. Tahun ajaran kelas tidak dapat diubah.
+         */
+        patch: operations["updateClass"];
+        trace?: never;
+    };
+    "/schools/{school}/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar siswa beserta kelas saat ini
+         * @description Izin: school.students.view.
+         */
+        get: operations["listStudents"];
+        put?: never;
+        /**
+         * Tambah siswa (belum punya kelas)
+         * @description Izin: school.students.manage.
+         */
+        post: operations["createStudent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/students/{student}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail siswa beserta riwayat penempatan kelas
+         * @description Izin: school.students.view.
+         */
+        get: operations["getStudent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah data atau status siswa
+         * @description Izin: school.students.manage. Siswa yang keluar (inactive, graduated, transferred) otomatis ditutup penempatan kelasnya; data tidak pernah dihapus.
+         */
+        patch: operations["updateStudent"];
+        trace?: never;
+    };
+    "/schools/{school}/students/{student}/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tempatkan siswa di kelas, atau pindahkan dari kelas sebelumnya
+         * @description Izin: school.students.manage. Penempatan berjalan ditutup sehari sebelum start_date. 409 ENROLLMENT_CONFLICT bila tanggal bentrok atau siswa sudah di kelas itu; 409 INVALID_STATE_TRANSITION bila siswa tidak aktif.
+         */
+        post: operations["enrollStudent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar impor terbaru (terbaru dulu)
+         * @description Izin: school.students.manage.
+         */
+        get: operations["listImports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/imports/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unggah file impor siswa (CSV atau XLSX, maks 5 MB dan 5000 baris)
+         * @description Izin: school.students.manage. Validasi berjalan di latar belakang; pantau lewat getImport sampai status validated atau failed. Kolom: nomor_induk, nama_lengkap (wajib); nisn, tanggal_lahir, kelas (opsional).
+         */
+        post: operations["uploadStudentImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/imports/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unduh templat CSV impor siswa
+         * @description Izin: school.students.manage.
+         */
+        get: operations["downloadStudentImportTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/imports/{import}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Status dan ringkasan satu impor
+         * @description Izin: school.students.manage.
+         */
+        get: operations["getImport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/imports/{import}/rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Baris impor (preview), dapat difilter menurut status
+         * @description Izin: school.students.manage.
+         */
+        get: operations["listImportRows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/imports/{import}/failed-rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unduh baris yang gagal (atau dilewati) beserta kesalahannya sebagai CSV perbaikan
+         * @description Izin: school.students.manage. Sel yang diawali = + - @ diberi apostrof agar tidak dibaca sebagai rumus.
+         */
+        get: operations["downloadImportFailedRows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/imports/{import}/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simpan semua baris valid sebagai siswa (baris gagal dilewati)
+         * @description Izin: school.students.manage. Hanya untuk status validated (409 INVALID_STATE_TRANSITION bila tidak). Satu transaksi; nomor yang direbut sejak preview dilewati.
+         */
+        post: operations["commitImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/holidays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar hari libur (urut tanggal)
+         * @description Izin: school.schedule.view.
+         */
+        get: operations["listHolidays"];
+        put?: never;
+        /**
+         * Tambah hari libur (rentang tanggal inklusif)
+         * @description Izin: school.schedule.manage.
+         */
+        post: operations["createHoliday"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/holidays/{holiday}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail hari libur
+         * @description Izin: school.schedule.view.
+         */
+        get: operations["getHoliday"];
+        put?: never;
+        post?: never;
+        /**
+         * Hapus hari libur (diaudit)
+         * @description Izin: school.schedule.manage.
+         */
+        delete: operations["deleteHoliday"];
+        options?: never;
+        head?: never;
+        /**
+         * Ubah hari libur
+         * @description Izin: school.schedule.manage.
+         */
+        patch: operations["updateHoliday"];
+        trace?: never;
+    };
+    "/schools/{school}/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar baris jadwal (satu baris per scope dan hari), semua versi
+         * @description Izin: school.schedule.view.
+         */
+        get: operations["listSchedules"];
+        put?: never;
+        /**
+         * Terbitkan versi jadwal baru untuk satu scope dan beberapa hari
+         * @description Izin: school.schedule.manage. Versi sebelumnya yang masih berlaku pada effective_from ditutup sehari sebelumnya. 409 SCHEDULE_CONFLICT bila sudah ada versi yang berlaku mulai tanggal itu atau setelahnya; semua hari dibatalkan bersama.
+         */
+        post: operations["publishSchedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/schedules/{schedule}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail satu baris jadwal
+         * @description Izin: school.schedule.view.
+         */
+        get: operations["getSchedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Tutup (effective_until) atau nonaktifkan satu baris jadwal
+         * @description Izin: school.schedule.manage. Jam dan scope tidak dapat diubah; buat versi baru.
+         */
+        patch: operations["updateSchedule"];
+        trace?: never;
+    };
+    "/schools/{school}/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Kalender satu bulan: libur atau jadwal yang berlaku per tanggal
+         * @description Izin: school.schedule.view.
+         */
+        get: operations["getCalendar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -703,7 +1215,7 @@ export interface components {
         /** @enum {string} */
         Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -879,6 +1391,329 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        /** @enum {string} */
+        TeacherStatus: "active" | "inactive";
+        /** @enum {string} */
+        ClassStatus: "active" | "archived";
+        AcademicYear: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+            is_active: boolean;
+        };
+        AcademicYearEnvelope: {
+            data: components["schemas"]["AcademicYear"];
+        };
+        AcademicYearCreate: {
+            name: string;
+            /** Format: date */
+            start_date: string;
+            /**
+             * Format: date
+             * @description Harus setelah start_date.
+             */
+            end_date: string;
+        };
+        AcademicYearUpdate: {
+            name?: string;
+            /** Format: date */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string;
+        };
+        Teacher: {
+            /** Format: uuid */
+            id: string;
+            full_name: string;
+            employee_number: string | null;
+            status: components["schemas"]["TeacherStatus"];
+            /** @description Akun login guru; null bila guru tidak punya akun. */
+            account: {
+                /** Format: uuid */
+                membership_id: string;
+                name: string;
+                /** Format: email */
+                email: string;
+                status: components["schemas"]["MembershipStatus"];
+            } | null;
+        };
+        TeacherEnvelope: {
+            data: components["schemas"]["Teacher"];
+        };
+        TeacherCreate: {
+            full_name: string;
+            employee_number?: string | null;
+            /**
+             * Format: uuid
+             * @description Keanggotaan sekolah yang belum berakhir; satu akun untuk satu guru.
+             */
+            membership_id?: string | null;
+        };
+        TeacherUpdate: {
+            full_name?: string;
+            employee_number?: string | null;
+            /** Format: uuid */
+            membership_id?: string | null;
+            status?: components["schemas"]["TeacherStatus"];
+        };
+        SchoolClass: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            grade_level: number;
+            status: components["schemas"]["ClassStatus"];
+            academic_year: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            homeroom_teacher: {
+                /** Format: uuid */
+                id: string;
+                full_name: string;
+            } | null;
+        };
+        ClassEnvelope: {
+            data: components["schemas"]["SchoolClass"];
+        };
+        ClassCreate: {
+            /** Format: uuid */
+            academic_year_id: string;
+            name: string;
+            grade_level: number;
+            /**
+             * Format: uuid
+             * @description Harus guru aktif di sekolah ini.
+             */
+            homeroom_teacher_id?: string | null;
+        };
+        ClassUpdate: {
+            name?: string;
+            grade_level?: number;
+            /** Format: uuid */
+            homeroom_teacher_id?: string | null;
+            status?: components["schemas"]["ClassStatus"];
+        };
+        /** @enum {string} */
+        StudentStatus: "active" | "inactive" | "graduated" | "transferred";
+        Student: {
+            /** Format: uuid */
+            id: string;
+            /** @description Nomor induk siswa (NIS), unik per sekolah. */
+            student_number: string;
+            /** @description 10 digit angka. */
+            nisn: string | null;
+            full_name: string;
+            /** Format: date */
+            date_of_birth: string | null;
+            status: components["schemas"]["StudentStatus"];
+            /** @description Kelas yang berlaku hari ini (zona waktu sekolah); null bila tidak ada. */
+            current_class: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
+        };
+        Enrollment: {
+            /** Format: uuid */
+            id: string;
+            class: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                academic_year: string;
+            };
+            /** Format: date */
+            start_date: string;
+            /**
+             * Format: date
+             * @description Null = masih berlangsung.
+             */
+            end_date: string | null;
+        };
+        StudentDetail: components["schemas"]["Student"] & {
+            /** @description Riwayat penempatan, terlama dulu. */
+            enrollments: components["schemas"]["Enrollment"][];
+        };
+        StudentDetailEnvelope: {
+            data: components["schemas"]["StudentDetail"];
+        };
+        StudentCreate: {
+            student_number: string;
+            nisn?: string | null;
+            full_name: string;
+            /** Format: date */
+            date_of_birth?: string | null;
+        };
+        StudentUpdate: {
+            student_number?: string;
+            nisn?: string | null;
+            full_name?: string;
+            /** Format: date */
+            date_of_birth?: string | null;
+            status?: components["schemas"]["StudentStatus"];
+        };
+        EnrollmentCreate: {
+            /**
+             * Format: uuid
+             * @description Kelas aktif di sekolah ini.
+             */
+            class_id: string;
+            /**
+             * Format: date
+             * @description Harus dalam tahun ajaran kelas dan setelah mulai penempatan sebelumnya.
+             */
+            start_date: string;
+        };
+        /** @enum {string} */
+        ImportStatus: "uploaded" | "validating" | "validated" | "committing" | "committed" | "failed" | "cancelled";
+        /** @enum {string} */
+        ImportRowStatus: "valid" | "invalid" | "committed" | "skipped";
+        ImportBatch: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["ImportStatus"];
+            original_filename: string;
+            total_rows: number;
+            valid_rows: number;
+            invalid_rows: number;
+            committed_rows: number;
+            /** @description Alasan bila status failed. */
+            error_message: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            committed_at: string | null;
+        };
+        ImportBatchEnvelope: {
+            data: components["schemas"]["ImportBatch"];
+        };
+        ImportRow: {
+            /** @description Nomor baris di file (header = 1). */
+            row_number: number;
+            status: components["schemas"]["ImportRowStatus"];
+            /** @description Isi sel asli per kolom. */
+            values: {
+                [key: string]: string | null;
+            };
+            errors: {
+                field: string;
+                message: string;
+            }[];
+        };
+        Holiday: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            start_date: string;
+            /**
+             * Format: date
+             * @description Inklusif.
+             */
+            end_date: string;
+        };
+        HolidayEnvelope: {
+            data: components["schemas"]["Holiday"];
+        };
+        HolidayCreate: {
+            name: string;
+            /** Format: date */
+            start_date: string;
+            /**
+             * Format: date
+             * @description Tidak boleh sebelum start_date.
+             */
+            end_date: string;
+        };
+        HolidayUpdate: {
+            name?: string;
+            /** Format: date */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string;
+        };
+        /** @enum {string} */
+        ScheduleScope: "school" | "grade_level" | "class";
+        Schedule: {
+            /** Format: uuid */
+            id: string;
+            scope_type: components["schemas"]["ScheduleScope"];
+            grade_level: number | null;
+            class: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
+            /** @description ISO: 1 = Senin … 7 = Minggu. */
+            day_of_week: number;
+            check_in_start: string;
+            check_in_deadline: string;
+            late_grace_minutes: number;
+            check_out_start: string;
+            scheduled_check_out: string;
+            /** Format: date */
+            effective_from: string;
+            /**
+             * Format: date
+             * @description Null = tanpa batas akhir.
+             */
+            effective_until: string | null;
+            is_active: boolean;
+        };
+        ScheduleEnvelope: {
+            data: components["schemas"]["Schedule"];
+        };
+        ScheduleListEnvelope: {
+            data: components["schemas"]["Schedule"][];
+        };
+        SchedulePublish: {
+            scope_type: components["schemas"]["ScheduleScope"];
+            /** @description Wajib untuk scope grade_level; dilarang untuk scope lain. */
+            grade_level?: number;
+            /**
+             * Format: uuid
+             * @description Wajib untuk scope class (kelas aktif); dilarang untuk scope lain.
+             */
+            class_id?: string;
+            days: number[];
+            check_in_start: string;
+            check_in_deadline: string;
+            late_grace_minutes: number;
+            check_out_start: string;
+            scheduled_check_out: string;
+            /** Format: date */
+            effective_from: string;
+        };
+        ScheduleUpdate: {
+            /** Format: date */
+            effective_until?: string | null;
+            is_active?: boolean;
+        };
+        CalendarDay: {
+            /** Format: date */
+            date: string;
+            day_of_week: number;
+            holiday: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
+            /** @description Jadwal yang berlaku; null pada hari libur atau hari tanpa jadwal. */
+            schedule: components["schemas"]["Schedule"] | null;
+        };
+        CalendarEnvelope: {
+            data: {
+                month: string;
+                /** Format: uuid */
+                class_id: string | null;
+                days: components["schemas"]["CalendarDay"][];
+            };
+        };
     };
     responses: {
         /** @description Belum login atau sesi berakhir (`UNAUTHENTICATED`, `LOGIN_REQUIRED`). */
@@ -911,7 +1746,10 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description Konflik. `code`: LAST_SCHOOL_ADMIN, INVALID_STATE_TRANSITION, INVITATION_ALREADY_PENDING, ALREADY_MEMBER. */
+        /**
+         * @description Konflik. `code`: LAST_SCHOOL_ADMIN, INVALID_STATE_TRANSITION, INVITATION_ALREADY_PENDING, ALREADY_MEMBER,
+         *     ACADEMIC_YEAR_OVERLAP, DUPLICATE_VALUE, ENROLLMENT_CONFLICT, SCHEDULE_CONFLICT.
+         */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -975,6 +1813,13 @@ export interface components {
         SchoolCode: string;
         MembershipId: string;
         InvitationId: string;
+        AcademicYearId: string;
+        TeacherId: string;
+        ClassId: string;
+        StudentId: string;
+        ImportId: string;
+        HolidayId: string;
+        ScheduleId: string;
     };
     requestBodies: never;
     headers: never;
@@ -2018,6 +2863,41 @@ export interface operations {
             422: components["responses"]["ValidationFailed"];
         };
     };
+    requestMemberPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                membership: components["parameters"]["MembershipId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequired"];
+            };
+        };
+        responses: {
+            /** @description Tautan dikirim. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["EmailNotConfigured"];
+        };
+    };
     listInvitations: {
         parameters: {
             query?: {
@@ -2174,6 +3054,1091 @@ export interface operations {
                         data: components["schemas"]["AuditLog"][];
                         meta: components["schemas"]["PageMeta"];
                     };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listAcademicYears: {
+        parameters: {
+            query?: {
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman tahun ajaran. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AcademicYear"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createAcademicYear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcademicYearCreate"];
+            };
+        };
+        responses: {
+            /** @description Dibuat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademicYearEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getAcademicYear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                academicYear: components["parameters"]["AcademicYearId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tahun ajaran. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademicYearEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateAcademicYear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                academicYear: components["parameters"]["AcademicYearId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcademicYearUpdate"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademicYearEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    activateAcademicYear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                academicYear: components["parameters"]["AcademicYearId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aktif. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademicYearEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listTeachers: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["TeacherStatus"];
+                /** @description Cari nama atau nomor pegawai (tidak peka huruf besar/kecil). */
+                q?: string;
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman guru. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Teacher"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createTeacher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeacherCreate"];
+            };
+        };
+        responses: {
+            /** @description Dibuat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeacherEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getTeacher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                teacher: components["parameters"]["TeacherId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Guru. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeacherEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateTeacher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                teacher: components["parameters"]["TeacherId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeacherUpdate"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeacherEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listClasses: {
+        parameters: {
+            query?: {
+                academic_year_id?: string;
+                grade_level?: number;
+                status?: components["schemas"]["ClassStatus"];
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman kelas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SchoolClass"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassCreate"];
+            };
+        };
+        responses: {
+            /** @description Dibuat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                schoolClass: components["parameters"]["ClassId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kelas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                schoolClass: components["parameters"]["ClassId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassUpdate"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listStudents: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["StudentStatus"];
+                /** @description Cari sebagian nama, nomor induk, atau NISN (tidak peka huruf besar/kecil). */
+                q?: string;
+                /** @description Hanya siswa yang hari ini berada di kelas ini. */
+                class_id?: string;
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman siswa. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Student"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createStudent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentCreate"];
+            };
+        };
+        responses: {
+            /** @description Dibuat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDetailEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getStudent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Siswa. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDetailEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateStudent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDetailEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    enrollStudent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Penempatan dibuat; respons memuat riwayat terbaru. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentDetailEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listImports: {
+        parameters: {
+            query?: {
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman impor. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ImportBatch"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    uploadStudentImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description File diterima dan sedang divalidasi. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportBatchEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    downloadStudentImportTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berkas CSV (UTF-8 dengan BOM). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                import: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Impor. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportBatchEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listImportRows: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["ImportRowStatus"];
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                import: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman baris. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ImportRow"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    downloadImportFailedRows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                import: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berkas CSV (UTF-8 dengan BOM). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    commitImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                import: components["parameters"]["ImportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Di-commit. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportBatchEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    listHolidays: {
+        parameters: {
+            query?: {
+                /** @description Hanya libur yang berakhir pada atau setelah tanggal ini. */
+                from?: string;
+                /** @description Hanya libur yang mulai pada atau sebelum tanggal ini. */
+                to?: string;
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman hari libur. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Holiday"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createHoliday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HolidayCreate"];
+            };
+        };
+        responses: {
+            /** @description Dibuat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolidayEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getHoliday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                holiday: components["parameters"]["HolidayId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hari libur. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolidayEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteHoliday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                holiday: components["parameters"]["HolidayId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateHoliday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                holiday: components["parameters"]["HolidayId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HolidayUpdate"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolidayEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listSchedules: {
+        parameters: {
+            query?: {
+                scope_type?: components["schemas"]["ScheduleScope"];
+                grade_level?: number;
+                class_id?: string;
+                is_active?: boolean;
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman jadwal (maks 100 baris). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Schedule"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    publishSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchedulePublish"];
+            };
+        };
+        responses: {
+            /** @description Versi baru dibuat, satu baris per hari. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleListEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                schedule: components["parameters"]["ScheduleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jadwal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                schedule: components["parameters"]["ScheduleId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getCalendar: {
+        parameters: {
+            query: {
+                /** @description Format TTTT-BB. */
+                month: string;
+                /** @description Hitung prioritas kelas > jenjang > sekolah untuk kelas ini; tanpa ini hanya jadwal sekolah. */
+                class_id?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kalender. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarEnvelope"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

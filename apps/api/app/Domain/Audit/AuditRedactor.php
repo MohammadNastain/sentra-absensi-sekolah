@@ -18,6 +18,14 @@ final class AuditRedactor
         'membership_invitation' => ['email', 'role_codes', 'expires_at', 'accepted_at', 'revoked_at', 'delivery_status'],
         'user' => ['email', 'name', 'status', 'two_factor_enabled'],
         'platform_admin' => ['user_id'],
+        'academic_year' => ['name', 'start_date', 'end_date', 'is_active'],
+        'teacher' => ['full_name', 'employee_number', 'membership_id', 'status'],
+        'student' => ['student_number', 'nisn', 'full_name', 'date_of_birth', 'status'],
+        'import_batch' => ['type', 'original_filename', 'file_sha256', 'total_rows', 'valid_rows', 'invalid_rows', 'committed_rows', 'status'],
+        'holiday' => ['name', 'start_date', 'end_date'],
+        'schedule' => ['scope_type', 'grade_level', 'class_id', 'day_of_week', 'check_in_start', 'check_in_deadline', 'late_grace_minutes', 'check_out_start', 'scheduled_check_out', 'effective_from', 'effective_until', 'is_active'],
+        'class_enrollment' => ['student_id', 'class_id', 'start_date', 'end_date'],
+        'school_class' => ['name', 'grade_level', 'academic_year_id', 'homeroom_teacher_id', 'status'],
         'auth' => ['email'],
     ];
 

@@ -77,6 +77,19 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
   if (value.can("school.members.manage")) {
     nav.push({ href: `${base}/invitations`, label: "Undangan", active: pathname.startsWith(`${base}/invitations`) });
   }
+  if (value.can("school.academic.view")) {
+    nav.push({ href: `${base}/academic-years`, label: "Tahun ajaran", active: pathname.startsWith(`${base}/academic-years`) });
+    nav.push({ href: `${base}/classes`, label: "Kelas", active: pathname.startsWith(`${base}/classes`) });
+    nav.push({ href: `${base}/teachers`, label: "Guru", active: pathname.startsWith(`${base}/teachers`) });
+  }
+  if (value.can("school.students.view")) {
+    nav.push({ href: `${base}/students`, label: "Siswa", active: pathname.startsWith(`${base}/students`) });
+  }
+  if (value.can("school.schedule.view")) {
+    nav.push({ href: `${base}/schedules`, label: "Jadwal", active: pathname.startsWith(`${base}/schedules`) });
+    nav.push({ href: `${base}/holidays`, label: "Libur", active: pathname.startsWith(`${base}/holidays`) });
+    nav.push({ href: `${base}/calendar`, label: "Kalender", active: pathname.startsWith(`${base}/calendar`) });
+  }
   if (value.can("school.audit.view")) {
     nav.push({ href: `${base}/audit`, label: "Audit", active: pathname.startsWith(`${base}/audit`) });
   }
