@@ -192,6 +192,12 @@ final class RecordScanAction
 
         if ($decision->isAccepted()) {
             $this->project($school->id, $daily->id, $decision, $event['id'], $sessionId, $class->id);
+            // Scan menang atas izin/sakit/dispensasi yang sudah berlaku (D-13); konflik dicatat agar bisa ditinjau di audit.
+            if ($decision->eventType === 'check_in' && $daily->leave_request_id !== null) {
+                $this->audit->record('school.attendance.leave_overridden', $school->id, 'attendance_event', $event['id'], ['attendance_status' => $daily->attendance_status], [
+                    'student_id' => $student->id, 'event_type' => 'check_in', 'result' => $decision->result, 'reason_code' => $decision->code,
+                ]);
+            }
         }
 
         if ($assist !== null && $decision->isAccepted()) {
@@ -318,7 +324,7 @@ final class RecordScanAction
         );
     }
 
-    /** @return object{id: string, attendance_status: string, check_in_event_id: string|null, check_out_event_id: string|null} */
+    /** @return object{id: string, attendance_status: string, check_in_event_id: string|null, check_out_event_id: string|null, leave_request_id: string|null} */
     private function lockDaily(string $schoolId, string $studentId, string $date): object
     {
         DB::insert(
@@ -327,7 +333,7 @@ final class RecordScanAction
         );
 
         return DB::selectOne(
-            'SELECT id, attendance_status, check_in_event_id, check_out_event_id FROM daily_attendance WHERE school_id = ? AND student_id = ? AND attendance_date = ? FOR UPDATE',
+            'SELECT id, attendance_status, check_in_event_id, check_out_event_id, leave_request_id FROM daily_attendance WHERE school_id = ? AND student_id = ? AND attendance_date = ? FOR UPDATE',
             [$schoolId, $studentId, $date],
         ) ?? throw new \LogicException('Baris harian tidak ditemukan setelah dibuat.');
     }

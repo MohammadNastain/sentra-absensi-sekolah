@@ -217,3 +217,18 @@ it('pencarian siswa untuk pengajuan dibatasi kelas wali kelas', function () {
     $this->actingAs($homeroom)->getJson(leaveUrl('/students?q=Ahmad'))->assertOk()->assertJsonCount(0, 'data');
     $this->actingAs($this->officer)->getJson(leaveUrl('/students'))->assertUnprocessable();
 });
+
+it('scan menang atas izin yang sudah berlaku (D-13): status jadi terlambat dan konflik tercatat di audit', function () {
+    Carbon::setTestNow(Carbon::parse('2026-10-19 10:00:00', 'Asia/Jakarta'));
+    $id = submitLeave(['student_id' => $this->student, 'leave_type' => 'izin', 'start_date' => '2026-10-19', 'end_date' => '2026-10-19']);
+    $this->actingAs($this->officer)->postJson(leaveUrl("/{$id}/decision"), ['decision' => 'approve'])->assertOk();
+    $this->inSchool($this->school, fn () => app(CloseAttendanceDay::class)->run($this->school, '2026-10-19'));
+    expect(dailyOf($this->student)->attendance_status)->toBe('izin');
+
+    Carbon::setTestNow(Carbon::parse('2026-10-19 10:30:00', 'Asia/Jakarta'));
+    scan($this->token)->assertJsonPath('data.result', 'accepted');
+
+    expect(dailyOf($this->student)->attendance_status)->toBe('terlambat');
+    $audit = DB::table('audit_logs')->where('action', 'school.attendance.leave_overridden')->first();
+    expect($audit)->not->toBeNull()->and($audit->actor_type)->toBe('system')->and(json_decode($audit->before_value, true)['attendance_status'])->toBe('izin');
+});
