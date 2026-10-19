@@ -42,7 +42,7 @@ Setelah diputuskan, butir dipindahkan ke `docs/adr/NNNN-judul.md` (format: konte
 | D-10 | Kebijakan "pulang tanpa catatan masuk" [4.5]. | **Diputuskan:** `needs_review` → antrean tinjauan petugas (ADR 0005). |
 | D-11 | Siswa datang setelah jendela pulang dibuka (mis. datang 12.00 untuk SD yang pulang 12.00). | Diperlakukan sama seperti D-10: `needs_review`. |
 | D-11b | Multi-sesi per siswa per hari [5.3, 7.1]. | MVP: 1 sesi/siswa/hari; shift pagi/siang via jadwal per kelas. |
-| D-13 | Siswa dengan izin disetujui ternyata scan masuk. | Scan menang (Hadir/Terlambat); konflik masuk antrean review. Dispensasi kegiatan luar tetap Dispensasi [konfirmasi]. |
+| D-13 | Siswa dengan izin disetujui ternyata scan masuk. | Scan menang (Hadir/Terlambat); konflik masuk antrean review. Dispensasi kegiatan luar tetap Dispensasi [konfirmasi]. Diterapkan: scan menang langsung dan konflik dicatat sebagai audit `school.attendance.leave_overridden` (tanpa antrean review). |
 | D-14 | Rumus persentase kehadiran [10]. | (Hadir+Terlambat) / (Hari efektif wajib − Izin − Sakit − Dispensasi yang disetujui), ditampilkan bersama komponen mentahnya. Alternatif per sekolah: penyebut = semua hari efektif. |
 | D-15 | Impor: commit sebagian atau semua-atau-tidak sama sekali? | Preview → admin commit **baris valid saja**; baris gagal diunduh sebagai file perbaikan. Satu transaksi untuk seluruh baris valid. |
 | D-16 | QR disimpan sebagai hash [7.1] membuat cetak ulang tidak bisa memakai token yang sama. | Hash saja; cetak ulang = terbit ulang (kartu lama otomatis tidak berlaku). |
