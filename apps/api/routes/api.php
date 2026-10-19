@@ -7,6 +7,7 @@ use App\Http\Controllers\Invitation\PublicInvitationController;
 use App\Http\Controllers\Me\MyInvitationController;
 use App\Http\Controllers\Me\MySchoolsController;
 use App\Http\Controllers\Platform\PlatformSchoolController;
+use App\Http\Controllers\School\AbsenceController;
 use App\Http\Controllers\School\AcademicYearController;
 use App\Http\Controllers\School\AttendanceController;
 use App\Http\Controllers\School\AuditLogController;
@@ -247,6 +248,18 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.review-queue.resolve');
     Route::get('attendance/assist-report', [AttendanceController::class, 'assistReport'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.assist-report');
+    Route::get('attendance/absence-settings', [AbsenceController::class, 'settings'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('attendance.absence-settings');
+    Route::put('attendance/absence-settings', [AbsenceController::class, 'updateSettings'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolProfileUpdate))->name('attendance.absence-settings.update');
+    Route::get('attendance/absences', [AbsenceController::class, 'pending'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceVerify))->name('attendance.absences');
+    Route::post('attendance/absences/verify', [AbsenceController::class, 'verify'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceVerify))->name('attendance.absences.verify');
+    Route::post('attendance/days/{date}/disruption', [AbsenceController::class, 'markDisruption'])->where('date', '\d{4}-\d{2}-\d{2}')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.disruption');
+    Route::post('attendance/days/{date}/release', [AbsenceController::class, 'releaseHold'])->where('date', '\d{4}-\d{2}-\d{2}')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.release');
     Route::get('attendance/today', [AttendanceController::class, 'today'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('attendance.today');
     Route::get('calendar', [CalendarController::class, 'show'])

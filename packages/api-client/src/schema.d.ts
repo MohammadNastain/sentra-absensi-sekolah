@@ -1678,6 +1678,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/attendance/absence-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pengaturan aturan alpa
+         * @description Izin: school.attendance.view.
+         */
+        get: operations["getAbsenceSettings"];
+        /**
+         * Ubah pengaturan aturan alpa
+         * @description Izin: school.profile.update. Jam batas harus setelah batas masuk + toleransi terlama jadwal aktif. Teraudit.
+         */
+        put: operations["updateAbsenceSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/absences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar alpa sementara satu tanggal
+         * @description Izin: school.attendance.verify. Wali kelas hanya melihat kelasnya. Menyertakan kesehatan hari.
+         */
+        get: operations["listPendingAbsences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/absences/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verifikasi alpa sementara menjadi alpa final
+         * @description Izin: school.attendance.verify. Semua-atau-tidak-sama-sekali; siswa di luar jangkauan = 404. Menulis attendance_adjustments dan audit.
+         */
+        post: operations["verifyAbsences"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/days/{date}/disruption": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tandai hari bergangguan (tahan aturan alpa)
+         * @description Izin: school.attendance.review. Menarik kembali alpa sementara otomatis hari itu. Alasan minimal 10 karakter.
+         */
+        post: operations["markDayDisrupted"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/days/{date}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lepas penahanan aturan alpa
+         * @description Izin: school.attendance.review. Menjalankan aturan alpa untuk hari itu setelah pemeriksaan. 409 bila hari tidak sedang ditahan.
+         */
+        post: operations["releaseDayHold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/attendance/assist-report": {
         parameters: {
             query?: never;
@@ -1727,7 +1831,7 @@ export interface components {
         /** @enum {string} */
         Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -2500,6 +2604,66 @@ export interface components {
             event_type: string | null;
             reason_code: string | null;
             recorded_at_local: string;
+        };
+        ReasonRequest: {
+            reason: string;
+        };
+        AbsenceSettings: {
+            enabled: boolean;
+            /** @description HH:MM waktu lokal sekolah; wajib bila enabled. */
+            cutoff_time?: string | null;
+        };
+        AbsenceSettingsEnvelope: {
+            data: components["schemas"]["AbsenceSettings"];
+        };
+        PendingAbsence: {
+            /** Format: uuid */
+            student_id: string;
+            student_name: string;
+            student_number: string;
+            /** Format: uuid */
+            class_id: string | null;
+            class_name: string | null;
+            /** @enum {string} */
+            absence_basis: "rule" | "manual";
+        };
+        PendingAbsencesEnvelope: {
+            data: {
+                /** Format: date */
+                date: string;
+                health: {
+                    /** @enum {string|null} */
+                    status: "ok" | "perlu_pemeriksaan" | "dilepas" | null;
+                    reasons: ("NO_SCANS" | "MANUAL")[];
+                };
+                items: components["schemas"]["PendingAbsence"][];
+            };
+        };
+        VerifyAbsencesRequest: {
+            /** Format: date */
+            date: string;
+            student_ids: string[];
+            reason: string;
+        };
+        VerifyAbsencesEnvelope: {
+            data: {
+                verified: number;
+            };
+        };
+        DayHoldEnvelope: {
+            data: {
+                /** Format: date */
+                date: string;
+                /** @enum {string} */
+                status: "perlu_pemeriksaan";
+            };
+        };
+        CloseDayEnvelope: {
+            data: {
+                required: number;
+                marked_absent: number;
+                health: string | null;
+            };
         };
         ReviewQueueEnvelope: {
             data: components["schemas"]["ReviewQueueItem"][];
@@ -5791,6 +5955,189 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResolveReviewEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getAbsenceSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceSettingsEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateAbsenceSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbsenceSettings"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceSettingsEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listPendingAbsences: {
+        parameters: {
+            query: {
+                date: string;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingAbsencesEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    verifyAbsences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyAbsencesRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerifyAbsencesEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    markDayDisrupted: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DayHoldEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    releaseDayHold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CloseDayEnvelope"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

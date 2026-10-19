@@ -95,7 +95,7 @@ const SAMPLE_UUID = '00000000-0000-7000-8000-000000000001';
 
 function concreteUri(string $uri): string
 {
-    $uri = str_replace('{school}', 'sekolah-a', $uri);
+    $uri = str_replace(['{school}', '{date}'], ['sekolah-a', '2026-10-19'], $uri);
 
     return (string) preg_replace('/\{[A-Za-z]+\}/', SAMPLE_UUID, $uri);
 }
