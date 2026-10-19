@@ -1994,6 +1994,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/reports/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rekap kehadiran per kelas dan total
+         * @description Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah.
+         */
+        get: operations["getReportSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/reports/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rekap kehadiran per siswa
+         * @description Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah.
+         */
+        get: operations["getReportStudents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/reports/lateness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Laporan keterlambatan
+         * @description Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah. Terbanyak lebih dulu.
+         */
+        get: operations["getReportLateness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/reports/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Laporan harian
+         * @description Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah.
+         */
+        get: operations["getReportDaily"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/reports/monthly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Laporan bulanan satu kelas (matriks siswa x tanggal)
+         * @description Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah.
+         */
+        get: operations["getReportMonthly"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/reports/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Riwayat scan ditolak, duplikat, dan perlu tinjauan
+         * @description Izin: school.attendance.review. Maksimal 500 baris, terbaru dulu.
+         */
+        get: operations["getReportEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/attendance/assist-report": {
         parameters: {
             query?: never;
@@ -3028,6 +3148,116 @@ export interface components {
         };
         CorrectionHistoryEnvelope: {
             data: components["schemas"]["CorrectionHistoryItem"][];
+        };
+        ReportMetrics: {
+            effective_days: number;
+            hadir: number;
+            terlambat: number;
+            izin: number;
+            sakit: number;
+            dispensasi: number;
+            /** @description Hanya alpa final yang terverifikasi. */
+            alpa: number;
+            alpa_belum_diverifikasi: number;
+            belum_tercatat: number;
+            present: number;
+            /** @description izin + sakit + dispensasi */
+            excluded: number;
+            denominator: number;
+            /** @description Null bila penyebut nol. */
+            attendance_percentage: number | null;
+            late_minutes: number;
+            early_leave: {
+                total: number;
+                approved: number;
+                pending: number;
+                rejected: number;
+            };
+        };
+        ReportClassRow: components["schemas"]["ReportMetrics"] & {
+            /** Format: uuid */
+            class_id: string;
+            class_name: string;
+            grade_level: number;
+        };
+        ReportStudentRow: components["schemas"]["ReportMetrics"] & {
+            /** Format: uuid */
+            student_id: string;
+            student_name: string;
+            student_number: string;
+        };
+        ReportSummaryEnvelope: {
+            data: {
+                /** Format: date */
+                from: string;
+                /** Format: date */
+                to: string;
+                totals: components["schemas"]["ReportMetrics"];
+                classes: components["schemas"]["ReportClassRow"][];
+            };
+        };
+        ReportStudentsEnvelope: {
+            data: components["schemas"]["ReportStudentRow"][];
+        };
+        ReportLatenessRow: {
+            /** Format: uuid */
+            student_id: string;
+            student_name: string;
+            student_number: string;
+            class_name: string;
+            late_days: number;
+            late_minutes: number;
+        };
+        ReportLatenessEnvelope: {
+            data: components["schemas"]["ReportLatenessRow"][];
+        };
+        ReportDailyRow: {
+            student_name: string;
+            student_number: string;
+            class_name: string;
+            /** @enum {string} */
+            status: "belum_tercatat" | "hadir" | "terlambat" | "izin" | "sakit" | "dispensasi" | "alpa_belum_diverifikasi" | "alpa";
+            /** @description HH.MM waktu lokal sekolah */
+            check_in: string | null;
+            check_out: string | null;
+            late_minutes: number | null;
+            early_leave: boolean;
+            /** @enum {string|null} */
+            early_leave_status: "pending" | "approved" | "rejected" | null;
+            /** @description Baris pernah dikoreksi/diselesaikan manual. */
+            corrected: boolean;
+        };
+        ReportDailyEnvelope: {
+            data: components["schemas"]["ReportDailyRow"][];
+        };
+        ReportMonthlyEnvelope: {
+            data: {
+                month: string;
+                days: string[];
+                students: {
+                    /** Format: uuid */
+                    student_id: string;
+                    student_name: string;
+                    student_number: string;
+                    /** @description Sejajar dengan days; null = bukan hari sekolah bagi kelas itu. */
+                    statuses: (string | null)[];
+                }[];
+            };
+        };
+        ReportEventRow: {
+            /** @description YYYY-MM-DD HH:MM waktu lokal sekolah */
+            occurred_at: string;
+            /** @enum {string} */
+            result: "duplicate" | "rejected" | "needs_review";
+            reason_code: string | null;
+            /** @enum {string} */
+            method: "qr" | "rfid" | "assisted_manual";
+            event_type: string | null;
+            student_name: string | null;
+            device_name: string | null;
+        };
+        ReportEventsEnvelope: {
+            data: components["schemas"]["ReportEventRow"][];
         };
         ReviewQueueEnvelope: {
             data: components["schemas"]["ReviewQueueItem"][];
@@ -6914,6 +7144,197 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getReportSummary: {
+        parameters: {
+            query: {
+                from: string;
+                /** @description Maksimal 366 hari dari from. */
+                to: string;
+                class_id?: string;
+                grade_level?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Laporan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportSummaryEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getReportStudents: {
+        parameters: {
+            query: {
+                from: string;
+                /** @description Maksimal 366 hari dari from. */
+                to: string;
+                class_id?: string;
+                grade_level?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Laporan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportStudentsEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getReportLateness: {
+        parameters: {
+            query: {
+                from: string;
+                /** @description Maksimal 366 hari dari from. */
+                to: string;
+                class_id?: string;
+                grade_level?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Laporan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportLatenessEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getReportDaily: {
+        parameters: {
+            query: {
+                date: string;
+                class_id?: string;
+                grade_level?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Laporan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportDailyEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getReportMonthly: {
+        parameters: {
+            query: {
+                month: string;
+                class_id: string;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Laporan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportMonthlyEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getReportEvents: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                result?: "duplicate" | "rejected" | "needs_review";
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Laporan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportEventsEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
         };
     };

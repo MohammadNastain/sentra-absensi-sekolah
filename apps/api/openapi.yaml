@@ -2784,6 +2784,134 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/reports/summary:
+    get:
+      tags: [school]
+      operationId: getReportSummary
+      summary: "Rekap kehadiran per kelas dan total"
+      description: "Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: "Maksimal 366 hari dari from." }
+        - { name: class_id, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: grade_level, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 13 } }
+      responses:
+        "200":
+          description: "Laporan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportSummaryEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/reports/students:
+    get:
+      tags: [school]
+      operationId: getReportStudents
+      summary: "Rekap kehadiran per siswa"
+      description: "Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: "Maksimal 366 hari dari from." }
+        - { name: class_id, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: grade_level, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 13 } }
+      responses:
+        "200":
+          description: "Laporan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportStudentsEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/reports/lateness:
+    get:
+      tags: [school]
+      operationId: getReportLateness
+      summary: "Laporan keterlambatan"
+      description: "Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah. Terbanyak lebih dulu."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: "Maksimal 366 hari dari from." }
+        - { name: class_id, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: grade_level, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 13 } }
+      responses:
+        "200":
+          description: "Laporan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportLatenessEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/reports/daily:
+    get:
+      tags: [school]
+      operationId: getReportDaily
+      summary: "Laporan harian"
+      description: "Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: date, in: query, required: true, schema: { type: string, format: date } }
+        - { name: class_id, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: grade_level, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 13 } }
+      responses:
+        "200":
+          description: "Laporan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportDailyEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/reports/monthly:
+    get:
+      tags: [school]
+      operationId: getReportMonthly
+      summary: "Laporan bulanan satu kelas (matriks siswa x tanggal)"
+      description: "Izin: school.attendance.view. Wali kelas hanya kelas yang ia ampu. Persentase = (hadir+terlambat)/(hari efektif - izin - sakit - dispensasi); alpa sementara dan belum tercatat dilaporkan terpisah."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: month, in: query, required: true, schema: { type: string, pattern: "^\\d{4}-\\d{2}$" } }
+        - { name: class_id, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: "Laporan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportMonthlyEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/reports/events:
+    get:
+      tags: [school]
+      operationId: getReportEvents
+      summary: "Riwayat scan ditolak, duplikat, dan perlu tinjauan"
+      description: "Izin: school.attendance.review. Maksimal 500 baris, terbaru dulu."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: result, in: query, required: false, schema: { type: string, enum: [duplicate, rejected, needs_review] } }
+      responses:
+        "200":
+          description: "Laporan."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportEventsEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
   /schools/{school}/attendance/assist-report:
     get:
       tags: [school]
@@ -4123,6 +4251,150 @@ components:
         data:
           type: array
           items: { $ref: "#/components/schemas/CorrectionHistoryItem" }
+    ReportMetrics:
+      type: object
+      required: [effective_days, hadir, terlambat, izin, sakit, dispensasi, alpa, alpa_belum_diverifikasi, belum_tercatat, present, excluded, denominator, attendance_percentage, late_minutes, early_leave]
+      properties:
+        effective_days: { type: integer }
+        hadir: { type: integer }
+        terlambat: { type: integer }
+        izin: { type: integer }
+        sakit: { type: integer }
+        dispensasi: { type: integer }
+        alpa: { type: integer, description: "Hanya alpa final yang terverifikasi." }
+        alpa_belum_diverifikasi: { type: integer }
+        belum_tercatat: { type: integer }
+        present: { type: integer }
+        excluded: { type: integer, description: "izin + sakit + dispensasi" }
+        denominator: { type: integer }
+        attendance_percentage: { type: [number, "null"], description: "Null bila penyebut nol." }
+        late_minutes: { type: integer }
+        early_leave:
+          type: object
+          required: [total, approved, pending, rejected]
+          properties:
+            total: { type: integer }
+            approved: { type: integer }
+            pending: { type: integer }
+            rejected: { type: integer }
+    ReportClassRow:
+      allOf:
+        - { $ref: "#/components/schemas/ReportMetrics" }
+        - type: object
+          required: [class_id, class_name, grade_level]
+          properties:
+            class_id: { type: string, format: uuid }
+            class_name: { type: string }
+            grade_level: { type: integer }
+    ReportStudentRow:
+      allOf:
+        - { $ref: "#/components/schemas/ReportMetrics" }
+        - type: object
+          required: [student_id, student_name, student_number]
+          properties:
+            student_id: { type: string, format: uuid }
+            student_name: { type: string }
+            student_number: { type: string }
+    ReportSummaryEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [from, to, totals, classes]
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+            totals: { $ref: "#/components/schemas/ReportMetrics" }
+            classes:
+              type: array
+              items: { $ref: "#/components/schemas/ReportClassRow" }
+    ReportStudentsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/ReportStudentRow" }
+    ReportLatenessRow:
+      type: object
+      required: [student_id, student_name, student_number, class_name, late_days, late_minutes]
+      properties:
+        student_id: { type: string, format: uuid }
+        student_name: { type: string }
+        student_number: { type: string }
+        class_name: { type: string }
+        late_days: { type: integer }
+        late_minutes: { type: integer }
+    ReportLatenessEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/ReportLatenessRow" }
+    ReportDailyRow:
+      type: object
+      required: [student_name, student_number, class_name, status, check_in, check_out, late_minutes, early_leave, early_leave_status, corrected]
+      properties:
+        student_name: { type: string }
+        student_number: { type: string }
+        class_name: { type: string }
+        status: { type: string, enum: [belum_tercatat, hadir, terlambat, izin, sakit, dispensasi, alpa_belum_diverifikasi, alpa] }
+        check_in: { type: [string, "null"], description: "HH.MM waktu lokal sekolah" }
+        check_out: { type: [string, "null"] }
+        late_minutes: { type: [integer, "null"] }
+        early_leave: { type: boolean }
+        early_leave_status: { type: [string, "null"], enum: [pending, approved, rejected, null] }
+        corrected: { type: boolean, description: "Baris pernah dikoreksi/diselesaikan manual." }
+    ReportDailyEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/ReportDailyRow" }
+    ReportMonthlyEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [month, days, students]
+          properties:
+            month: { type: string }
+            days: { type: array, items: { type: string, format: date } }
+            students:
+              type: array
+              items:
+                type: object
+                required: [student_id, student_name, student_number, statuses]
+                properties:
+                  student_id: { type: string, format: uuid }
+                  student_name: { type: string }
+                  student_number: { type: string }
+                  statuses:
+                    type: array
+                    description: "Sejajar dengan days; null = bukan hari sekolah bagi kelas itu."
+                    items: { type: [string, "null"] }
+    ReportEventRow:
+      type: object
+      required: [occurred_at, result, reason_code, method, event_type, student_name, device_name]
+      properties:
+        occurred_at: { type: string, description: "YYYY-MM-DD HH:MM waktu lokal sekolah" }
+        result: { type: string, enum: [duplicate, rejected, needs_review] }
+        reason_code: { type: [string, "null"] }
+        method: { type: string, enum: [qr, rfid, assisted_manual] }
+        event_type: { type: [string, "null"] }
+        student_name: { type: [string, "null"] }
+        device_name: { type: [string, "null"] }
+    ReportEventsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/ReportEventRow" }
     ReviewQueueEnvelope:
       type: object
       required: [data]

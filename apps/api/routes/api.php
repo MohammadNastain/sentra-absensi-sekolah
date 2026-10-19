@@ -19,6 +19,7 @@ use App\Http\Controllers\School\HolidayController;
 use App\Http\Controllers\School\InvitationController;
 use App\Http\Controllers\School\LeaveRequestController;
 use App\Http\Controllers\School\MemberController;
+use App\Http\Controllers\School\ReportController;
 use App\Http\Controllers\School\ScheduleController;
 use App\Http\Controllers\School\SchoolClassController;
 use App\Http\Controllers\School\SchoolProfileController;
@@ -274,6 +275,18 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrect))->name('attendance.correction-requests.decide');
     Route::post('attendance/correction-requests/{correction}/cancel', [CorrectionController::class, 'cancel'])->whereUuid('correction')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.cancel');
+    Route::get('reports/summary', [ReportController::class, 'summary'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.summary');
+    Route::get('reports/students', [ReportController::class, 'students'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.students');
+    Route::get('reports/lateness', [ReportController::class, 'lateness'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.lateness');
+    Route::get('reports/daily', [ReportController::class, 'daily'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.daily');
+    Route::get('reports/monthly', [ReportController::class, 'monthly'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.monthly');
+    Route::get('reports/events', [ReportController::class, 'events'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('reports.events');
     Route::get('leave-requests', [LeaveRequestController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.index');
     Route::get('leave-requests/students', [LeaveRequestController::class, 'students'])
