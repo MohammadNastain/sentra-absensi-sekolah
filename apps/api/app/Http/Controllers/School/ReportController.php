@@ -31,6 +31,13 @@ final class ReportController extends Controller
         return $this->respond($this->reports->summary($this->tenant->school(), $from, $to, $class, $grade, $this->scope->classIds()));
     }
 
+    public function trend(Request $request, School $school): JsonResponse
+    {
+        [$from, $to, $class, $grade] = $this->range($request);
+
+        return $this->respond($this->reports->trend($this->tenant->school(), $from, $to, $class, $grade, $this->scope->classIds()));
+    }
+
     public function students(Request $request, School $school): JsonResponse
     {
         [$from, $to, $class, $grade] = $this->range($request);

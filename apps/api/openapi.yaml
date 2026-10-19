@@ -2887,6 +2887,28 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/reports/trend:
+    get:
+      tags: [school]
+      operationId: getReportTrend
+      summary: "Tren kehadiran harian"
+      description: "Izin: school.attendance.view. Satu titik per tanggal sekolah yang termaterialisasi; rumus sama dengan rekap."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date }, description: "Maksimal 366 hari dari from." }
+        - { name: class_id, in: query, required: false, schema: { type: string, format: uuid } }
+        - { name: grade_level, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 13 } }
+      responses:
+        "200":
+          description: "Titik tren."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReportTrendEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
   /schools/{school}/reports/students:
     get:
       tags: [school]
@@ -4394,6 +4416,20 @@ components:
             approved: { type: integer }
             pending: { type: integer }
             rejected: { type: integer }
+    ReportTrendPoint:
+      allOf:
+        - { $ref: "#/components/schemas/ReportMetrics" }
+        - type: object
+          required: [date]
+          properties:
+            date: { type: string, format: date }
+    ReportTrendEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/ReportTrendPoint" }
     ReportClassRow:
       allOf:
         - { $ref: "#/components/schemas/ReportMetrics" }

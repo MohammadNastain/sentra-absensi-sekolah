@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { attempt, type FormFailure } from "@/lib/errors";
 import { roleLabel } from "@/lib/school-options";
 import { AttendanceToday } from "./attendance-today";
+import { AttendanceTrend } from "./attendance-trend";
 import { useSchool } from "./school-context";
 
 /** Ringkasan sekolah dan (bagi pemilik izin) ubah profil. */
@@ -45,6 +46,7 @@ export default function SchoolHomePage() {
       </div>
 
       {can("school.attendance.view") ? <AttendanceToday /> : null}
+      {can("school.attendance.view") ? <AttendanceTrend /> : null}
 
       <section className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Profil</h2>

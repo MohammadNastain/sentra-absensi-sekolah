@@ -263,3 +263,11 @@ test("Tahap 5D: laporan tampil dan ekspor CSV selesai dengan tautan unduh", asyn
   const exports = page.getByRole("region", { name: "Ekspor saya" }).or(page.locator("section[aria-labelledby=rep-exports-title]"));
   await expect(exports.getByRole("link", { name: "Unduh" }).first()).toBeVisible({ timeout: 30000 });
 });
+
+test("Tahap 5E: dashboard menampilkan tren kehadiran dan rentang dapat diganti", async ({ page }) => {
+  await loginAsAdmin(page);
+  const trend = page.getByRole("region", { name: "Tren kehadiran" });
+  await expect(trend).toBeVisible();
+  await trend.getByLabel("Rentang").selectOption("30");
+  await expect(trend.getByRole("img").or(trend.getByText("Belum ada data kehadiran pada rentang ini."))).toBeVisible();
+});
