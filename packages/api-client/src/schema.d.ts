@@ -3147,12 +3147,9 @@ export interface components {
             /** Format: date */
             date: string;
             /** @enum {string} */
-            type: "status_change" | "early_leave_decision";
-            /**
-             * @description status_change: salah satu status harian; early_leave_decision: approved atau rejected.
-             * @enum {string}
-             */
-            value: "hadir" | "terlambat" | "izin" | "sakit" | "dispensasi" | "alpa" | "approved" | "rejected";
+            type: "status_change" | "early_leave_decision" | "check_in_time" | "check_out_time";
+            /** @description status_change: salah satu status harian (hadir, terlambat, izin, sakit, dispensasi, alpa); early_leave_decision: approved atau rejected; check_in_time/check_out_time: jam HH:MM waktu lokal sekolah (status terlambat dan pulang awal diturunkan ulang dari jadwal). */
+            value: string;
             reason: string;
         };
         CorrectionDecisionRequest: {
@@ -3171,7 +3168,7 @@ export interface components {
             /** Format: date */
             attendance_date: string;
             /** @enum {string} */
-            adjustment_type: "status_change" | "early_leave_decision";
+            adjustment_type: "status_change" | "early_leave_decision" | "check_in_time" | "check_out_time";
             current_value: string;
             requested_value: string;
             reason: string;
@@ -3199,7 +3196,7 @@ export interface components {
                 /** Format: date */
                 attendance_date: string;
                 /** @enum {string} */
-                adjustment_type: "status_change" | "early_leave_decision";
+                adjustment_type: "status_change" | "early_leave_decision" | "check_in_time" | "check_out_time";
                 from: {
                     [key: string]: unknown;
                 };

@@ -23,7 +23,7 @@ final class AuditRedactor
         'student' => ['student_number', 'nisn', 'full_name', 'date_of_birth', 'status'],
         'import_batch' => ['type', 'original_filename', 'file_sha256', 'total_rows', 'valid_rows', 'invalid_rows', 'committed_rows', 'status'],
         'student_credential' => ['student_id', 'credential_type', 'status', 'status_reason', 'replaces_credential_id'],
-        'attendance_event' => ['student_id', 'event_type', 'result', 'reason_code', 'assist_reason_code', 'device_id', 'method'],
+        'attendance_event' => ['student_id', 'event_type', 'result', 'reason_code', 'assist_reason_code', 'device_id', 'method', 'attendance_status'],
         'attendance_correction' => ['student_id', 'attendance_date', 'adjustment_type', 'attendance_status', 'early_leave_status'],
         'leave_request' => ['student_id', 'leave_type', 'start_date', 'end_date', 'status'],
         'export_job' => ['report', 'format'],

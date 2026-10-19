@@ -59,7 +59,7 @@ it('memasang trigger append-only yang juga berlaku bagi owner', function () {
         ->pluck('pg_trigger.tgname')
         ->sort()->values()->all();
 
-    expect($triggers)->toBe(['audit_logs_append_only', 'audit_logs_no_truncate']);
+    expect($triggers)->toBe(['audit_logs_ip_scrub_only', 'audit_logs_no_delete', 'audit_logs_no_truncate']);
 
     // Trigger diuji sebagai owner (yang masih punya hak UPDATE/DELETE) pada baris miliknya sendiri,
     // di transaksi terpisah yang selalu di-rollback.
@@ -70,17 +70,11 @@ it('memasang trigger append-only yang juga berlaku bagi owner', function () {
         $owner->select("SELECT set_config('app.platform', 'on', true)");
         $id = $owner->scalar("INSERT INTO audit_logs (actor_type, action) VALUES ('system', 'test.trigger') RETURNING id");
 
-        // Lapis 1: tidak ada policy UPDATE/DELETE, jadi owner pun tidak mengenai baris apa pun.
-        expect($owner->update('UPDATE audit_logs SET reason = ? WHERE id = ?', ['x', $id]))->toBe(0)
-            ->and($owner->delete('DELETE FROM audit_logs WHERE id = ?', [$id]))->toBe(0);
+        // DELETE: tidak ada policy DELETE, jadi owner pun tidak mengenai baris apa pun.
+        expect($owner->delete('DELETE FROM audit_logs WHERE id = ?', [$id]))->toBe(0);
 
-        // Lapis 2: bila RLS dilepas (mis. salah konfigurasi), fungsi trigger tetap menolak.
-        // Diuji pada tabel TEMP agar tidak butuh lock ACCESS EXCLUSIVE pada audit_logs,
-        // yang sedang dipegang transaksi test (sentra_app) dan akan menyebabkan deadlock.
-        $owner->statement('CREATE TEMP TABLE append_only_probe (id int) ON COMMIT DROP');
-        $owner->statement('CREATE TRIGGER probe BEFORE UPDATE OR DELETE ON append_only_probe FOR EACH ROW EXECUTE FUNCTION reject_append_only_mutation()');
-        $owner->insert('INSERT INTO append_only_probe VALUES (1)');
-        expect(fn () => $owner->update('UPDATE append_only_probe SET id = 2'))
+        // UPDATE selain mengosongkan ip_address ditolak trigger, juga untuk owner (policy scrub mengizinkan baris platform).
+        expect(fn () => $owner->update('UPDATE audit_logs SET reason = ? WHERE id = ?', ['x', $id]))
             ->toThrow(QueryException::class, 'append-only');
     } finally {
         $owner->rollBack();
