@@ -40,6 +40,8 @@ enum Role: string
                 Permission::SchoolAttendanceAssist,
                 Permission::SchoolAttendanceReview,
                 Permission::SchoolAttendanceVerify,
+                Permission::SchoolAttendanceCorrect,
+                Permission::SchoolAttendanceCorrectionRequest,
                 Permission::SchoolLeaveManage,
                 Permission::SchoolLeaveApprove,
             ],
@@ -60,6 +62,7 @@ enum Role: string
                 Permission::SchoolScheduleView,
                 Permission::SchoolAttendanceView,
                 Permission::SchoolAttendanceVerify,
+                Permission::SchoolAttendanceCorrectionRequest,
                 Permission::SchoolLeaveManage,
             ],
             // Petugas piket melihat ringkasan harian (tanpa data akademik); terminal memakai token perangkat, bukan akun.

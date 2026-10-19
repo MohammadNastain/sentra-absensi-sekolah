@@ -12,6 +12,7 @@ use App\Http\Controllers\School\AcademicYearController;
 use App\Http\Controllers\School\AttendanceController;
 use App\Http\Controllers\School\AuditLogController;
 use App\Http\Controllers\School\CalendarController;
+use App\Http\Controllers\School\CorrectionController;
 use App\Http\Controllers\School\CredentialController;
 use App\Http\Controllers\School\DeviceController;
 use App\Http\Controllers\School\HolidayController;
@@ -261,6 +262,18 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.disruption');
     Route::post('attendance/days/{date}/release', [AbsenceController::class, 'releaseHold'])->where('date', '\d{4}-\d{2}-\d{2}')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.release');
+    Route::post('attendance/corrections', [CorrectionController::class, 'apply'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrect))->name('attendance.corrections.apply');
+    Route::get('attendance/corrections/history', [CorrectionController::class, 'history'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.corrections.history');
+    Route::get('attendance/correction-requests', [CorrectionController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.index');
+    Route::post('attendance/correction-requests', [CorrectionController::class, 'request'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.store');
+    Route::post('attendance/correction-requests/{correction}/decision', [CorrectionController::class, 'decide'])->whereUuid('correction')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrect))->name('attendance.correction-requests.decide');
+    Route::post('attendance/correction-requests/{correction}/cancel', [CorrectionController::class, 'cancel'])->whereUuid('correction')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.cancel');
     Route::get('leave-requests', [LeaveRequestController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.index');
     Route::get('leave-requests/students', [LeaveRequestController::class, 'students'])

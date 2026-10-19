@@ -1890,6 +1890,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/attendance/corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Koreksi absensi langsung
+         * @description Izin: school.attendance.correct. Mengubah status harian (hadir, terlambat, izin, sakit, dispensasi, alpa) atau keputusan pulang awal; menulis attendance_adjustments dan audit. Hanya hari yang sudah berjalan. Alasan minimal 10 karakter.
+         */
+        post: operations["applyCorrection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/corrections/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Riwayat koreksi yang berlaku
+         * @description Izin: school.attendance.review. Dari attendance_adjustments, terbaru lebih dulu, maksimal 500.
+         */
+        get: operations["listCorrectionHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/correction-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar pengajuan koreksi
+         * @description Izin: school.attendance.correction_request. Menunggu lebih dulu; wali kelas hanya kelasnya.
+         */
+        get: operations["listCorrectionRequests"];
+        put?: never;
+        /**
+         * Ajukan koreksi absensi
+         * @description Izin: school.attendance.correction_request. Siswa di luar kelas wali kelas = 404; satu pengajuan menunggu per hari dan jenis (409).
+         */
+        post: operations["createCorrectionRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/correction-requests/{correction}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Setujui atau tolak pengajuan koreksi
+         * @description Izin: school.attendance.correct. Persetujuan menerapkan koreksi (409 bila kondisi sudah berubah); penolakan wajib beralasan.
+         */
+        post: operations["decideCorrectionRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/attendance/correction-requests/{correction}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batalkan pengajuan koreksi
+         * @description Izin: school.attendance.correction_request. Hanya yang masih menunggu.
+         */
+        post: operations["cancelCorrectionRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/attendance/assist-report": {
         parameters: {
             query?: never;
@@ -1939,7 +2043,7 @@ export interface components {
         /** @enum {string} */
         Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify" | "school.leave.manage" | "school.leave.approve";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify" | "school.attendance.correct" | "school.attendance.correction_request" | "school.leave.manage" | "school.leave.approve";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -2832,6 +2936,98 @@ export interface components {
             data: components["schemas"]["LeaveRequest"] & {
                 reverted_days: number;
             };
+        };
+        CorrectionRequestBody: {
+            /** Format: uuid */
+            student_id: string;
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            type: "status_change" | "early_leave_decision";
+            /**
+             * @description status_change: salah satu status harian; early_leave_decision: approved atau rejected.
+             * @enum {string}
+             */
+            value: "hadir" | "terlambat" | "izin" | "sakit" | "dispensasi" | "alpa" | "approved" | "rejected";
+            reason: string;
+        };
+        CorrectionDecisionRequest: {
+            /** @enum {string} */
+            decision: "approve" | "reject";
+            /** @description Wajib bila reject. */
+            note?: string | null;
+        };
+        CorrectionRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            student_id: string;
+            student_name: string;
+            class_name: string | null;
+            /** Format: date */
+            attendance_date: string;
+            /** @enum {string} */
+            adjustment_type: "status_change" | "early_leave_decision";
+            current_value: string;
+            requested_value: string;
+            reason: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "cancelled";
+            requested_by: string;
+            decision_note: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CorrectionRequestEnvelope: {
+            data: components["schemas"]["CorrectionRequest"];
+        };
+        CorrectionRequestsEnvelope: {
+            data: components["schemas"]["CorrectionRequest"][];
+        };
+        CorrectionAppliedEnvelope: {
+            data: {
+                /** Format: uuid */
+                adjustment_id: string;
+                /** Format: uuid */
+                request_id: string | null;
+                /** Format: uuid */
+                student_id: string;
+                /** Format: date */
+                attendance_date: string;
+                /** @enum {string} */
+                adjustment_type: "status_change" | "early_leave_decision";
+                from: {
+                    [key: string]: unknown;
+                };
+                to: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        CorrectionHistoryItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            attendance_date: string;
+            student_name: string;
+            /** @enum {string} */
+            adjustment_type: "status_change" | "check_in_time" | "check_out_time" | "early_leave_decision" | "review_resolution";
+            from: {
+                [key: string]: unknown;
+            } | null;
+            to: {
+                [key: string]: unknown;
+            } | null;
+            reason: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected";
+            requested_by: string;
+            decided_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CorrectionHistoryEnvelope: {
+            data: components["schemas"]["CorrectionHistoryItem"][];
         };
         ReviewQueueEnvelope: {
             data: components["schemas"]["ReviewQueueItem"][];
@@ -6522,6 +6718,196 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeaveCancelEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    applyCorrection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionRequestBody"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionAppliedEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listCorrectionHistory: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                student_id?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionHistoryEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listCorrectionRequests: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "rejected" | "cancelled";
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionRequestsEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    createCorrectionRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionRequestBody"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionRequestEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    decideCorrectionRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                correction: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionRequestEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    cancelCorrectionRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                correction: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionRequestEnvelope"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

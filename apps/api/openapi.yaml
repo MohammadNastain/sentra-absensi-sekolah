@@ -2647,6 +2647,143 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/corrections:
+    post:
+      tags: [school]
+      operationId: applyCorrection
+      summary: "Koreksi absensi langsung"
+      description: "Izin: school.attendance.correct. Mengubah status harian (hadir, terlambat, izin, sakit, dispensasi, alpa) atau keputusan pulang awal; menulis attendance_adjustments dan audit. Hanya hari yang sudah berjalan. Alasan minimal 10 karakter."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorrectionRequestBody" }
+      responses:
+        "201":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorrectionAppliedEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/corrections/history:
+    get:
+      tags: [school]
+      operationId: listCorrectionHistory
+      summary: "Riwayat koreksi yang berlaku"
+      description: "Izin: school.attendance.review. Dari attendance_adjustments, terbaru lebih dulu, maksimal 500."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: student_id, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorrectionHistoryEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/correction-requests:
+    get:
+      tags: [school]
+      operationId: listCorrectionRequests
+      summary: "Daftar pengajuan koreksi"
+      description: "Izin: school.attendance.correction_request. Menunggu lebih dulu; wali kelas hanya kelasnya."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: status, in: query, required: false, schema: { type: string, enum: [pending, approved, rejected, cancelled] } }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorrectionRequestsEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    post:
+      tags: [school]
+      operationId: createCorrectionRequest
+      summary: "Ajukan koreksi absensi"
+      description: "Izin: school.attendance.correction_request. Siswa di luar kelas wali kelas = 404; satu pengajuan menunggu per hari dan jenis (409)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorrectionRequestBody" }
+      responses:
+        "201":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorrectionRequestEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/correction-requests/{correction}/decision:
+    post:
+      tags: [school]
+      operationId: decideCorrectionRequest
+      summary: "Setujui atau tolak pengajuan koreksi"
+      description: "Izin: school.attendance.correct. Persetujuan menerapkan koreksi (409 bila kondisi sudah berubah); penolakan wajib beralasan."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: correction, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorrectionDecisionRequest" }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorrectionRequestEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/attendance/correction-requests/{correction}/cancel:
+    post:
+      tags: [school]
+      operationId: cancelCorrectionRequest
+      summary: "Batalkan pengajuan koreksi"
+      description: "Izin: school.attendance.correction_request. Hanya yang masih menunggu."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: correction, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequest" }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorrectionRequestEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
   /schools/{school}/attendance/assist-report:
     get:
       tags: [school]
@@ -2855,7 +2992,7 @@ components:
       enum: [school_admin, principal, homeroom_teacher, duty_officer, terminal_operator]
     Permission:
       type: string
-      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review, school.attendance.verify, school.leave.manage, school.leave.approve]
+      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review, school.attendance.verify, school.attendance.correct, school.attendance.correction_request, school.leave.manage, school.leave.approve]
     SchoolStatus:
       type: string
       enum: [trial, active, suspended, terminated]
@@ -3902,6 +4039,90 @@ components:
               required: [reverted_days]
               properties:
                 reverted_days: { type: integer }
+    CorrectionRequestBody:
+      type: object
+      required: [student_id, date, type, value, reason]
+      properties:
+        student_id: { type: string, format: uuid }
+        date: { type: string, format: date }
+        type: { type: string, enum: [status_change, early_leave_decision] }
+        value:
+          type: string
+          enum: [hadir, terlambat, izin, sakit, dispensasi, alpa, approved, rejected]
+          description: "status_change: salah satu status harian; early_leave_decision: approved atau rejected."
+        reason: { type: string, minLength: 10, maxLength: 500 }
+    CorrectionDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [approve, reject] }
+        note: { type: [string, "null"], minLength: 10, maxLength: 500, description: "Wajib bila reject." }
+    CorrectionRequest:
+      type: object
+      required: [id, student_id, student_name, class_name, attendance_date, adjustment_type, current_value, requested_value, reason, status, requested_by, decision_note, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        student_id: { type: string, format: uuid }
+        student_name: { type: string }
+        class_name: { type: [string, "null"] }
+        attendance_date: { type: string, format: date }
+        adjustment_type: { type: string, enum: [status_change, early_leave_decision] }
+        current_value: { type: string }
+        requested_value: { type: string }
+        reason: { type: string }
+        status: { type: string, enum: [pending, approved, rejected, cancelled] }
+        requested_by: { type: string }
+        decision_note: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+    CorrectionRequestEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/CorrectionRequest" }
+    CorrectionRequestsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/CorrectionRequest" }
+    CorrectionAppliedEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [adjustment_id, request_id, student_id, attendance_date, adjustment_type, from, to]
+          properties:
+            adjustment_id: { type: string, format: uuid }
+            request_id: { type: [string, "null"], format: uuid }
+            student_id: { type: string, format: uuid }
+            attendance_date: { type: string, format: date }
+            adjustment_type: { type: string, enum: [status_change, early_leave_decision] }
+            from: { type: object, additionalProperties: true }
+            to: { type: object, additionalProperties: true }
+    CorrectionHistoryItem:
+      type: object
+      required: [id, attendance_date, student_name, adjustment_type, from, to, reason, status, requested_by, decided_by, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        attendance_date: { type: string, format: date }
+        student_name: { type: string }
+        adjustment_type: { type: string, enum: [status_change, check_in_time, check_out_time, early_leave_decision, review_resolution] }
+        from: { type: [object, "null"], additionalProperties: true }
+        to: { type: [object, "null"], additionalProperties: true }
+        reason: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        requested_by: { type: string }
+        decided_by: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+    CorrectionHistoryEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/CorrectionHistoryItem" }
     ReviewQueueEnvelope:
       type: object
       required: [data]

@@ -93,6 +93,9 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
   if (value.can("school.attendance.assist") || value.can("school.attendance.review")) {
     nav.push({ href: `${base}/attendance`, label: "Kehadiran", active: pathname.startsWith(`${base}/attendance`) });
   }
+  if (value.can("school.attendance.correction_request")) {
+    nav.push({ href: `${base}/corrections`, label: "Koreksi", active: pathname.startsWith(`${base}/corrections`) });
+  }
   if (value.can("school.leave.manage")) {
     nav.push({ href: `${base}/leave`, label: "Izin", active: pathname.startsWith(`${base}/leave`) });
   }
