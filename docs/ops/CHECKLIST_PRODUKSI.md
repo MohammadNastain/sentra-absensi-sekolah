@@ -26,7 +26,7 @@ Centang satu per satu sebelum pilot. Bagian yang bergantung keputusan hosting (D
 - [ ] Cadangan harian berjalan dan salinan di lokasi terpisah ⏳
 - [ ] **Uji restore berhasil** pada staging dan dicatat tanggalnya (lihat `BACKUP_RESTORE.md`)
 - [ ] PITR aktif ⏳
-- [ ] Retensi sesuai D-26 setelah tinjauan hukum: IP audit 90 hari, foto 30 hari setelah keluar, ekspor 7 hari (sudah), staging impor 30 hari (sudah) ⏳
+- [ ] Retensi sesuai D-26 setelah tinjauan hukum: IP audit 90 hari (job `audit:scrub-ip` harian 03:00, sudah; angka diatur `AUDIT_IP_RETENTION_DAYS`), ekspor 7 hari (sudah), staging impor 30 hari (sudah), foto 30 hari setelah keluar (belum ada fitur foto, tidak berlaku) ⏳
 
 ## Keamanan
 
