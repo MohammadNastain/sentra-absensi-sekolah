@@ -142,6 +142,9 @@ column daily_attendance.updated_at timestamp with time zone nullable=NO
 column daily_attendance.verified_at timestamp with time zone nullable=YES
 column daily_attendance.verified_by_user_id uuid nullable=YES
 column daily_attendance.version integer nullable=NO
+column device_presence.device_id uuid nullable=NO
+column device_presence.minute_at timestamp with time zone nullable=NO
+column device_presence.school_id uuid nullable=NO
 column devices.created_at timestamp with time zone nullable=NO
 column devices.created_by_user_id uuid nullable=NO
 column devices.device_type text nullable=NO
@@ -364,6 +367,7 @@ index CREATE INDEX daily_attendance_class_date_index ON public.daily_attendance 
 index CREATE INDEX daily_attendance_date_index ON public.daily_attendance USING btree (school_id, attendance_date)
 index CREATE INDEX daily_attendance_leave_index ON public.daily_attendance USING btree (school_id, leave_request_id) WHERE (leave_request_id IS NOT NULL)
 index CREATE INDEX daily_attendance_status_date_index ON public.daily_attendance USING btree (school_id, attendance_status, attendance_date)
+index CREATE INDEX device_presence_school_minute_index ON public.device_presence USING btree (school_id, minute_at)
 index CREATE INDEX devices_school_status_index ON public.devices USING btree (school_id, status)
 index CREATE INDEX export_jobs_expiry_index ON public.export_jobs USING btree (expires_at) WHERE (file_path IS NOT NULL)
 index CREATE INDEX export_jobs_requester_index ON public.export_jobs USING btree (school_id, requested_by_user_id, created_at DESC)
@@ -413,6 +417,7 @@ index CREATE UNIQUE INDEX correction_requests_school_id_id_unique ON public.corr
 index CREATE UNIQUE INDEX daily_attendance_pkey ON public.daily_attendance USING btree (id)
 index CREATE UNIQUE INDEX daily_attendance_school_id_id_unique ON public.daily_attendance USING btree (school_id, id)
 index CREATE UNIQUE INDEX daily_attendance_student_date_unique ON public.daily_attendance USING btree (school_id, student_id, attendance_date)
+index CREATE UNIQUE INDEX device_presence_pkey ON public.device_presence USING btree (device_id, minute_at)
 index CREATE UNIQUE INDEX devices_pairing_code_unique ON public.devices USING btree (pairing_code_hash) WHERE (pairing_code_hash IS NOT NULL)
 index CREATE UNIQUE INDEX devices_pkey ON public.devices USING btree (id)
 index CREATE UNIQUE INDEX devices_school_id_id_unique ON public.devices USING btree (school_id, id)
@@ -659,6 +664,12 @@ constraint daily_attendance daily_attendance_student_id_not_null NOT NULL studen
 constraint daily_attendance daily_attendance_updated_at_not_null NOT NULL updated_at
 constraint daily_attendance daily_attendance_verified_by_user_id_fkey FOREIGN KEY (verified_by_user_id) REFERENCES users(id)
 constraint daily_attendance daily_attendance_version_not_null NOT NULL version
+constraint device_presence device_presence_device_id_fkey FOREIGN KEY (device_id) REFERENCES devices(id)
+constraint device_presence device_presence_device_id_not_null NOT NULL device_id
+constraint device_presence device_presence_minute_at_not_null NOT NULL minute_at
+constraint device_presence device_presence_pkey PRIMARY KEY (device_id, minute_at)
+constraint device_presence device_presence_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint device_presence device_presence_school_id_not_null NOT NULL school_id
 constraint devices devices_created_at_not_null NOT NULL created_at
 constraint devices devices_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
 constraint devices devices_created_by_user_id_not_null NOT NULL created_by_user_id
@@ -947,6 +958,7 @@ policy class_enrollments tenant_isolation ALL (school_id = app_school_id()) (sch
 policy classes tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy correction_requests tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy daily_attendance tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy device_presence tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy devices device_claim_owner_update UPDATE (status = 'pending_pairing'::text) true
 policy devices device_lookup_owner_read SELECT true 
 policy devices tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
@@ -981,6 +993,7 @@ rls class_enrollments enabled=true forced=true
 rls classes enabled=true forced=true
 rls correction_requests enabled=true forced=true
 rls daily_attendance enabled=true forced=true
+rls device_presence enabled=true forced=true
 rls devices enabled=true forced=true
 rls export_jobs enabled=true forced=true
 rls failed_jobs enabled=false forced=false

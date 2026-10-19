@@ -14,6 +14,8 @@ const CARD = "space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:bord
 const HEALTH_REASONS: Record<string, string> = {
   NO_SCANS: "Tidak ada satu pun scan yang tercatat padahal ada siswa wajib hadir.",
   MANUAL: "Ditandai bergangguan oleh petugas.",
+  DEVICE_OFFLINE: "Terminal aktif sempat tidak terlihat terlalu lama selama jendela masuk.",
+  SCAN_ERROR_RATE: "Tingkat error server pada scan melebihi ambang.",
 };
 
 /** Tanggal hari ini menurut zona waktu sekolah, "YYYY-MM-DD". */

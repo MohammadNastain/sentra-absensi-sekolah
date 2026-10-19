@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Attendance\CloseAttendanceDay;
+use App\Http\Middleware\CountScanOutcomes;
 use App\Models\Student;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
@@ -173,4 +174,64 @@ it('pemulihan: penutupan yang terlewat satu hari dijalankan lagi oleh run terjad
     // Idempoten: menjalankan lagi tidak mengubah apa pun.
     app(CloseAttendanceDay::class)->runForAllSchools(null, 2);
     expect($this->inSchool($this->school, fn () => DB::table('daily_attendance')->where('attendance_date', '2026-10-19')->count()))->toBe(2);
+});
+
+function presenceRow(string $deviceId, string $localTime): void
+{
+    $t = test();
+    $t->inSchool($t->school, fn () => DB::table('device_presence')->insert([
+        'school_id' => $t->school->id, 'device_id' => $deviceId, 'minute_at' => Carbon::parse("2026-10-19 {$localTime}", 'Asia/Jakarta')->utc()->toDateTimeString(),
+    ]));
+}
+
+function deviceIdOf(): string
+{
+    $t = test();
+
+    return $t->inSchool($t->school, fn () => (string) DB::table('devices')->value('id'));
+}
+
+it('terminal berdetak lalu hilang lama selama jendela masuk: aturan ditahan (DEVICE_OFFLINE)', function () {
+    atTime('06:30');
+    scan($this->token)->assertJsonPath('data.result', 'accepted');
+    $device = deviceIdOf();
+    foreach (['06:00', '06:01', '06:02', '06:03', '06:04', '06:05'] as $t) {
+        presenceRow($device, $t);
+    }
+    atTime('09:30');
+
+    expect(closeDay())->toMatchArray(['marked_absent' => 0, 'health' => 'perlu_pemeriksaan']);
+    $reasons = $this->inSchool($this->school, fn () => json_decode(DB::table('attendance_day_health')->value('reasons'), true));
+    expect($reasons)->toBe(['DEVICE_OFFLINE']);
+});
+
+it('terminal berdetak menyeluruh selama jendela masuk: hari tetap sehat', function () {
+    atTime('06:30');
+    scan($this->token)->assertJsonPath('data.result', 'accepted');
+    $device = deviceIdOf();
+    for ($m = 0; $m < 60; $m += 2) {
+        presenceRow($device, sprintf('06:%02d', $m));
+    }
+    atTime('09:30');
+
+    expect(closeDay())->toMatchArray(['marked_absent' => 1, 'health' => 'ok']);
+});
+
+it('tingkat error 5xx pada scan di atas ambang menahan aturan (SCAN_ERROR_RATE)', function () {
+    atTime('06:30');
+    scan($this->token)->assertJsonPath('data.result', 'accepted');
+    $key = CountScanOutcomes::key($this->school->id, '2026-10-19');
+    Cache::put("{$key}:total", 40);
+    Cache::put("{$key}:errors", 4);
+    atTime('09:30');
+
+    expect(closeDay())->toMatchArray(['marked_absent' => 0, 'health' => 'perlu_pemeriksaan']);
+    expect($this->inSchool($this->school, fn () => json_decode(DB::table('attendance_day_health')->value('reasons'), true)))->toBe(['SCAN_ERROR_RATE']);
+});
+
+it('middleware menghitung request scan dan yang berstatus 5xx', function () {
+    atTime('06:30');
+    scan($this->token)->assertJsonPath('data.result', 'accepted');
+
+    expect(CountScanOutcomes::read($this->school->id, '2026-10-19'))->toBe(['total' => 1, 'errors' => 0]);
 });

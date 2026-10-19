@@ -5,6 +5,7 @@ namespace App\Domain\Attendance;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Scheduling\ScheduleResolver;
 use App\Domain\Tenancy\DatabaseContext;
+use App\Http\Middleware\CountScanOutcomes;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\User;
@@ -23,6 +24,13 @@ final class CloseAttendanceDay
     public const HEALTH_NO_SCANS = 'NO_SCANS';
 
     public const HEALTH_MANUAL = 'MANUAL';
+
+    public const HEALTH_DEVICE_OFFLINE = 'DEVICE_OFFLINE';
+
+    public const HEALTH_ERROR_RATE = 'SCAN_ERROR_RATE';
+
+    /** Terminal baru dinilai bila hari itu meninggalkan cukup jejak (klien yang mengirim heartbeat tiap 30 detik); klien yang hanya sesekali scan tidak dinilai. */
+    private const HEARTBEATING_MIN_MINUTES = 5;
 
     public function __construct(
         private readonly DatabaseContext $database,
@@ -273,6 +281,13 @@ final class CloseAttendanceDay
         if ($required > 0 && $scans === 0) {
             $reasons[] = self::HEALTH_NO_SCANS;
         }
+        if ($this->deviceOfflineTooLong($school, $date)) {
+            $reasons[] = self::HEALTH_DEVICE_OFFLINE;
+        }
+        $outcomes = CountScanOutcomes::read($school->id, $date);
+        if ($outcomes['total'] >= (int) config('sentra.health_error_min_requests') && (float) config('sentra.health_error_rate') <= $outcomes['errors'] / $outcomes['total']) {
+            $reasons[] = self::HEALTH_ERROR_RATE;
+        }
 
         $status = $reasons === [] ? 'ok' : 'perlu_pemeriksaan';
         DB::insert(
@@ -282,5 +297,57 @@ final class CloseAttendanceDay
         );
 
         return $status;
+    }
+
+    /**
+     * Terminal aktif yang tampak hari itu (ada jejak keberadaan) tetapi tidak terlihat lebih dari ambang menit
+     * kumulatif selama jendela masuk (dari batas masuk awal sampai tenggat akhir jadwal yang dipakai hari itu).
+     * Satu jejak menutupi menit itu dan dua menit sesudahnya (jendela online terminal).
+     */
+    private function deviceOfflineTooLong(School $school, string $date): bool
+    {
+        $window = DB::selectOne(
+            'SELECT min(sc.check_in_start) AS opens, max(sc.check_in_deadline) AS closes
+             FROM attendance_sessions ss JOIN schedules sc ON sc.school_id = ss.school_id AND sc.id = ss.schedule_id
+             WHERE ss.school_id = ? AND ss.session_date = ?',
+            [$school->id, $date],
+        );
+        if ($window === null || $window->opens === null) {
+            return false;
+        }
+
+        $start = Carbon::parse("{$date} {$window->opens}", $school->timezone)->utc()->startOfMinute();
+        $end = Carbon::parse("{$date} {$window->closes}", $school->timezone)->utc()->startOfMinute();
+        $minutes = (int) $start->diffInMinutes($end);
+        if ($minutes <= 0) {
+            return false;
+        }
+
+        $dayStart = Carbon::parse($date, $school->timezone)->startOfDay()->utc();
+        $devices = DB::select(
+            "SELECT p.device_id FROM device_presence p JOIN devices d ON d.id = p.device_id
+             WHERE p.school_id = ? AND d.status = 'active' AND p.minute_at >= ? AND p.minute_at < ?
+             GROUP BY p.device_id HAVING count(*) >= ?",
+            [$school->id, $dayStart->toDateTimeString(), $dayStart->copy()->addDay()->toDateTimeString(), self::HEARTBEATING_MIN_MINUTES],
+        );
+        $threshold = (int) config('sentra.health_offline_minutes');
+        foreach ($devices as $device) {
+            $seen = DB::select(
+                'SELECT minute_at FROM device_presence WHERE device_id = ? AND minute_at >= ? AND minute_at < ?',
+                [$device->device_id, $start->copy()->subMinutes(2)->toDateTimeString(), $end->toDateTimeString()],
+            );
+            $covered = [];
+            foreach ($seen as $row) {
+                $at = (int) $start->diffInMinutes(Carbon::parse((string) $row->minute_at)->utc()->startOfMinute(), false);
+                for ($m = max(0, $at); $m <= $at + 2 && $m < $minutes; $m++) {
+                    $covered[$m] = true;
+                }
+            }
+            if ($minutes - count($covered) > $threshold) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
