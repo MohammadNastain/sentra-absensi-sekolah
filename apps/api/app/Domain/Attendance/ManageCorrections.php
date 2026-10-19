@@ -3,8 +3,10 @@
 namespace App\Domain\Attendance;
 
 use App\Domain\Audit\AuditLogger;
+use App\Domain\Scheduling\ScheduleResolver;
 use App\Domain\Tenancy\DatabaseContext;
 use App\Models\School;
+use App\Models\SchoolClass;
 use App\Models\User;
 use App\Support\Http\ApiProblem;
 use Illuminate\Database\QueryException;
@@ -26,10 +28,22 @@ final class ManageCorrections
 
     public const EARLY_LEAVE = ['approved', 'rejected'];
 
+    /** Jenis koreksi jam; nilainya 'HH:MM' waktu lokal sekolah pada tanggal absensi. */
+    public const TIMES = ['check_in_time', 'check_out_time'];
+
+    /** Kunci nilai pada JSON `to_value` per jenis koreksi. */
+    private const VALUE_KEYS = [
+        'status_change' => 'attendance_status',
+        'early_leave_decision' => 'early_leave_status',
+        'check_in_time' => 'check_in_time',
+        'check_out_time' => 'check_out_time',
+    ];
+
     public function __construct(
         private readonly DatabaseContext $database,
         private readonly AuditLogger $audit,
         private readonly CloseAttendanceDay $closer,
+        private readonly ScheduleResolver $resolver,
     ) {}
 
     /**
@@ -58,7 +72,7 @@ final class ManageCorrections
     {
         return $this->database->runInSchool($school->id, fn () => DB::transaction(function () use ($school, $actor, $data, $classScope) {
             $daily = $this->dailyFor($school, $data['student_id'], $data['date'], $classScope);
-            $this->assertApplicable($daily, $data['type'], $data['value']);
+            $this->assertApplicable($school, $daily, $data['type'], $data['value']);
 
             try {
                 $id = (string) DB::scalar(
@@ -113,7 +127,7 @@ final class ManageCorrections
 
             if ($decision === 'approve') {
                 $to = json_decode((string) $row->to_value, true);
-                $value = (string) ($to['attendance_status'] ?? $to['early_leave_status'] ?? '');
+                $value = (string) ($to[self::VALUE_KEYS[(string) $row->adjustment_type]] ?? '');
                 $daily = $this->dailyFor($school, (string) $row->student_id, (string) $row->attendance_date, null);
                 $this->perform($school, $actor, $this->userOf((string) $row->requested_by_user_id), $daily, (string) $row->adjustment_type, $value, (string) $row->reason, $id);
             }
@@ -192,7 +206,7 @@ final class ManageCorrections
      */
     private function perform(School $school, User $decider, User $requester, stdClass $daily, string $type, string $value, string $reason, ?string $requestId): array
     {
-        $this->assertApplicable($daily, $type, $value);
+        $this->assertApplicable($school, $daily, $type, $value);
         $reason = trim($reason);
 
         if ($type === 'status_change') {
@@ -208,6 +222,8 @@ final class ManageCorrections
                  WHERE id = ? AND school_id = ?",
                 [$value, $value, $value, $decider->id, $value, $value, $daily->id, $school->id],
             );
+        } elseif (in_array($type, self::TIMES, true)) {
+            [$from, $to] = $this->applyTime($school, $daily, $type, $value);
         } else {
             $from = ['early_leave_status' => $daily->early_leave_status];
             $to = ['early_leave_status' => $value];
@@ -228,8 +244,107 @@ final class ManageCorrections
         return ['adjustment_id' => $adjustmentId, 'request_id' => $requestId, 'student_id' => (string) $daily->student_id, 'attendance_date' => (string) $daily->attendance_date, 'adjustment_type' => $type, 'from' => $from, 'to' => $to];
     }
 
-    private function assertApplicable(stdClass $daily, string $type, string $value): void
+    /**
+     * Koreksi jam: menyimpan override pada proyeksi harian, lalu menurunkan ulang status/terlambat (masuk) atau
+     * pulang awal (pulang) dari jadwal kelas pada tanggal itu.
+     *
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>}
+     */
+    private function applyTime(School $school, stdClass $daily, string $type, string $value): array
     {
+        $window = $this->windowFor($school, $daily);
+        $seconds = ScheduleWindow::seconds($value);
+        $at = Carbon::parse("{$daily->attendance_date} {$value}:00", $school->timezone)->utc()->toIso8601String();
+
+        if ($type === 'check_in_time') {
+            $from = ['check_in_time' => $this->effectiveTime($school, $daily, 'in'), 'attendance_status' => (string) $daily->attendance_status];
+            $late = $seconds > $window->checkInDeadline + $window->graceSeconds;
+            $status = $late ? 'terlambat' : 'hadir';
+            DB::update(
+                "UPDATE daily_attendance SET check_in_time_override = ?, attendance_status = ?, late_minutes = ?, source = 'manual_adjustment',
+                        leave_request_id = NULL, absence_basis = NULL, version = version + 1, updated_at = now()
+                 WHERE id = ? AND school_id = ?",
+                [$at, $status, $late ? intdiv($seconds - $window->checkInDeadline, 60) : null, $daily->id, $school->id],
+            );
+
+            return [$from, ['check_in_time' => $value, 'attendance_status' => $status]];
+        }
+
+        $from = ['check_out_time' => $this->effectiveTime($school, $daily, 'out'), 'early_leave' => (bool) $daily->early_leave];
+        $early = $seconds < $window->scheduledCheckOut;
+        DB::update(
+            "UPDATE daily_attendance SET check_out_time_override = ?, early_leave = ?,
+                    early_leave_status = CASE WHEN ? THEN COALESCE(early_leave_status, 'pending') END,
+                    source = 'manual_adjustment', version = version + 1, updated_at = now()
+             WHERE id = ? AND school_id = ?",
+            [$at, $early, $early, $daily->id, $school->id],
+        );
+
+        return [$from, ['check_out_time' => $value, 'early_leave' => $early]];
+    }
+
+    private function windowFor(School $school, stdClass $daily): ScheduleWindow
+    {
+        $class = $daily->class_id === null ? null : SchoolClass::query()->find((string) $daily->class_id);
+        $schedule = $class === null ? null : $this->resolver->resolve($school->id, Carbon::parse((string) $daily->attendance_date, $school->timezone)->startOfDay(), $class)->schedule;
+        if ($schedule === null) {
+            throw ApiProblem::invalidStateTransition('Tidak ada jadwal pada tanggal itu untuk menghitung jam.');
+        }
+
+        return ScheduleWindow::fromSchedule($schedule);
+    }
+
+    /** Jam masuk/pulang berlaku ('HH:MM' lokal): override koreksi lebih dulu, lalu jam event; null bila belum ada. */
+    private function effectiveTime(School $school, stdClass $daily, string $which): ?string
+    {
+        $override = $which === 'in' ? $daily->check_in_time_override : $daily->check_out_time_override;
+        $at = $override ?? ($which === 'in' ? $daily->check_in_at : $daily->check_out_at);
+
+        return $at === null ? null : Carbon::parse((string) $at)->setTimezone($school->timezone)->format('H:i');
+    }
+
+    private function assertTimeApplicable(School $school, stdClass $daily, string $type, string $value): void
+    {
+        if (! preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $value)) {
+            throw ApiProblem::invalidStateTransition('Jam harus berformat HH:MM.');
+        }
+        $local = Carbon::now()->setTimezone($school->timezone);
+        if ((string) $daily->attendance_date === $local->toDateString() && $value > $local->format('H:i')) {
+            throw ApiProblem::invalidStateTransition('Jam koreksi tidak boleh di masa depan.');
+        }
+
+        $in = $this->effectiveTime($school, $daily, 'in');
+        $out = $this->effectiveTime($school, $daily, 'out');
+        if ($type === 'check_in_time') {
+            if ($in === $value) {
+                throw ApiProblem::invalidStateTransition('Jam masuk sudah sama dengan yang diminta.');
+            }
+            if ($out !== null && $value >= $out) {
+                throw ApiProblem::invalidStateTransition('Jam masuk harus lebih awal daripada jam pulang.');
+            }
+
+            return;
+        }
+
+        if ($in === null) {
+            throw ApiProblem::invalidStateTransition('Jam pulang tidak bisa dikoreksi sebelum ada jam masuk.');
+        }
+        if ($out === $value) {
+            throw ApiProblem::invalidStateTransition('Jam pulang sudah sama dengan yang diminta.');
+        }
+        if ($value <= $in) {
+            throw ApiProblem::invalidStateTransition('Jam pulang harus lebih akhir daripada jam masuk.');
+        }
+    }
+
+    private function assertApplicable(School $school, stdClass $daily, string $type, string $value): void
+    {
+        if (in_array($type, self::TIMES, true)) {
+            $this->assertTimeApplicable($school, $daily, $type, $value);
+
+            return;
+        }
+
         if ($type === 'status_change') {
             if (! in_array($value, self::STATUSES, true)) {
                 throw ApiProblem::invalidStateTransition('Status tujuan tidak valid.');
@@ -265,7 +380,10 @@ final class ManageCorrections
         }
 
         $daily = DB::selectOne(
-            'SELECT id, student_id, attendance_date, class_id, attendance_status, early_leave, early_leave_status FROM daily_attendance WHERE school_id = ? AND student_id = ? AND attendance_date = ? FOR UPDATE',
+            'SELECT d.id, d.student_id, d.attendance_date, d.class_id, d.attendance_status, d.early_leave, d.early_leave_status, d.check_in_time_override, d.check_out_time_override,
+                    (SELECT occurred_at_server FROM attendance_events WHERE school_id = d.school_id AND id = d.check_in_event_id) AS check_in_at,
+                    (SELECT occurred_at_server FROM attendance_events WHERE school_id = d.school_id AND id = d.check_out_event_id) AS check_out_at
+             FROM daily_attendance d WHERE d.school_id = ? AND d.student_id = ? AND d.attendance_date = ? FOR UPDATE OF d',
             [$school->id, $studentId, $date],
         );
         if ($daily === null) {
@@ -290,7 +408,7 @@ final class ManageCorrections
     /** @return array<string, string> */
     private function toValue(string $type, string $value): array
     {
-        return $type === 'status_change' ? ['attendance_status' => $value] : ['early_leave_status' => $value];
+        return [self::VALUE_KEYS[$type] => $value];
     }
 
     /**
@@ -300,17 +418,20 @@ final class ManageCorrections
     private function auditView(array $data): array
     {
         return ['student_id' => $data['student_id'], 'attendance_date' => $data['date'], 'adjustment_type' => $data['type']]
-            + ($data['type'] === 'status_change' ? ['attendance_status' => $data['value']] : ['early_leave_status' => $data['value']]);
+            + [self::VALUE_KEYS[$data['type']] => $data['value']];
     }
 
     private function selectSql(): string
     {
         return 'SELECT r.*, s.full_name, s.student_number, c.name AS class_name, d.attendance_status AS current_status, d.early_leave_status AS current_early,
-                       req.name AS requested_by_name
+                       COALESCE(d.check_in_time_override, (SELECT occurred_at_server FROM attendance_events WHERE school_id = d.school_id AND id = d.check_in_event_id)) AS current_check_in,
+                       COALESCE(d.check_out_time_override, (SELECT occurred_at_server FROM attendance_events WHERE school_id = d.school_id AND id = d.check_out_event_id)) AS current_check_out,
+                       sch.timezone AS school_timezone, req.name AS requested_by_name
                 FROM correction_requests r
                 JOIN students s ON s.school_id = r.school_id AND s.id = r.student_id
                 JOIN daily_attendance d ON d.school_id = r.school_id AND d.id = r.daily_attendance_id
                 LEFT JOIN classes c ON c.school_id = d.school_id AND c.id = d.class_id
+                JOIN schools sch ON sch.id = r.school_id
                 JOIN users req ON req.id = r.requested_by_user_id';
     }
 
@@ -320,6 +441,18 @@ final class ManageCorrections
         $row = DB::selectOne("{$this->selectSql()} WHERE r.school_id = ? AND r.id = ?", [$school->id, $id]) ?? throw new NotFoundHttpException;
 
         return $this->present($row);
+    }
+
+    private function currentValue(stdClass $r): string
+    {
+        $time = fn (?string $at) => $at === null ? '' : Carbon::parse($at)->setTimezone((string) $r->school_timezone)->format('H:i');
+
+        return match ((string) $r->adjustment_type) {
+            'status_change' => (string) $r->current_status,
+            'check_in_time' => $time($r->current_check_in),
+            'check_out_time' => $time($r->current_check_out),
+            default => (string) ($r->current_early ?? ''),
+        };
     }
 
     /** @return array<string, mixed> */
@@ -334,8 +467,8 @@ final class ManageCorrections
             'class_name' => $r->class_name === null ? null : (string) $r->class_name,
             'attendance_date' => (string) $r->attendance_date,
             'adjustment_type' => (string) $r->adjustment_type,
-            'current_value' => (string) ($r->adjustment_type === 'status_change' ? $r->current_status : ($r->current_early ?? '')),
-            'requested_value' => (string) ($to['attendance_status'] ?? $to['early_leave_status'] ?? ''),
+            'current_value' => $this->currentValue($r),
+            'requested_value' => (string) ($to[self::VALUE_KEYS[(string) $r->adjustment_type]] ?? ''),
             'reason' => (string) $r->reason,
             'status' => (string) $r->status,
             'requested_by' => (string) $r->requested_by_name,

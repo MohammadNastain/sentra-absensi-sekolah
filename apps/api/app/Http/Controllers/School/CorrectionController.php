@@ -87,13 +87,18 @@ final class CorrectionController extends Controller
         $v = $request->validate([
             'student_id' => ['required', 'uuid'],
             'date' => ['required', 'date_format:Y-m-d'],
-            'type' => ['required', Rule::in(['status_change', 'early_leave_decision'])],
-            'value' => ['required', 'string', Rule::in([...ManageCorrections::STATUSES, ...ManageCorrections::EARLY_LEAVE])],
+            'type' => ['required', Rule::in(['status_change', 'early_leave_decision', ...ManageCorrections::TIMES])],
+            'value' => ['required', 'string', 'max:20'],
             'reason' => ['required', 'string', 'min:10', 'max:500'],
         ], ['reason.min' => 'Alasan minimal 10 karakter.']);
 
-        $allowed = $v['type'] === 'status_change' ? ManageCorrections::STATUSES : ManageCorrections::EARLY_LEAVE;
-        if (! in_array($v['value'], $allowed, true)) {
+        $allowed = match ($v['type']) {
+            'status_change' => ManageCorrections::STATUSES,
+            'early_leave_decision' => ManageCorrections::EARLY_LEAVE,
+            default => null,
+        };
+        $valid = $allowed === null ? (bool) preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $v['value']) : in_array($v['value'], $allowed, true);
+        if (! $valid) {
             throw ValidationException::withMessages(['value' => 'Nilai tidak sesuai dengan jenis koreksi.']);
         }
         $v['reason'] = trim($v['reason']);

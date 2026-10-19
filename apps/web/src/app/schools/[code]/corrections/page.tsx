@@ -279,22 +279,28 @@ function CorrectionForm({ direct, onDone }: { direct: boolean; onDone: (message:
             onChange={(e) => {
               const next = e.target.value as Body["type"];
               setType(next);
-              setValue(next === "status_change" ? "hadir" : "approved");
+              setValue(next === "status_change" ? "hadir" : next === "early_leave_decision" ? "approved" : "");
             }}
           >
             <option value="status_change">Ubah status kehadiran</option>
             <option value="early_leave_decision">Keputusan pulang awal</option>
+            <option value="check_in_time">Koreksi jam masuk</option>
+            <option value="check_out_time">Koreksi jam pulang</option>
           </SelectField>
-          <SelectField label={type === "status_change" ? "Status baru" : "Keputusan"} name="value" value={value} onChange={(e) => setValue(e.target.value)} error={fields.value}>
-            {(type === "status_change" ? ["hadir", "terlambat", "izin", "sakit", "dispensasi", "alpa"] : ["approved", "rejected"]).map((v) => (
-              <option key={v} value={v}>
-                {label(v)}
-              </option>
-            ))}
-          </SelectField>
+          {type === "check_in_time" || type === "check_out_time" ? (
+            <TextField label={type === "check_in_time" ? "Jam masuk baru" : "Jam pulang baru"} name="value" type="time" value={value} onChange={(e) => setValue(e.target.value)} error={fields.value} />
+          ) : (
+            <SelectField label={type === "status_change" ? "Status baru" : "Keputusan"} name="value" value={value} onChange={(e) => setValue(e.target.value)} error={fields.value}>
+              {(type === "status_change" ? ["hadir", "terlambat", "izin", "sakit", "dispensasi", "alpa"] : ["approved", "rejected"]).map((v) => (
+                <option key={v} value={v}>
+                  {label(v)}
+                </option>
+              ))}
+            </SelectField>
+          )}
           <TextAreaField label="Alasan (min. 10 karakter)" name="reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} error={fields.reason} />
           <div className="flex gap-3">
-            <PrimaryButton type="submit" pending={pending} disabled={reason.trim().length < 10}>
+            <PrimaryButton type="submit" pending={pending} disabled={reason.trim().length < 10 || value === ""}>
               {direct ? "Terapkan koreksi" : "Kirim pengajuan"}
             </PrimaryButton>
             <SecondaryButton type="button" onClick={() => setStudent(null)}>

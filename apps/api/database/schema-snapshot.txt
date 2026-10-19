@@ -127,7 +127,9 @@ column daily_attendance.attendance_date date nullable=NO
 column daily_attendance.attendance_session_id uuid nullable=YES
 column daily_attendance.attendance_status text nullable=NO
 column daily_attendance.check_in_event_id uuid nullable=YES
+column daily_attendance.check_in_time_override timestamp with time zone nullable=YES
 column daily_attendance.check_out_event_id uuid nullable=YES
+column daily_attendance.check_out_time_override timestamp with time zone nullable=YES
 column daily_attendance.class_id uuid nullable=YES
 column daily_attendance.created_at timestamp with time zone nullable=NO
 column daily_attendance.early_leave boolean nullable=NO
@@ -628,7 +630,7 @@ constraint correction_requests correction_requests_status_not_null NOT NULL stat
 constraint correction_requests correction_requests_student_fk FOREIGN KEY (school_id, student_id) REFERENCES students(school_id, id)
 constraint correction_requests correction_requests_student_id_not_null NOT NULL student_id
 constraint correction_requests correction_requests_to_value_not_null NOT NULL to_value
-constraint correction_requests correction_requests_type_check CHECK ((adjustment_type = ANY (ARRAY['status_change'::text, 'early_leave_decision'::text])))
+constraint correction_requests correction_requests_type_check CHECK ((adjustment_type = ANY (ARRAY['status_change'::text, 'early_leave_decision'::text, 'check_in_time'::text, 'check_out_time'::text])))
 constraint correction_requests correction_requests_updated_at_not_null NOT NULL updated_at
 constraint daily_attendance daily_attendance_absence_basis_check CHECK (((absence_basis IS NULL) OR (absence_basis = ANY (ARRAY['rule'::text, 'manual'::text]))))
 constraint daily_attendance daily_attendance_alpa_basis CHECK (((attendance_status <> ALL (ARRAY['alpa'::text, 'alpa_belum_diverifikasi'::text])) OR (absence_basis IS NOT NULL)))

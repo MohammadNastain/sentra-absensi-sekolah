@@ -4276,11 +4276,11 @@ components:
       properties:
         student_id: { type: string, format: uuid }
         date: { type: string, format: date }
-        type: { type: string, enum: [status_change, early_leave_decision] }
+        type: { type: string, enum: [status_change, early_leave_decision, check_in_time, check_out_time] }
         value:
           type: string
-          enum: [hadir, terlambat, izin, sakit, dispensasi, alpa, approved, rejected]
-          description: "status_change: salah satu status harian; early_leave_decision: approved atau rejected."
+          maxLength: 20
+          description: "status_change: salah satu status harian (hadir, terlambat, izin, sakit, dispensasi, alpa); early_leave_decision: approved atau rejected; check_in_time/check_out_time: jam HH:MM waktu lokal sekolah (status terlambat dan pulang awal diturunkan ulang dari jadwal)."
         reason: { type: string, minLength: 10, maxLength: 500 }
     CorrectionDecisionRequest:
       type: object
@@ -4297,7 +4297,7 @@ components:
         student_name: { type: string }
         class_name: { type: [string, "null"] }
         attendance_date: { type: string, format: date }
-        adjustment_type: { type: string, enum: [status_change, early_leave_decision] }
+        adjustment_type: { type: string, enum: [status_change, early_leave_decision, check_in_time, check_out_time] }
         current_value: { type: string }
         requested_value: { type: string }
         reason: { type: string }
@@ -4329,7 +4329,7 @@ components:
             request_id: { type: [string, "null"], format: uuid }
             student_id: { type: string, format: uuid }
             attendance_date: { type: string, format: date }
-            adjustment_type: { type: string, enum: [status_change, early_leave_decision] }
+            adjustment_type: { type: string, enum: [status_change, early_leave_decision, check_in_time, check_out_time] }
             from: { type: object, additionalProperties: true }
             to: { type: object, additionalProperties: true }
     CorrectionHistoryItem:
