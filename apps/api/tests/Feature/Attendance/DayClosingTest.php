@@ -156,3 +156,21 @@ it('perintah attendance:close-day berjalan untuk semua sekolah', function () {
     $this->artisan('attendance:close-day')->expectsOutputToContain('sekolah-a: wajib hadir 2, ditandai alpa sementara 1')->assertSuccessful();
     $this->artisan('attendance:close-day', ['--date' => 'bukan-tanggal'])->assertFailed();
 });
+
+it('pemulihan: penutupan yang terlewat satu hari dijalankan lagi oleh run terjadwal (backfill), hasil hari ini tetap dikembalikan', function () {
+    // 2026-10-19 hari Senin; server "mati" pada Senin, hidup lagi Selasa 20 Okt.
+    atTime('06:30', '2026-10-19');
+    scan($this->token)->assertJsonPath('data.result', 'accepted');
+    atTime('10:00', '2026-10-20');
+
+    $results = app(CloseAttendanceDay::class)->runForAllSchools(null, 2);
+
+    expect($results)->toHaveKey($this->school->code);
+    $monday = $this->inSchool($this->school, fn () => DB::table('daily_attendance')->where('attendance_date', '2026-10-19')->get());
+    expect($monday)->toHaveCount(2)
+        ->and($monday->firstWhere('student_id', $this->absent)->attendance_status)->toBe('alpa_belum_diverifikasi');
+
+    // Idempoten: menjalankan lagi tidak mengubah apa pun.
+    app(CloseAttendanceDay::class)->runForAllSchools(null, 2);
+    expect($this->inSchool($this->school, fn () => DB::table('daily_attendance')->where('attendance_date', '2026-10-19')->count()))->toBe(2);
+});

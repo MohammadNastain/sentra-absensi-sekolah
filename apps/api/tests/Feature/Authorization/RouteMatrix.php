@@ -154,6 +154,7 @@ final class RouteMatrix
             'POST api/v1/schools/{school}/attendance/correction-requests/{correction}/decision' => Permission::SchoolAttendanceCorrect,
             'POST api/v1/schools/{school}/attendance/correction-requests/{correction}/cancel' => Permission::SchoolAttendanceCorrectionRequest,
             'GET api/v1/schools/{school}/reports/summary' => Permission::SchoolAttendanceView,
+            'GET api/v1/schools/{school}/reports/trend' => Permission::SchoolAttendanceView,
             'GET api/v1/schools/{school}/reports/students' => Permission::SchoolAttendanceView,
             'GET api/v1/schools/{school}/reports/lateness' => Permission::SchoolAttendanceView,
             'GET api/v1/schools/{school}/reports/daily' => Permission::SchoolAttendanceView,

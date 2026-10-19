@@ -65,6 +65,26 @@ final class AttendanceReports
     }
 
     /**
+     * Tren harian: satu titik per tanggal sekolah pada rentang (untuk grafik dashboard).
+     *
+     * @param  list<string>|null  $classScope
+     * @return list<array<string, mixed>>
+     */
+    public function trend(School $school, string $from, string $to, ?string $classId, ?int $gradeLevel, ?array $classScope): array
+    {
+        [$where, $args] = $this->filters($school, $from, $to, $classId, $gradeLevel, $classScope);
+
+        $rows = DB::select(
+            'SELECT d.attendance_date AS date, '.self::COUNTS."
+             FROM daily_attendance d JOIN classes c ON c.school_id = d.school_id AND c.id = d.class_id
+             WHERE {$where} GROUP BY d.attendance_date ORDER BY d.attendance_date",
+            $args,
+        );
+
+        return array_values(array_map(fn ($r) => ['date' => (string) $r->date] + $this->metrics($r), $rows));
+    }
+
+    /**
      * Rekap per siswa (satu kelas atau semua kelas yang boleh dilihat), diurutkan nama.
      *
      * @param  list<string>|null  $classScope

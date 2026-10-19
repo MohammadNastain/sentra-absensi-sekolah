@@ -2078,6 +2078,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/reports/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tren kehadiran harian
+         * @description Izin: school.attendance.view. Satu titik per tanggal sekolah yang termaterialisasi; rumus sama dengan rekap.
+         */
+        get: operations["getReportTrend"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/reports/students": {
         parameters: {
             query?: never;
@@ -3272,6 +3292,13 @@ export interface components {
                 pending: number;
                 rejected: number;
             };
+        };
+        ReportTrendPoint: components["schemas"]["ReportMetrics"] & {
+            /** Format: date */
+            date: string;
+        };
+        ReportTrendEnvelope: {
+            data: components["schemas"]["ReportTrendPoint"][];
         };
         ReportClassRow: components["schemas"]["ReportMetrics"] & {
             /** Format: uuid */
@@ -7387,6 +7414,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportSummaryEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getReportTrend: {
+        parameters: {
+            query: {
+                from: string;
+                /** @description Maksimal 366 hari dari from. */
+                to: string;
+                class_id?: string;
+                grade_level?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Titik tren. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportTrendEnvelope"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

@@ -263,3 +263,20 @@ test("Tahap 5D: laporan tampil dan ekspor CSV selesai dengan tautan unduh", asyn
   const exports = page.getByRole("region", { name: "Ekspor saya" }).or(page.locator("section[aria-labelledby=rep-exports-title]"));
   await expect(exports.getByRole("link", { name: "Unduh" }).first()).toBeVisible({ timeout: 30000 });
 });
+
+test("Tahap 5E: dashboard menampilkan tren kehadiran dan rentang dapat diganti", async ({ page }) => {
+  await loginAsAdmin(page);
+  const trend = page.getByRole("region", { name: "Tren kehadiran" });
+  await expect(trend).toBeVisible();
+  await trend.getByLabel("Rentang").selectOption("30");
+  await expect(trend.getByRole("img").or(trend.getByText("Belum ada data kehadiran pada rentang ini."))).toBeVisible();
+});
+
+test("Tahap 5 sisa: riwayat koreksi dapat dimuat", async ({ page }) => {
+  await loginAsAdmin(page);
+  await nav(page, "Koreksi").click();
+  const history = page.getByRole("region", { name: "Riwayat koreksi" });
+  await history.getByLabel("Dari").fill("2026-01-01");
+  await history.getByRole("button", { name: "Tampilkan" }).click();
+  await expect(history.getByRole("listitem").first().or(history.getByText("Tidak ada koreksi pada rentang ini."))).toBeVisible();
+});

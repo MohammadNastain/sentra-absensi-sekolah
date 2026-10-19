@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 final class CloseAttendanceDayCommand extends Command
 {
-    protected $signature = 'attendance:close-day {--date= : Tanggal Y-m-d (default: hari ini menurut zona waktu tiap sekolah)}';
+    protected $signature = 'attendance:close-day {--date= : Tanggal Y-m-d (default: hari ini menurut zona waktu tiap sekolah)} {--backfill=3 : Jumlah hari sebelumnya yang ikut dijalankan ulang bila --date kosong (0 = tidak ada)}';
 
     protected $description = 'Tutup hari absensi: materialisasi belum_tercatat dan terapkan aturan alpa sementara (ADR 0005 §5)';
 
@@ -20,7 +20,7 @@ final class CloseAttendanceDayCommand extends Command
             return self::INVALID;
         }
 
-        foreach ($close->runForAllSchools($date === null ? null : (string) $date) as $code => $r) {
+        foreach ($close->runForAllSchools($date === null ? null : (string) $date, max(0, min(14, (int) $this->option('backfill')))) as $code => $r) {
             $this->line("{$code}: wajib hadir {$r['required']}, ditandai alpa sementara {$r['marked_absent']}, kesehatan hari: ".($r['health'] ?? '-'));
         }
 

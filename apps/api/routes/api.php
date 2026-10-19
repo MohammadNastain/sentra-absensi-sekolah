@@ -278,6 +278,8 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.cancel');
     Route::get('reports/summary', [ReportController::class, 'summary'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.summary');
+    Route::get('reports/trend', [ReportController::class, 'trend'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.trend');
     Route::get('reports/students', [ReportController::class, 'students'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.students');
     Route::get('reports/lateness', [ReportController::class, 'lateness'])

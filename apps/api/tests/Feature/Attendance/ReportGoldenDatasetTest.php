@@ -338,3 +338,14 @@ it('ekspor: PDF dihasilkan (dompdf) dengan nilai di-escape', function () {
 
     expect(file_get_contents($res->baseResponse->getFile()->getPathname()))->toStartWith('%PDF-')->and($data['row_count'])->toBe(5);
 });
+
+it('tren: satu titik per tanggal dengan rumus yang sama dengan rekap', function () {
+    $data = rep('/trend?from=2026-10-01&to=2026-10-31')->assertOk()->json('data');
+
+    expect($data)->toHaveCount(10)->and(array_column($data, 'date'))->toBe(GOLDEN_DAYS);
+    // 5 siswa/hari. Hari ke-5 (9 Okt): A2 terlambat, B1 dispensasi → hadir+terlambat 4, penyebut 4 → 100%.
+    expect($data[4])->toMatchArray(['effective_days' => 5, 'terlambat' => 1, 'dispensasi' => 1, 'present' => 5 - 1 /* dispensasi */, 'denominator' => 4, 'attendance_percentage' => 100.0]);
+    // Hari ke-9 (15 Okt): A1 sakit, A2 alpa sementara, B2 alpa → 3 hadir dari 4 (sakit dikecualikan).
+    expect($data[8])->toMatchArray(['sakit' => 1, 'alpa' => 1, 'alpa_belum_diverifikasi' => 1, 'denominator' => 4, 'present' => 2, 'attendance_percentage' => 50.0]);
+    rep("/trend?from=2026-10-01&to=2026-10-31&class_id={$this->c8a}")->assertOk()->assertJsonCount(10, 'data');
+});
