@@ -12,12 +12,14 @@ use App\Http\Controllers\School\AcademicYearController;
 use App\Http\Controllers\School\AttendanceController;
 use App\Http\Controllers\School\AuditLogController;
 use App\Http\Controllers\School\CalendarController;
+use App\Http\Controllers\School\CorrectionController;
 use App\Http\Controllers\School\CredentialController;
 use App\Http\Controllers\School\DeviceController;
 use App\Http\Controllers\School\HolidayController;
 use App\Http\Controllers\School\InvitationController;
 use App\Http\Controllers\School\LeaveRequestController;
 use App\Http\Controllers\School\MemberController;
+use App\Http\Controllers\School\ReportController;
 use App\Http\Controllers\School\ScheduleController;
 use App\Http\Controllers\School\SchoolClassController;
 use App\Http\Controllers\School\SchoolProfileController;
@@ -261,6 +263,30 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.disruption');
     Route::post('attendance/days/{date}/release', [AbsenceController::class, 'releaseHold'])->where('date', '\d{4}-\d{2}-\d{2}')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.release');
+    Route::post('attendance/corrections', [CorrectionController::class, 'apply'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrect))->name('attendance.corrections.apply');
+    Route::get('attendance/corrections/history', [CorrectionController::class, 'history'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.corrections.history');
+    Route::get('attendance/correction-requests', [CorrectionController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.index');
+    Route::post('attendance/correction-requests', [CorrectionController::class, 'request'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.store');
+    Route::post('attendance/correction-requests/{correction}/decision', [CorrectionController::class, 'decide'])->whereUuid('correction')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrect))->name('attendance.correction-requests.decide');
+    Route::post('attendance/correction-requests/{correction}/cancel', [CorrectionController::class, 'cancel'])->whereUuid('correction')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.cancel');
+    Route::get('reports/summary', [ReportController::class, 'summary'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.summary');
+    Route::get('reports/students', [ReportController::class, 'students'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.students');
+    Route::get('reports/lateness', [ReportController::class, 'lateness'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.lateness');
+    Route::get('reports/daily', [ReportController::class, 'daily'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.daily');
+    Route::get('reports/monthly', [ReportController::class, 'monthly'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.monthly');
+    Route::get('reports/events', [ReportController::class, 'events'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('reports.events');
     Route::get('leave-requests', [LeaveRequestController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.index');
     Route::get('leave-requests/students', [LeaveRequestController::class, 'students'])

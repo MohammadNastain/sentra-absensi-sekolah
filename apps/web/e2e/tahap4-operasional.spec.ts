@@ -218,3 +218,33 @@ test("Tahap 5B: ajukan izin dengan lampiran, setujui, lalu batalkan", async ({ p
   await expect(page.getByText("Izin dibatalkan.")).toBeVisible();
   await expect(row.getByText("Dibatalkan")).toBeVisible();
 });
+
+test("Tahap 5C: koreksi langsung admin, status yang sama ditolak", async ({ page }) => {
+  await loginAsAdmin(page);
+  await nav(page, "Koreksi").click();
+  await expect(page.getByRole("heading", { name: "Koreksi absensi", exact: true })).toBeVisible();
+
+  async function correct(status: string, reason: string) {
+    const form = page.getByRole("region", { name: "Koreksi langsung" });
+    await form.getByLabel("Cari siswa").fill("Candra");
+    await form.getByRole("button", { name: "Cari" }).click();
+    await form.getByRole("listitem").filter({ hasText: "Candra Wijaya" }).getByRole("button", { name: "Pilih" }).click();
+    await form.getByLabel("Tanggal").fill("2026-10-12");
+    await form.getByLabel("Status baru").selectOption(status);
+    const submit = form.getByRole("button", { name: "Terapkan koreksi" });
+    await expect(submit).toBeDisabled();
+    await form.getByLabel(/Alasan/).fill(reason);
+    await submit.click();
+    return form;
+  }
+
+  // Dua koreksi berurutan ke status berbeda; hasil akhir "sakit" membuat tes dapat diulang.
+  await correct("terlambat", "Koreksi uji e2e: terlambat");
+  await expect(page.getByText("Koreksi diterapkan.")).toBeVisible();
+
+  const form = await correct("sakit", "Koreksi uji e2e: sakit");
+  await expect(page.getByText("Koreksi diterapkan.")).toBeVisible();
+
+  await correct("sakit", "Koreksi uji e2e: sakit ulang");
+  await expect(form.getByText("Status sudah sama dengan yang diminta.").or(page.getByText("Status sudah sama dengan yang diminta.")).first()).toBeVisible();
+});

@@ -153,7 +153,8 @@ final class CloseAttendanceDay
              JOIN leave_requests l ON l.school_id = d.school_id AND l.student_id = d.student_id AND l.status = 'approved'
                  AND d.attendance_date BETWEEN l.start_date AND l.end_date
              WHERE d.school_id = ? AND d.attendance_date = ? AND d.check_in_event_id IS NULL
-               AND d.attendance_status IN ('belum_tercatat', 'alpa_belum_diverifikasi', 'alpa'){$only}";
+               AND d.attendance_status IN ('belum_tercatat', 'alpa_belum_diverifikasi', 'alpa')
+               AND (d.attendance_status <> 'alpa' OR d.absence_basis = 'rule'){$only}";
 
         DB::insert(
             "INSERT INTO attendance_adjustments (school_id, daily_attendance_id, student_id, attendance_date, adjustment_type, from_value, to_value, reason, status, requested_by_user_id, decided_by_user_id, decided_at)
