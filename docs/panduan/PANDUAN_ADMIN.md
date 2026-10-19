@@ -60,7 +60,7 @@ Jumlah perangkat aktif dibatasi per sekolah (sekolah demo: 1).
 ## 6. Koreksi absensi
 
 Menu **Koreksi**:
-- **Admin**: koreksi langsung (ubah status, atau putuskan pulang awal) dengan alasan minimal 10 karakter. Hanya untuk hari yang sudah berjalan.
+- **Admin**: koreksi langsung (ubah status, putuskan pulang awal, atau koreksi jam masuk/pulang; status terlambat dan pulang awal dihitung ulang dari jadwal) dengan alasan minimal 10 karakter. Hanya untuk hari yang sudah berjalan.
 - **Wali kelas**: mengajukan untuk siswa kelasnya; admin menyetujui/menolak. Absensi baru berubah setelah disetujui.
 - Setiap koreksi tercatat di riwayat dan audit; data scan asli tidak pernah diubah.
 
@@ -88,4 +88,4 @@ Menu **Audit** menampilkan siapa melakukan apa dan kapan (koreksi, keputusan izi
 
 ## 10. Yang belum tersedia
 
-Koreksi jam masuk/pulang, notifikasi ke orang tua, dan penarikan data otomatis saat server mati *(rencana)*. Bila hari terlewat penutupannya, hubungi pengelola teknis untuk menjalankan penutupan hari manual.
+Notifikasi ke orang tua, dan penarikan data otomatis saat server mati *(rencana)*. Bila hari terlewat penutupannya, hubungi pengelola teknis untuk menjalankan penutupan hari manual.

@@ -145,7 +145,7 @@ final class AttendanceReports
 
         $rows = DB::select(
             "SELECT s.full_name, s.student_number, c.name AS class_name, d.attendance_status, d.late_minutes, d.early_leave, d.early_leave_status, d.source,
-                    ci.occurred_at_server AS check_in_at, co.occurred_at_server AS check_out_at
+                    COALESCE(d.check_in_time_override, ci.occurred_at_server) AS check_in_at, COALESCE(d.check_out_time_override, co.occurred_at_server) AS check_out_at
              FROM daily_attendance d
              JOIN students s ON s.school_id = d.school_id AND s.id = d.student_id
              JOIN classes c ON c.school_id = d.school_id AND c.id = d.class_id

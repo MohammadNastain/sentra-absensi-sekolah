@@ -182,3 +182,44 @@ it('riwayat koreksi: tersaring tanggal/siswa dan hanya untuk peninjau', function
     $this->actingAs($this->homeroom)->getJson(corrUrl('/corrections/history?from=2026-10-01&to=2026-10-31'))->assertForbidden();
     $this->actingAs($this->officer)->getJson(corrUrl('/corrections/history?from=2026-10-31&to=2026-10-01'))->assertUnprocessable();
 });
+
+it('koreksi jam masuk: status dan menit terlambat diturunkan ulang dari jadwal, jam tampil di laporan harian', function () {
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_in_time', 'value' => '06:30']))->assertCreated()
+        ->assertJsonPath('data.from.check_in_time', null)->assertJsonPath('data.to.attendance_status', 'hadir');
+    $row = corrDaily();
+    expect($row->attendance_status)->toBe('hadir')->and($row->late_minutes)->toBeNull()->and($row->source)->toBe('manual_adjustment')->and($row->check_in_event_id)->toBeNull();
+
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_in_time', 'value' => '07:20', 'reason' => 'Jam masuk dikoreksi sesuai buku piket']))->assertCreated()
+        ->assertJsonPath('data.from.check_in_time', '06:30')->assertJsonPath('data.to.attendance_status', 'terlambat');
+    expect(corrDaily()->attendance_status)->toBe('terlambat')->and(corrDaily()->late_minutes)->toBe(20);
+
+    $this->actingAs($this->admin)->getJson('/api/v1/schools/sekolah-a/reports/daily?date=2026-10-19')->assertOk()
+        ->assertJsonPath('data.0.check_in', '07.20')->assertJsonPath('data.0.late_minutes', 20)->assertJsonPath('data.0.corrected', true);
+    $this->useSchool($this->school);
+    expect(DB::table('attendance_adjustments')->where('adjustment_type', 'check_in_time')->count())->toBe(2);
+});
+
+it('koreksi jam pulang: pulang awal diturunkan ulang, butuh jam masuk, dan urutan jam dijaga', function () {
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_out_time', 'value' => '14:05']))->assertStatus(409);
+
+    Carbon::setTestNow(Carbon::parse('2026-10-19 06:30:00', 'Asia/Jakarta'));
+    scan($this->token)->assertJsonPath('data.code', 'CHECK_IN_OK');
+    Carbon::setTestNow(Carbon::parse('2026-10-19 10:00:00', 'Asia/Jakarta'));
+
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_out_time', 'value' => '06:00']))->assertStatus(409);
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_out_time', 'value' => '13:00']))->assertStatus(409);
+
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_out_time', 'value' => '09:30']))->assertCreated()
+        ->assertJsonPath('data.to.early_leave', true);
+    expect(corrDaily()->early_leave)->toBeTrue()->and(corrDaily()->early_leave_status)->toBe('pending');
+
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_in_time', 'value' => '09:30', 'reason' => 'Mencoba jam masuk setelah pulang']))->assertStatus(409);
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_in_time', 'value' => '25:00']))->assertUnprocessable();
+});
+
+it('wali kelas mengajukan koreksi jam masuk, admin menyetujui, jam berlaku', function () {
+    $id = $this->actingAs($this->homeroom)->postJson(corrUrl('/correction-requests'), corrBody(['type' => 'check_in_time', 'value' => '06:45']))->assertCreated()
+        ->assertJsonPath('data.requested_value', '06:45')->json('data.id');
+    $this->actingAs($this->admin)->postJson(corrUrl("/correction-requests/{$id}/decision"), ['decision' => 'approve'])->assertOk();
+    expect(corrDaily()->attendance_status)->toBe('hadir');
+});
