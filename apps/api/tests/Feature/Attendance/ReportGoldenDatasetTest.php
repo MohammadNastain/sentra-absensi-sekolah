@@ -233,3 +233,108 @@ it('otorisasi: kepala sekolah boleh melihat laporan; wali kelas hanya kelasnya; 
     $this->addMember($other, $outsider, [Role::SchoolAdmin]);
     $this->actingAs($outsider)->getJson('/api/v1/schools/sekolah-b/reports/summary?from=2026-10-01&to=2026-10-31')->assertOk()->assertJsonPath('data.totals.effective_days', 0);
 });
+
+function exportReq(array $body, ?User $as = null)
+{
+    $t = test();
+
+    return $t->actingAs($as ?? $t->admin)->postJson('/api/v1/schools/sekolah-a/exports', $body);
+}
+
+function csvLines(string $url, ?User $as = null): array
+{
+    $t = test();
+    $file = $t->actingAs($as ?? $t->admin)->get($url)->assertOk()->baseResponse->getFile()->getPathname();
+
+    $content = str_starts_with((string) file_get_contents($file), "\xEF\xBB\xBF") ? substr((string) file_get_contents($file), 3) : (string) file_get_contents($file);
+
+    return array_map('str_getcsv', array_values(array_filter(explode("\n", $content))));
+}
+
+it('ekspor: CSV rekap dibuat job, diunduh lewat URL bertanda tangan, angkanya sama dengan laporan', function () {
+    Storage::fake('local');
+    $res = exportReq(['report' => 'summary', 'format' => 'csv', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']])->assertStatus(202)->assertJsonPath('data.format', 'csv');
+
+    $id = $res->json('data.id');
+    $show = $this->actingAs($this->admin)->getJson("/api/v1/schools/sekolah-a/exports/{$id}")->assertOk()->assertJsonPath('data.status', 'done')->assertJsonPath('data.row_count', 4);
+    $lines = csvLines($show->json('data.download_url'));
+
+    expect($lines[0][0])->toBe('Kelas')->and($lines[0][10])->toBe('Persentase kehadiran (%)');
+    expect(array_column($lines, 0))->toBe(['Kelas', '7A', '7B', '8A', 'Total']);
+    expect($lines[4][1])->toBe('50')->and($lines[4][10])->toBe('89.13');
+    $logged = false;
+    $this->inSchool($this->school, function () use (&$logged) {
+        $logged = DB::table('audit_logs')->where('action', 'school.export.requested')->exists();
+    });
+    expect($logged)->toBeTrue();
+});
+
+it('ekspor: XLSX dihasilkan dan sel berawalan rumus diberi apostrof (injeksi)', function () {
+    Storage::fake('local');
+    $this->inSchool($this->school, fn () => Student::query()->where('id', $this->a1)->update(['full_name' => '=HYPERLINK("http://x")']));
+
+    $id = exportReq(['report' => 'students', 'format' => 'csv', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']])->json('data.id');
+    $url = $this->actingAs($this->admin)->getJson("/api/v1/schools/sekolah-a/exports/{$id}")->json('data.download_url');
+    expect(csvLines($url)[1][0])->toStartWith("'=");
+
+    $xid = exportReq(['report' => 'daily', 'format' => 'xlsx', 'filters' => ['date' => '2026-10-08']])->json('data.id');
+    $x = $this->actingAs($this->admin)->getJson("/api/v1/schools/sekolah-a/exports/{$xid}")->assertJsonPath('data.status', 'done')->json('data');
+    expect($x['file_size'])->toBeGreaterThan(500)->and($x['row_count'])->toBe(5);
+});
+
+it('ekspor: URL kedaluwarsa atau diubah ditolak; akun lain tidak melihat berkas peminta', function () {
+    Storage::fake('local');
+    $id = exportReq(['report' => 'lateness', 'format' => 'csv', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']])->json('data.id');
+    $url = $this->actingAs($this->admin)->getJson("/api/v1/schools/sekolah-a/exports/{$id}")->json('data.download_url');
+
+    $this->actingAs($this->admin)->get($url.'x')->assertNotFound();
+    $this->actingAs($this->principal)->getJson("/api/v1/schools/sekolah-a/exports/{$id}")->assertNotFound();
+    $this->actingAs($this->principal)->get($url)->assertNotFound();
+    expect($this->actingAs($this->principal)->getJson('/api/v1/schools/sekolah-a/exports')->json('data'))->toBe([]);
+    $this->travel(11)->minutes();
+    $this->actingAs($this->admin)->get($url)->assertNotFound();
+    $this->travelBack();
+});
+
+it('ekspor: wali kelas hanya mengekspor kelasnya; petugas piket tidak boleh; filter tidak valid ditolak', function () {
+    Storage::fake('local');
+    $homeroom = User::factory()->create();
+    $membership = $this->addMember($this->school, $homeroom, [Role::HomeroomTeacher]);
+    $this->inSchool($this->school, function () use ($membership) {
+        $teacher = Teacher::query()->create(['school_id' => $this->school->id, 'full_name' => 'Wali', 'membership_id' => $membership->id, 'status' => 'active']);
+        SchoolClass::query()->where('id', $this->c7a)->update(['homeroom_teacher_id' => $teacher->id]);
+    });
+
+    $id = exportReq(['report' => 'students', 'format' => 'csv', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']], $homeroom)->assertStatus(202)->json('data.id');
+    $url = $this->actingAs($homeroom)->getJson("/api/v1/schools/sekolah-a/exports/{$id}")->json('data.download_url');
+    expect(array_column(csvLines($url, $homeroom), 0))->toBe(['Nama', 'A1 Satu', 'A2 Dua']);
+
+    exportReq(['report' => 'summary', 'format' => 'csv', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']], $this->officer)->assertForbidden();
+    exportReq(['report' => 'summary', 'format' => 'docx', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']])->assertUnprocessable();
+    exportReq(['report' => 'summary', 'format' => 'csv', 'filters' => ['from' => '2026-10-31', 'to' => '2026-10-01']])->assertUnprocessable();
+    exportReq(['report' => 'monthly', 'format' => 'csv', 'filters' => ['month' => '2026-10']])->assertUnprocessable();
+});
+
+it('ekspor: berkas kedaluwarsa dihapus oleh exports:purge dan tidak dapat diunduh lagi', function () {
+    Storage::fake('local');
+    $id = exportReq(['report' => 'lateness', 'format' => 'csv', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']])->json('data.id');
+    $path = DB::scalar('SELECT file_path FROM export_jobs WHERE id = ?', [$id]);
+    Storage::disk('local')->assertExists($path);
+
+    $this->inSchool($this->school, fn () => DB::update("UPDATE export_jobs SET expires_at = now() - interval '1 day' WHERE id = ?", [$id]));
+    $this->artisan('exports:purge')->assertSuccessful();
+
+    Storage::disk('local')->assertMissing($path);
+    $this->actingAs($this->admin)->getJson("/api/v1/schools/sekolah-a/exports/{$id}")->assertOk()->assertJsonPath('data.download_url', null);
+});
+
+it('ekspor: PDF dihasilkan (dompdf) dengan nilai di-escape', function () {
+    Storage::fake('local');
+    $this->inSchool($this->school, fn () => Student::query()->where('id', $this->a1)->update(['full_name' => '<script>alert(1)</script> A1']));
+
+    $id = exportReq(['report' => 'students', 'format' => 'pdf', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']])->assertStatus(202)->json('data.id');
+    $data = $this->actingAs($this->admin)->getJson("/api/v1/schools/sekolah-a/exports/{$id}")->assertJsonPath('data.status', 'done')->json('data');
+    $res = $this->actingAs($this->admin)->get($data['download_url'])->assertOk()->assertHeader('Content-Type', 'application/pdf');
+
+    expect(file_get_contents($res->baseResponse->getFile()->getPathname()))->toStartWith('%PDF-')->and($data['row_count'])->toBe(5);
+});

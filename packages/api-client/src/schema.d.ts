@@ -1994,6 +1994,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar ekspor milik peminta (50 terbaru)
+         * @description Izin: school.reports.export. Hanya ekspor milik akun sendiri.
+         */
+        get: operations["listExports"];
+        put?: never;
+        /**
+         * Minta ekspor laporan (CSV/XLSX) yang dibuat async
+         * @description Izin: school.reports.export. Wali kelas dibatasi kelasnya (dibekukan saat diminta). Hasil diambil lewat download_url bertanda tangan berumur 10 menit; berkas disimpan 7 hari. PDF maksimal 2000 baris.
+         */
+        post: operations["requestExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/exports/{export}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Status ekspor
+         * @description Izin: school.reports.export; hanya peminta. download_url null bila belum selesai atau sudah kedaluwarsa; URL baru dibuat tiap pembacaan.
+         */
+        get: operations["getExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/exports/{export}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unduh berkas ekspor (URL bertanda tangan)
+         * @description Izin: school.reports.export; hanya peminta. Wajib membawa tanda tangan dan kedaluwarsa dari download_url.
+         */
+        get: operations["downloadExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/reports/summary": {
         parameters: {
             query?: never;
@@ -2163,7 +2227,7 @@ export interface components {
         /** @enum {string} */
         Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify" | "school.attendance.correct" | "school.attendance.correction_request" | "school.leave.manage" | "school.leave.approve";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify" | "school.attendance.correct" | "school.attendance.correction_request" | "school.leave.manage" | "school.leave.approve" | "school.reports.export";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -3148,6 +3212,41 @@ export interface components {
         };
         CorrectionHistoryEnvelope: {
             data: components["schemas"]["CorrectionHistoryItem"][];
+        };
+        ExportRequestBody: {
+            /** @enum {string} */
+            report: "summary" | "students" | "lateness" | "daily" | "monthly" | "events";
+            /** @enum {string} */
+            format: "csv" | "xlsx" | "pdf";
+            /** @description Sama dengan parameter laporan terkait (from/to/class_id/grade_level, atau date, atau month+class_id, atau from/to/result untuk events). */
+            filters: {
+                [key: string]: unknown;
+            };
+        };
+        Export: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            report: "summary" | "students" | "lateness" | "daily" | "monthly" | "events";
+            /** @enum {string} */
+            format: "csv" | "xlsx" | "pdf";
+            /** @enum {string} */
+            status: "queued" | "running" | "done" | "failed";
+            row_count: number | null;
+            file_size: number | null;
+            error_message: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @description URL bertanda tangan, berlaku 10 menit. */
+            download_url: string | null;
+        };
+        ExportEnvelope: {
+            data: components["schemas"]["Export"];
+        };
+        ExportListEnvelope: {
+            data: components["schemas"]["Export"][];
         };
         ReportMetrics: {
             effective_days: number;
@@ -7145,6 +7244,122 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listExports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar ekspor. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportListEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    requestExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequestBody"];
+            };
+        };
+        responses: {
+            /** @description Ekspor diterima dan masuk antrean. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                export: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status ekspor. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    downloadExport: {
+        parameters: {
+            query: {
+                signature: string;
+                expires: number;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                export: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berkas CSV, XLSX, atau PDF. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                    "text/csv": string;
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     getReportSummary: {

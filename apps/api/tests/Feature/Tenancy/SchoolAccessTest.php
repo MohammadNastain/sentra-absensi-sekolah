@@ -121,5 +121,5 @@ it('menampilkan daftar sekolah milik user tanpa sekolah lain dan tanpa keanggota
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.school.code', 'sekolah-a')
         ->assertJsonPath('data.0.roles', ['homeroom_teacher', 'principal'])
-        ->assertJsonPath('data.0.permissions', ['school.academic.view', 'school.attendance.correction_request', 'school.attendance.verify', 'school.attendance.view', 'school.audit.view', 'school.leave.manage', 'school.members.view', 'school.profile.view', 'school.schedule.view', 'school.students.view']);
+        ->assertJsonPath('data.0.permissions', ['school.academic.view', 'school.attendance.correction_request', 'school.attendance.verify', 'school.attendance.view', 'school.audit.view', 'school.leave.manage', 'school.members.view', 'school.profile.view', 'school.reports.export', 'school.schedule.view', 'school.students.view']);
 });

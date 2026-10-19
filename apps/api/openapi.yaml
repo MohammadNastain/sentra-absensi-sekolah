@@ -2784,6 +2784,87 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/exports:
+    get:
+      tags: [school]
+      operationId: listExports
+      summary: "Daftar ekspor milik peminta (50 terbaru)"
+      description: "Izin: school.reports.export. Hanya ekspor milik akun sendiri."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Daftar ekspor."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportListEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [school]
+      operationId: requestExport
+      summary: "Minta ekspor laporan (CSV/XLSX) yang dibuat async"
+      description: "Izin: school.reports.export. Wali kelas dibatasi kelasnya (dibekukan saat diminta). Hasil diambil lewat download_url bertanda tangan berumur 10 menit; berkas disimpan 7 hari. PDF maksimal 2000 baris."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExportRequestBody" }
+      responses:
+        "202":
+          description: "Ekspor diterima dan masuk antrean."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/exports/{export}:
+    get:
+      tags: [school]
+      operationId: getExport
+      summary: "Status ekspor"
+      description: "Izin: school.reports.export; hanya peminta. download_url null bila belum selesai atau sudah kedaluwarsa; URL baru dibuat tiap pembacaan."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: export, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: "Status ekspor."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExportEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/exports/{export}/download:
+    get:
+      tags: [school]
+      operationId: downloadExport
+      summary: "Unduh berkas ekspor (URL bertanda tangan)"
+      description: "Izin: school.reports.export; hanya peminta. Wajib membawa tanda tangan dan kedaluwarsa dari download_url."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: export, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: signature, in: query, required: true, schema: { type: string } }
+        - { name: expires, in: query, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: "Berkas CSV, XLSX, atau PDF."
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+            text/csv:
+              schema: { type: string }
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /schools/{school}/reports/summary:
     get:
       tags: [school]
@@ -3120,7 +3201,7 @@ components:
       enum: [school_admin, principal, homeroom_teacher, duty_officer, terminal_operator]
     Permission:
       type: string
-      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review, school.attendance.verify, school.attendance.correct, school.attendance.correction_request, school.leave.manage, school.leave.approve]
+      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review, school.attendance.verify, school.attendance.correct, school.attendance.correction_request, school.leave.manage, school.leave.approve, school.reports.export]
     SchoolStatus:
       type: string
       enum: [trial, active, suspended, terminated]
@@ -4251,6 +4332,42 @@ components:
         data:
           type: array
           items: { $ref: "#/components/schemas/CorrectionHistoryItem" }
+    ExportRequestBody:
+      type: object
+      required: [report, format, filters]
+      properties:
+        report: { type: string, enum: [summary, students, lateness, daily, monthly, events] }
+        format: { type: string, enum: [csv, xlsx, pdf] }
+        filters:
+          type: object
+          description: "Sama dengan parameter laporan terkait (from/to/class_id/grade_level, atau date, atau month+class_id, atau from/to/result untuk events)."
+          additionalProperties: true
+    Export:
+      type: object
+      required: [id, report, format, status, row_count, file_size, error_message, created_at, expires_at, download_url]
+      properties:
+        id: { type: string, format: uuid }
+        report: { type: string, enum: [summary, students, lateness, daily, monthly, events] }
+        format: { type: string, enum: [csv, xlsx, pdf] }
+        status: { type: string, enum: [queued, running, done, failed] }
+        row_count: { type: [integer, "null"] }
+        file_size: { type: [integer, "null"] }
+        error_message: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+        download_url: { type: [string, "null"], description: "URL bertanda tangan, berlaku 10 menit." }
+    ExportEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Export" }
+    ExportListEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Export" }
     ReportMetrics:
       type: object
       required: [effective_days, hadir, terlambat, izin, sakit, dispensasi, alpa, alpa_belum_diverifikasi, belum_tercatat, present, excluded, denominator, attendance_percentage, late_minutes, early_leave]

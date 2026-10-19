@@ -158,6 +158,22 @@ column devices.school_id uuid nullable=NO
 column devices.status text nullable=NO
 column devices.token_hash bytea nullable=YES
 column devices.updated_at timestamp with time zone nullable=NO
+column export_jobs.class_scope jsonb nullable=YES
+column export_jobs.created_at timestamp with time zone nullable=NO
+column export_jobs.error_message text nullable=YES
+column export_jobs.expires_at timestamp with time zone nullable=NO
+column export_jobs.file_path text nullable=YES
+column export_jobs.file_size bigint nullable=YES
+column export_jobs.filters jsonb nullable=NO
+column export_jobs.finished_at timestamp with time zone nullable=YES
+column export_jobs.format text nullable=NO
+column export_jobs.id uuid nullable=NO
+column export_jobs.report text nullable=NO
+column export_jobs.requested_by_user_id uuid nullable=NO
+column export_jobs.row_count integer nullable=YES
+column export_jobs.school_id uuid nullable=NO
+column export_jobs.status text nullable=NO
+column export_jobs.updated_at timestamp with time zone nullable=NO
 column failed_jobs.connection text nullable=NO
 column failed_jobs.exception text nullable=NO
 column failed_jobs.failed_at timestamp with time zone nullable=NO
@@ -349,6 +365,8 @@ index CREATE INDEX daily_attendance_date_index ON public.daily_attendance USING 
 index CREATE INDEX daily_attendance_leave_index ON public.daily_attendance USING btree (school_id, leave_request_id) WHERE (leave_request_id IS NOT NULL)
 index CREATE INDEX daily_attendance_status_date_index ON public.daily_attendance USING btree (school_id, attendance_status, attendance_date)
 index CREATE INDEX devices_school_status_index ON public.devices USING btree (school_id, status)
+index CREATE INDEX export_jobs_expiry_index ON public.export_jobs USING btree (expires_at) WHERE (file_path IS NOT NULL)
+index CREATE INDEX export_jobs_requester_index ON public.export_jobs USING btree (school_id, requested_by_user_id, created_at DESC)
 index CREATE INDEX holidays_school_dates_index ON public.holidays USING btree (school_id, start_date, end_date)
 index CREATE INDEX import_batches_school_created_index ON public.import_batches USING btree (school_id, created_at DESC)
 index CREATE INDEX import_rows_batch_status_index ON public.import_rows USING btree (school_id, batch_id, status, row_number)
@@ -399,6 +417,8 @@ index CREATE UNIQUE INDEX devices_pairing_code_unique ON public.devices USING bt
 index CREATE UNIQUE INDEX devices_pkey ON public.devices USING btree (id)
 index CREATE UNIQUE INDEX devices_school_id_id_unique ON public.devices USING btree (school_id, id)
 index CREATE UNIQUE INDEX devices_token_hash_unique ON public.devices USING btree (token_hash)
+index CREATE UNIQUE INDEX export_jobs_pkey ON public.export_jobs USING btree (id)
+index CREATE UNIQUE INDEX export_jobs_school_id_id_unique ON public.export_jobs USING btree (school_id, id)
 index CREATE UNIQUE INDEX failed_jobs_pkey ON public.failed_jobs USING btree (id)
 index CREATE UNIQUE INDEX failed_jobs_uuid_key ON public.failed_jobs USING btree (uuid)
 index CREATE UNIQUE INDEX holidays_pkey ON public.holidays USING btree (id)
@@ -656,6 +676,24 @@ constraint devices devices_status_not_null NOT NULL status
 constraint devices devices_token_hash_unique UNIQUE (token_hash)
 constraint devices devices_type_check CHECK ((device_type = 'gate_terminal'::text))
 constraint devices devices_updated_at_not_null NOT NULL updated_at
+constraint export_jobs export_jobs_created_at_not_null NOT NULL created_at
+constraint export_jobs export_jobs_done_check CHECK (((status <> ALL (ARRAY['done'::text, 'failed'::text])) OR (finished_at IS NOT NULL)))
+constraint export_jobs export_jobs_expires_at_not_null NOT NULL expires_at
+constraint export_jobs export_jobs_filters_not_null NOT NULL filters
+constraint export_jobs export_jobs_format_check CHECK ((format = ANY (ARRAY['csv'::text, 'xlsx'::text, 'pdf'::text])))
+constraint export_jobs export_jobs_format_not_null NOT NULL format
+constraint export_jobs export_jobs_id_not_null NOT NULL id
+constraint export_jobs export_jobs_pkey PRIMARY KEY (id)
+constraint export_jobs export_jobs_report_check CHECK ((report = ANY (ARRAY['summary'::text, 'students'::text, 'lateness'::text, 'daily'::text, 'monthly'::text, 'events'::text])))
+constraint export_jobs export_jobs_report_not_null NOT NULL report
+constraint export_jobs export_jobs_requested_by_user_id_fkey FOREIGN KEY (requested_by_user_id) REFERENCES users(id)
+constraint export_jobs export_jobs_requested_by_user_id_not_null NOT NULL requested_by_user_id
+constraint export_jobs export_jobs_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint export_jobs export_jobs_school_id_id_unique UNIQUE (school_id, id)
+constraint export_jobs export_jobs_school_id_not_null NOT NULL school_id
+constraint export_jobs export_jobs_status_check CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'done'::text, 'failed'::text])))
+constraint export_jobs export_jobs_status_not_null NOT NULL status
+constraint export_jobs export_jobs_updated_at_not_null NOT NULL updated_at
 constraint failed_jobs failed_jobs_connection_not_null NOT NULL connection
 constraint failed_jobs failed_jobs_exception_not_null NOT NULL exception
 constraint failed_jobs failed_jobs_failed_at_not_null NOT NULL failed_at
@@ -912,6 +950,7 @@ policy daily_attendance tenant_isolation ALL (school_id = app_school_id()) (scho
 policy devices device_claim_owner_update UPDATE (status = 'pending_pairing'::text) true
 policy devices device_lookup_owner_read SELECT true 
 policy devices tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy export_jobs tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy holidays tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy import_batches tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy import_rows tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
@@ -943,6 +982,7 @@ rls classes enabled=true forced=true
 rls correction_requests enabled=true forced=true
 rls daily_attendance enabled=true forced=true
 rls devices enabled=true forced=true
+rls export_jobs enabled=true forced=true
 rls failed_jobs enabled=false forced=false
 rls holidays enabled=true forced=true
 rls import_batches enabled=true forced=true

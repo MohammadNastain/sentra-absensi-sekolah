@@ -124,7 +124,7 @@ services:
     extends:
       service: api
     ports: !reset []
-    command: ["php", "artisan", "queue:work", "--tries=1", "--sleep=1", "--max-time=3600"]
+    command: ["php", "artisan", "queue:work", "--tries=1", "--sleep=1", "--max-time=3600", "--queue=default,exports"]
 
   # Penjadwal tugas berkala (mis. imports:purge, retensi staging impor D-26).
   scheduler:

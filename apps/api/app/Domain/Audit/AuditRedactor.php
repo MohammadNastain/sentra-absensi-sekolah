@@ -26,6 +26,7 @@ final class AuditRedactor
         'attendance_event' => ['student_id', 'event_type', 'result', 'reason_code', 'assist_reason_code', 'device_id', 'method'],
         'attendance_correction' => ['student_id', 'attendance_date', 'adjustment_type', 'attendance_status', 'early_leave_status'],
         'leave_request' => ['student_id', 'leave_type', 'start_date', 'end_date', 'status'],
+        'export_job' => ['report', 'format'],
         'attendance_day' => ['date', 'reverted', 'count'],
         'attendance_settings' => ['absence_rule_enabled', 'absence_cutoff_time'],
         'device' => ['name', 'device_type', 'status', 'revoked_reason'],

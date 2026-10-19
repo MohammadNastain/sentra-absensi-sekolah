@@ -248,3 +248,18 @@ test("Tahap 5C: koreksi langsung admin, status yang sama ditolak", async ({ page
   await correct("sakit", "Koreksi uji e2e: sakit ulang");
   await expect(form.getByText("Status sudah sama dengan yang diminta.").or(page.getByText("Status sudah sama dengan yang diminta.")).first()).toBeVisible();
 });
+
+test("Tahap 5D: laporan tampil dan ekspor CSV selesai dengan tautan unduh", async ({ page }) => {
+  await loginAsAdmin(page);
+  await nav(page, "Laporan").click();
+  await expect(page.getByRole("heading", { name: "Laporan kehadiran", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Tampilkan" }).click();
+  await expect(page.getByRole("region", { name: "Hasil laporan" })).toBeVisible();
+
+  await page.getByLabel("Format ekspor").selectOption("csv");
+  await page.getByRole("button", { name: "Ekspor", exact: true }).click();
+  await expect(page.getByText("Ekspor diminta.")).toBeVisible();
+  const exports = page.getByRole("region", { name: "Ekspor saya" }).or(page.locator("section[aria-labelledby=rep-exports-title]"));
+  await expect(exports.getByRole("link", { name: "Unduh" }).first()).toBeVisible({ timeout: 30000 });
+});
