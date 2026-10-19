@@ -15,6 +15,7 @@ use App\Http\Controllers\School\CalendarController;
 use App\Http\Controllers\School\CorrectionController;
 use App\Http\Controllers\School\CredentialController;
 use App\Http\Controllers\School\DeviceController;
+use App\Http\Controllers\School\ExportController;
 use App\Http\Controllers\School\HolidayController;
 use App\Http\Controllers\School\InvitationController;
 use App\Http\Controllers\School\LeaveRequestController;
@@ -287,6 +288,14 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.monthly');
     Route::get('reports/events', [ReportController::class, 'events'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('reports.events');
+    Route::get('exports', [ExportController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolReportsExport))->name('exports.index');
+    Route::post('exports', [ExportController::class, 'store'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolReportsExport))->name('exports.store');
+    Route::get('exports/{export}', [ExportController::class, 'show'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolReportsExport))->name('exports.show');
+    Route::get('exports/{export}/download', [ExportController::class, 'download'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolReportsExport))->name('exports.download');
     Route::get('leave-requests', [LeaveRequestController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.index');
     Route::get('leave-requests/students', [LeaveRequestController::class, 'students'])

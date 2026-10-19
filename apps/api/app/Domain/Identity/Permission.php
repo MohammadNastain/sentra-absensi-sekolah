@@ -29,6 +29,7 @@ enum Permission: string
     case SchoolAttendanceVerify = 'school.attendance.verify';
     case SchoolAttendanceCorrect = 'school.attendance.correct';
     case SchoolAttendanceCorrectionRequest = 'school.attendance.correction_request';
+    case SchoolReportsExport = 'school.reports.export';
     case SchoolLeaveManage = 'school.leave.manage';
     case SchoolLeaveApprove = 'school.leave.approve';
 
