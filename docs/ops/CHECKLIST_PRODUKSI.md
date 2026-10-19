@@ -38,7 +38,7 @@ Centang satu per satu sebelum pilot. Bagian yang bergantung keputusan hosting (D
 
 ## Operasional
 
-- [ ] Monitoring dan alert: uptime `/up`, perangkat offline, antrean tertahan, disk, kegagalan cadangan ⏳
+- [ ] Monitoring dan alert: sinyal, ambang, dan tindakan sudah ditetapkan di `MONITORING.md`; pemasangan alat dan kanal alert menunggu D-23 ⏳
 - [ ] Runbook gangguan dibaca petugas (`BACKUP_RESTORE.md` §4, `PANDUAN_PETUGAS.md`)
 - [ ] Prosedur manual saat gangguan disetujui sekolah pilot
 - [ ] Persetujuan pemilik produk atas angka golden dataset laporan (`ReportGoldenDatasetTest`)
