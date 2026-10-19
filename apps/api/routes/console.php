@@ -13,5 +13,8 @@ Schedule::command('imports:purge')->dailyAt('02:30')->withoutOverlapping();
 // Retensi berkas ekspor laporan: harian.
 Schedule::command('exports:purge')->dailyAt('02:45')->withoutOverlapping();
 
+// Retensi alamat IP audit (D-26, 90 hari): harian; baris audit tetap, hanya IP dikosongkan.
+Schedule::command('audit:scrub-ip')->dailyAt('03:00')->withoutOverlapping();
+
 // Penutupan hari absensi (ADR 0005 §5): tiap jam; idempoten, jadi aman diulang. Aturan alpa baru berlaku setelah cutoff sekolah.
 Schedule::command('attendance:close-day')->hourly()->withoutOverlapping();
