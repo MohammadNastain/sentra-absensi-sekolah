@@ -55,9 +55,9 @@ it('hari libur dan hari tanpa jadwal dilaporkan', function () {
 });
 
 it('peringatan perangkat: aktif tetapi tidak terlihat dalam dua menit dihitung offline', function () {
-    Carbon::setTestNow(); // last_seen_at memakai jam database; bandingkan dengan jam nyata
     $this->useSchool($this->school);
-    DB::update("UPDATE devices SET last_seen_at = now() - interval '10 minutes'");
+    // Jam uji dibekukan; heartbeat menulis last_seen_at dengan jam database (lebih baru), jadi tetap terbaca online.
+    DB::update('UPDATE devices SET last_seen_at = ?', [Carbon::now()->subMinutes(10)->toDateTimeString()]);
     dashToday()->assertJsonPath('data.devices', ['active' => 1, 'offline' => 1]);
 
     scanCall('POST', '/heartbeat', [], $this->deviceToken)->assertOk();
