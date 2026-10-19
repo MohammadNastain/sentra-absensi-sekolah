@@ -18,6 +18,7 @@ Versi diperiksa langsung ke Docker Hub, Packagist, npm, dan GitHub Releases pada
 | Pest | **5.2.1** (`~5.2.1`) + pest-plugin-laravel 5.0.1 | Tahap 1 | Menarik PHPUnit 13.3.4. Pest 5.3.x berumur < 2 minggu. |
 | Larastan | **3.12.3** (`~3.12.2`) + PHPStan 2.3.1 | Tahap 1 | Patch 3.12.3 (13 hari) diambil Composer; level 8 untuk `app/`, `database/`, `routes/`. |
 | OpenSpout | **5.12.0** (24 Sep 2026) | Tahap 2C | Pembaca CSV/XLSX streaming untuk impor siswa. 5.12.1–5.12.2 (12–13 Okt) berumur < 2 minggu. |
+| dompdf/dompdf | **3.1.6** (20 Jul 2026) | Tahap 5D | Ekspor laporan PDF (HTML→PDF, tanpa sumber daya jauh/PHP). Rilis > 2 bulan. |
 | qrcode (npm) + @types/qrcode | **1.5.4** / **1.5.5** | Tahap 3A | Membuat gambar QR kartu siswa di browser (tanpa kirim token ke server mana pun). Rilis lama dan stabil. |
 | jsqr (npm) | **1.4.0** | Tahap 3D | Membaca QR dari kamera di terminal web (decode di browser; BarcodeDetector tidak andal di Chrome desktop). Tanpa dependensi; rilis lama dan stabil. |
 | Composer | **2.10.3** | Tahap 0 | |

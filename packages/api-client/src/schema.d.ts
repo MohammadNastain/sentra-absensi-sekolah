@@ -2009,7 +2009,7 @@ export interface paths {
         put?: never;
         /**
          * Minta ekspor laporan (CSV/XLSX) yang dibuat async
-         * @description Izin: school.reports.export. Wali kelas dibatasi kelasnya (dibekukan saat diminta). Hasil diambil lewat download_url bertanda tangan berumur 10 menit; berkas disimpan 7 hari. PDF belum tersedia.
+         * @description Izin: school.reports.export. Wali kelas dibatasi kelasnya (dibekukan saat diminta). Hasil diambil lewat download_url bertanda tangan berumur 10 menit; berkas disimpan 7 hari. PDF maksimal 2000 baris.
          */
         post: operations["requestExport"];
         delete?: never;
@@ -2227,7 +2227,7 @@ export interface components {
         /** @enum {string} */
         Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify" | "school.attendance.correct" | "school.attendance.correction_request" | "school.leave.manage" | "school.leave.approve";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify" | "school.attendance.correct" | "school.attendance.correction_request" | "school.leave.manage" | "school.leave.approve" | "school.reports.export";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -3217,7 +3217,7 @@ export interface components {
             /** @enum {string} */
             report: "summary" | "students" | "lateness" | "daily" | "monthly" | "events";
             /** @enum {string} */
-            format: "csv" | "xlsx";
+            format: "csv" | "xlsx" | "pdf";
             /** @description Sama dengan parameter laporan terkait (from/to/class_id/grade_level, atau date, atau month+class_id, atau from/to/result untuk events). */
             filters: {
                 [key: string]: unknown;
@@ -3229,7 +3229,7 @@ export interface components {
             /** @enum {string} */
             report: "summary" | "students" | "lateness" | "daily" | "monthly" | "events";
             /** @enum {string} */
-            format: "csv" | "xlsx";
+            format: "csv" | "xlsx" | "pdf";
             /** @enum {string} */
             status: "queued" | "running" | "done" | "failed";
             row_count: number | null;
@@ -7346,12 +7346,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Berkas CSV atau XLSX. */
+            /** @description Berkas CSV, XLSX, atau PDF. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/pdf": string;
                     "text/csv": string;
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
                 };

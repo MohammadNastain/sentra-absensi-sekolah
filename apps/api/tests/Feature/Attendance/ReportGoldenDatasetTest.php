@@ -310,7 +310,7 @@ it('ekspor: wali kelas hanya mengekspor kelasnya; petugas piket tidak boleh; fil
     expect(array_column(csvLines($url, $homeroom), 0))->toBe(['Nama', 'A1 Satu', 'A2 Dua']);
 
     exportReq(['report' => 'summary', 'format' => 'csv', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']], $this->officer)->assertForbidden();
-    exportReq(['report' => 'summary', 'format' => 'pdf', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']])->assertUnprocessable();
+    exportReq(['report' => 'summary', 'format' => 'docx', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']])->assertUnprocessable();
     exportReq(['report' => 'summary', 'format' => 'csv', 'filters' => ['from' => '2026-10-31', 'to' => '2026-10-01']])->assertUnprocessable();
     exportReq(['report' => 'monthly', 'format' => 'csv', 'filters' => ['month' => '2026-10']])->assertUnprocessable();
 });
@@ -326,4 +326,15 @@ it('ekspor: berkas kedaluwarsa dihapus oleh exports:purge dan tidak dapat diundu
 
     Storage::disk('local')->assertMissing($path);
     $this->actingAs($this->admin)->getJson("/api/v1/schools/sekolah-a/exports/{$id}")->assertOk()->assertJsonPath('data.download_url', null);
+});
+
+it('ekspor: PDF dihasilkan (dompdf) dengan nilai di-escape', function () {
+    Storage::fake('local');
+    $this->inSchool($this->school, fn () => Student::query()->where('id', $this->a1)->update(['full_name' => '<script>alert(1)</script> A1']));
+
+    $id = exportReq(['report' => 'students', 'format' => 'pdf', 'filters' => ['from' => '2026-10-01', 'to' => '2026-10-31']])->assertStatus(202)->json('data.id');
+    $data = $this->actingAs($this->admin)->getJson("/api/v1/schools/sekolah-a/exports/{$id}")->assertJsonPath('data.status', 'done')->json('data');
+    $res = $this->actingAs($this->admin)->get($data['download_url'])->assertOk()->assertHeader('Content-Type', 'application/pdf');
+
+    expect(file_get_contents($res->baseResponse->getFile()->getPathname()))->toStartWith('%PDF-')->and($data['row_count'])->toBe(5);
 });

@@ -680,7 +680,7 @@ constraint export_jobs export_jobs_created_at_not_null NOT NULL created_at
 constraint export_jobs export_jobs_done_check CHECK (((status <> ALL (ARRAY['done'::text, 'failed'::text])) OR (finished_at IS NOT NULL)))
 constraint export_jobs export_jobs_expires_at_not_null NOT NULL expires_at
 constraint export_jobs export_jobs_filters_not_null NOT NULL filters
-constraint export_jobs export_jobs_format_check CHECK ((format = ANY (ARRAY['csv'::text, 'xlsx'::text])))
+constraint export_jobs export_jobs_format_check CHECK ((format = ANY (ARRAY['csv'::text, 'xlsx'::text, 'pdf'::text])))
 constraint export_jobs export_jobs_format_not_null NOT NULL format
 constraint export_jobs export_jobs_id_not_null NOT NULL id
 constraint export_jobs export_jobs_pkey PRIMARY KEY (id)

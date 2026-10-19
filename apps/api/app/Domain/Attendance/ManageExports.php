@@ -6,6 +6,8 @@ use App\Domain\Audit\AuditLogger;
 use App\Jobs\GenerateReportExport;
 use App\Models\School;
 use App\Models\User;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -26,11 +28,13 @@ final class ManageExports
 {
     public const REPORTS = ['summary', 'students', 'lateness', 'daily', 'monthly', 'events'];
 
-    public const FORMATS = ['csv', 'xlsx'];
+    public const FORMATS = ['csv', 'xlsx', 'pdf'];
 
     public const RETENTION_DAYS = 7;
 
     public const URL_MINUTES = 10;
+
+    private const PDF_MAX_ROWS = 2000;
 
     public function __construct(
         private readonly AuditLogger $audit,
@@ -84,7 +88,11 @@ final class ManageExports
         return [
             'path' => Storage::disk('local')->path((string) $row->file_path),
             'name' => "laporan-{$row->report}-".Carbon::parse((string) $row->created_at)->format('Ymd-His').".{$row->format}",
-            'mime' => $row->format === 'csv' ? 'text/csv; charset=UTF-8' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'mime' => match ($row->format) {
+                'csv' => 'text/csv; charset=UTF-8',
+                'pdf' => 'application/pdf',
+                default => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            },
         ];
     }
 
@@ -102,7 +110,7 @@ final class ManageExports
             $school = School::query()->findOrFail($schoolId);
             $table = $this->table($school, (string) $job->report, json_decode((string) $job->filters, true) ?: [], $job->class_scope === null ? null : json_decode((string) $job->class_scope, true));
             Storage::disk('local')->makeDirectory("exports/{$schoolId}");
-            $count = $this->write(Storage::disk('local')->path($path), (string) $job->format, $table);
+            $count = $this->write($school, (string) $job->report, Storage::disk('local')->path($path), (string) $job->format, $table);
             DB::update(
                 "UPDATE export_jobs SET status = 'done', file_path = ?, file_size = ?, row_count = ?, finished_at = now(), updated_at = now() WHERE school_id = ? AND id = ?",
                 [$path, Storage::disk('local')->size($path), $count, $schoolId, $id],
@@ -172,8 +180,11 @@ final class ManageExports
     /**
      * @param  array{headers: list<string>, rows: list<array<mixed>>}  $table
      */
-    private function write(string $path, string $format, array $table): int
+    private function write(School $school, string $report, string $path, string $format, array $table): int
     {
+        if ($format === 'pdf') {
+            return $this->writePdf($school, $report, $path, $table);
+        }
         $writer = $format === 'csv' ? new CsvWriter : new XlsxWriter;
         $writer->openToFile($path);
         $writer->addRow(Row::fromValues(array_map($this->safe(...), $table['headers'])));
@@ -181,6 +192,34 @@ final class ManageExports
             $writer->addRow(Row::fromValues(array_map($this->safe(...), $row)));
         }
         $writer->close();
+
+        return count($table['rows']);
+    }
+
+    /**
+     * PDF lanskap A4 berisi tabel yang sama dengan CSV/XLSX. Semua nilai di-escape; sumber daya jauh dimatikan.
+     *
+     * @param  array{headers: list<string>, rows: list<array<mixed>>}  $table
+     */
+    private function writePdf(School $school, string $report, string $path, array $table): int
+    {
+        if (count($table['rows']) > self::PDF_MAX_ROWS) {
+            throw new \RuntimeException('Baris terlalu banyak untuk PDF.');
+        }
+        $cell = fn (mixed $v) => e((string) ($v ?? ''));
+        $head = implode('', array_map(fn ($h) => '<th>'.$cell($h).'</th>', $table['headers']));
+        $body = implode('', array_map(fn ($row) => '<tr>'.implode('', array_map(fn ($v) => '<td>'.$cell($v).'</td>', $row)).'</tr>', $table['rows']));
+        $title = e("Laporan {$report} - {$school->name}");
+        $html = "<html><head><meta charset=\"utf-8\"><style>body{font-family:DejaVu Sans,sans-serif;font-size:7pt}h1{font-size:11pt}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:2px 3px;text-align:left}th{background:#e8e8e8}</style></head><body><h1>{$title}</h1><p>Dibuat ".e(now()->setTimezone($school->timezone)->format('Y-m-d H:i'))."</p><table repeat-header=\"1\"><thead><tr>{$head}</tr></thead><tbody>{$body}</tbody></table></body></html>";
+
+        $options = new Options;
+        $options->set('isRemoteEnabled', false);
+        $options->set('isPhpEnabled', false);
+        $pdf = new Dompdf($options);
+        $pdf->loadHtml($html);
+        $pdf->setPaper('A4', 'landscape');
+        $pdf->render();
+        file_put_contents($path, $pdf->output());
 
         return count($table['rows']);
     }

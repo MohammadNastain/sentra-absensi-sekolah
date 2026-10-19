@@ -2805,7 +2805,7 @@ paths:
       tags: [school]
       operationId: requestExport
       summary: "Minta ekspor laporan (CSV/XLSX) yang dibuat async"
-      description: "Izin: school.reports.export. Wali kelas dibatasi kelasnya (dibekukan saat diminta). Hasil diambil lewat download_url bertanda tangan berumur 10 menit; berkas disimpan 7 hari. PDF belum tersedia."
+      description: "Izin: school.reports.export. Wali kelas dibatasi kelasnya (dibekukan saat diminta). Hasil diambil lewat download_url bertanda tangan berumur 10 menit; berkas disimpan 7 hari. PDF maksimal 2000 baris."
       parameters:
         - $ref: "#/components/parameters/SchoolCode"
       requestBody:
@@ -2854,8 +2854,10 @@ paths:
         - { name: expires, in: query, required: true, schema: { type: integer } }
       responses:
         "200":
-          description: "Berkas CSV atau XLSX."
+          description: "Berkas CSV, XLSX, atau PDF."
           content:
+            application/pdf:
+              schema: { type: string, format: binary }
             text/csv:
               schema: { type: string }
             application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
@@ -3199,7 +3201,7 @@ components:
       enum: [school_admin, principal, homeroom_teacher, duty_officer, terminal_operator]
     Permission:
       type: string
-      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review, school.attendance.verify, school.attendance.correct, school.attendance.correction_request, school.leave.manage, school.leave.approve]
+      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review, school.attendance.verify, school.attendance.correct, school.attendance.correction_request, school.leave.manage, school.leave.approve, school.reports.export]
     SchoolStatus:
       type: string
       enum: [trial, active, suspended, terminated]
@@ -4335,7 +4337,7 @@ components:
       required: [report, format, filters]
       properties:
         report: { type: string, enum: [summary, students, lateness, daily, monthly, events] }
-        format: { type: string, enum: [csv, xlsx] }
+        format: { type: string, enum: [csv, xlsx, pdf] }
         filters:
           type: object
           description: "Sama dengan parameter laporan terkait (from/to/class_id/grade_level, atau date, atau month+class_id, atau from/to/result untuk events)."
@@ -4346,7 +4348,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         report: { type: string, enum: [summary, students, lateness, daily, monthly, events] }
-        format: { type: string, enum: [csv, xlsx] }
+        format: { type: string, enum: [csv, xlsx, pdf] }
         status: { type: string, enum: [queued, running, done, failed] }
         row_count: { type: [integer, "null"] }
         file_size: { type: [integer, "null"] }
