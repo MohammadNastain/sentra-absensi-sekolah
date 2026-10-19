@@ -1782,6 +1782,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/leave-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar izin/sakit/dispensasi
+         * @description Izin: school.leave.manage. Menunggu lebih dulu; wali kelas hanya siswa kelasnya. Filter status opsional.
+         */
+        get: operations["listLeaveRequests"];
+        put?: never;
+        /**
+         * Ajukan izin/sakit/dispensasi untuk siswa
+         * @description Izin: school.leave.manage. Rentang maksimal 31 hari; tumpang tindih dengan izin menunggu/disetujui = 409.
+         */
+        post: operations["createLeaveRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/leave-requests/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cari siswa untuk pengajuan izin
+         * @description Izin: school.leave.manage. Wali kelas hanya siswa kelasnya. Maksimal 10 hasil.
+         */
+        get: operations["searchLeaveStudents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/leave-requests/{leave}/attachment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unduh lampiran izin
+         * @description Izin: school.leave.manage. Tanpa cache; 404 bila tidak ada.
+         */
+        get: operations["downloadLeaveFile"];
+        put?: never;
+        /**
+         * Unggah lampiran (PDF/JPG/PNG, maks 5 MB)
+         * @description Izin: school.leave.manage. Disimpan privat; mengganti lampiran sebelumnya. Hanya untuk izin menunggu/disetujui (409 selain itu).
+         */
+        post: operations["attachLeaveFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/leave-requests/{leave}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Setujui atau tolak izin
+         * @description Izin: school.leave.approve. Persetujuan memproyeksikan status ke absensi harian tanggal yang sudah berjalan (scan menang atas izin). Penolakan wajib beralasan.
+         */
+        post: operations["decideLeaveRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/leave-requests/{leave}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batalkan izin
+         * @description Izin: school.leave.manage; membatalkan izin yang sudah disetujui membutuhkan school.leave.approve dan mengembalikan hari-harinya ke belum_tercatat.
+         */
+        post: operations["cancelLeaveRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/attendance/assist-report": {
         parameters: {
             query?: never;
@@ -1831,7 +1939,7 @@ export interface components {
         /** @enum {string} */
         Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify" | "school.leave.manage" | "school.leave.approve";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */
@@ -2663,6 +2771,66 @@ export interface components {
                 required: number;
                 marked_absent: number;
                 health: string | null;
+            };
+        };
+        LeaveRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            student_id: string;
+            student_name: string;
+            student_number: string;
+            class_name: string | null;
+            /** @enum {string} */
+            leave_type: "izin" | "sakit" | "dispensasi";
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+            reason: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected" | "cancelled";
+            has_attachment: boolean;
+            attachment_name: string | null;
+            decision_note: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        LeaveRequestsEnvelope: {
+            data: components["schemas"]["LeaveRequest"][];
+        };
+        LeaveRequestEnvelope: {
+            data: components["schemas"]["LeaveRequest"];
+        };
+        CreateLeaveRequest: {
+            /** Format: uuid */
+            student_id: string;
+            /** @enum {string} */
+            leave_type: "izin" | "sakit" | "dispensasi";
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+            reason: string;
+        };
+        LeaveAttachmentRequest: {
+            /** Format: binary */
+            file: string;
+        };
+        LeaveDecisionRequest: {
+            /** @enum {string} */
+            decision: "approve" | "reject";
+            /** @description Wajib bila reject. */
+            note?: string | null;
+        };
+        LeaveDecisionEnvelope: {
+            data: components["schemas"]["LeaveRequest"] & {
+                projected_days: number;
+            };
+        };
+        LeaveCancelEnvelope: {
+            data: components["schemas"]["LeaveRequest"] & {
+                reverted_days: number;
             };
         };
         ReviewQueueEnvelope: {
@@ -6138,6 +6306,222 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CloseDayEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listLeaveRequests: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "rejected" | "cancelled";
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestsEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    createLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLeaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    searchLeaveStudents: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistStudentsEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    downloadLeaveFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                leave: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    attachLeaveFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                leave: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["LeaveAttachmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    decideLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                leave: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveDecisionEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    cancelLeaveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                leave: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description Berhasil. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveCancelEnvelope"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

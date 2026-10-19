@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
 import { useSchool } from "../school-context";
+import { AbsenceSettingsPanel, AbsenceVerificationPanel, schoolToday } from "./absence-panels";
 
 type AssistStudent = Schemas["AssistStudent"];
 type ReviewItem = Schemas["ReviewQueueItem"];
@@ -25,13 +26,17 @@ export default function AttendanceOperationsPage() {
   const { can } = useSchool();
   const canAssist = can("school.attendance.assist");
   const canReview = can("school.attendance.review");
+  const canVerify = can("school.attendance.verify");
+  const canConfigure = can("school.profile.update");
 
   return (
     <>
       <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Kehadiran</h1>
       {canAssist ? <AssistPanel /> : null}
       {canReview ? <ReviewQueuePanel /> : null}
+      {canVerify ? <AbsenceVerificationPanel canHold={canReview} /> : null}
       {canReview ? <AssistReportPanel /> : null}
+      {canConfigure ? <AbsenceSettingsPanel /> : null}
     </>
   );
 }
@@ -246,7 +251,7 @@ function ReviewQueuePanel() {
         <h2 id="review-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           Antrean tinjauan
         </h2>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Scan pulang tanpa catatan masuk. Terima untuk mencatat pulang, atau tolak untuk mengabaikan; keduanya wajib beralasan.</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Scan yang perlu keputusan (pulang tanpa catatan masuk, atau masuk pada siswa yang sudah dinyatakan alpa). Terima untuk mencatat pulang, atau tolak untuk mengabaikan; keduanya wajib beralasan.</p>
       </div>
       {error ? <FormAlert>{error}</FormAlert> : null}
       {items === null && !error ? <p role="status" className="text-sm text-zinc-600 dark:text-zinc-400">Memuat antrean…</p> : null}
@@ -283,7 +288,7 @@ function ReviewQueuePanel() {
                   <TextAreaField label="Alasan (min. 10 karakter)" name={`reason-${item.event_id}`} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} />
                   <div className="flex gap-3">
                     <PrimaryButton type="button" pending={pending} disabled={reason.trim().length < 10} onClick={() => void resolve(item.event_id, "accept")}>
-                      Terima (catat pulang)
+                      Terima (catat scan)
                     </PrimaryButton>
                     <SecondaryButton type="button" disabled={pending || reason.trim().length < 10} onClick={() => void resolve(item.event_id, "reject")}>
                       Tolak
@@ -300,12 +305,6 @@ function ReviewQueuePanel() {
       ) : null}
     </section>
   );
-}
-
-/** Tanggal hari ini menurut zona waktu sekolah, "YYYY-MM-DD". */
-function schoolToday(timeZone: string, offsetDays = 0): string {
-  const date = new Date(Date.now() + offsetDays * 86_400_000);
-  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
 }
 
 function AssistReportPanel() {

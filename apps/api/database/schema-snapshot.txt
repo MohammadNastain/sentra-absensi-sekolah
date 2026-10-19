@@ -119,6 +119,7 @@ column daily_attendance.early_leave boolean nullable=NO
 column daily_attendance.early_leave_status text nullable=YES
 column daily_attendance.id uuid nullable=NO
 column daily_attendance.late_minutes integer nullable=YES
+column daily_attendance.leave_request_id uuid nullable=YES
 column daily_attendance.school_id uuid nullable=NO
 column daily_attendance.source text nullable=NO
 column daily_attendance.student_id uuid nullable=NO
@@ -182,6 +183,23 @@ column import_rows.payload jsonb nullable=NO
 column import_rows.row_number integer nullable=NO
 column import_rows.school_id uuid nullable=NO
 column import_rows.status text nullable=NO
+column leave_requests.attachment_mime text nullable=YES
+column leave_requests.attachment_name text nullable=YES
+column leave_requests.attachment_path text nullable=YES
+column leave_requests.created_at timestamp with time zone nullable=NO
+column leave_requests.decided_at timestamp with time zone nullable=YES
+column leave_requests.decided_by_user_id uuid nullable=YES
+column leave_requests.decision_note text nullable=YES
+column leave_requests.end_date date nullable=NO
+column leave_requests.id uuid nullable=NO
+column leave_requests.leave_type text nullable=NO
+column leave_requests.reason text nullable=NO
+column leave_requests.requested_by_user_id uuid nullable=NO
+column leave_requests.school_id uuid nullable=NO
+column leave_requests.start_date date nullable=NO
+column leave_requests.status text nullable=NO
+column leave_requests.student_id uuid nullable=NO
+column leave_requests.updated_at timestamp with time zone nullable=NO
 column membership_invitations.accepted_at timestamp with time zone nullable=YES
 column membership_invitations.accepted_user_id uuid nullable=YES
 column membership_invitations.created_at timestamp with time zone nullable=NO
@@ -312,11 +330,15 @@ index CREATE INDEX class_enrollments_student_index ON public.class_enrollments U
 index CREATE INDEX classes_homeroom_teacher_index ON public.classes USING btree (school_id, homeroom_teacher_id)
 index CREATE INDEX daily_attendance_class_date_index ON public.daily_attendance USING btree (school_id, class_id, attendance_date)
 index CREATE INDEX daily_attendance_date_index ON public.daily_attendance USING btree (school_id, attendance_date)
+index CREATE INDEX daily_attendance_leave_index ON public.daily_attendance USING btree (school_id, leave_request_id) WHERE (leave_request_id IS NOT NULL)
 index CREATE INDEX daily_attendance_status_date_index ON public.daily_attendance USING btree (school_id, attendance_status, attendance_date)
 index CREATE INDEX devices_school_status_index ON public.devices USING btree (school_id, status)
 index CREATE INDEX holidays_school_dates_index ON public.holidays USING btree (school_id, start_date, end_date)
 index CREATE INDEX import_batches_school_created_index ON public.import_batches USING btree (school_id, created_at DESC)
 index CREATE INDEX import_rows_batch_status_index ON public.import_rows USING btree (school_id, batch_id, status, row_number)
+index CREATE INDEX leave_requests_no_overlap ON public.leave_requests USING gist (school_id, student_id, daterange(start_date, end_date, '[]'::text)) WHERE (status = ANY (ARRAY['pending'::text, 'approved'::text]))
+index CREATE INDEX leave_requests_status_index ON public.leave_requests USING btree (school_id, status, created_at DESC)
+index CREATE INDEX leave_requests_student_index ON public.leave_requests USING btree (school_id, student_id, start_date, end_date)
 index CREATE INDEX membership_invitations_email_index ON public.membership_invitations USING btree (email)
 index CREATE INDEX membership_roles_school_role_index ON public.membership_roles USING btree (school_id, role_code)
 index CREATE INDEX schedules_no_overlap ON public.schedules USING gist (school_id, scope_key, day_of_week, daterange(effective_from, effective_until, '[]'::text)) WHERE is_active
@@ -366,6 +388,8 @@ index CREATE UNIQUE INDEX import_batches_pkey ON public.import_batches USING btr
 index CREATE UNIQUE INDEX import_batches_school_id_id_unique ON public.import_batches USING btree (school_id, id)
 index CREATE UNIQUE INDEX import_rows_batch_row_unique ON public.import_rows USING btree (batch_id, row_number)
 index CREATE UNIQUE INDEX import_rows_pkey ON public.import_rows USING btree (id)
+index CREATE UNIQUE INDEX leave_requests_pkey ON public.leave_requests USING btree (id)
+index CREATE UNIQUE INDEX leave_requests_school_id_id_unique ON public.leave_requests USING btree (school_id, id)
 index CREATE UNIQUE INDEX membership_invitations_pending_unique ON public.membership_invitations USING btree (school_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL))
 index CREATE UNIQUE INDEX membership_invitations_pkey ON public.membership_invitations USING btree (id)
 index CREATE UNIQUE INDEX membership_invitations_school_id_id_unique ON public.membership_invitations USING btree (school_id, id)
@@ -557,6 +581,7 @@ constraint daily_attendance daily_attendance_early_leave_not_null NOT NULL early
 constraint daily_attendance daily_attendance_early_status_check CHECK (((early_leave_status IS NULL) OR (early_leave_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))))
 constraint daily_attendance daily_attendance_id_not_null NOT NULL id
 constraint daily_attendance daily_attendance_late_minutes_check CHECK (((late_minutes IS NULL) OR (late_minutes >= 0)))
+constraint daily_attendance daily_attendance_leave_fk FOREIGN KEY (school_id, leave_request_id) REFERENCES leave_requests(school_id, id)
 constraint daily_attendance daily_attendance_pkey PRIMARY KEY (id)
 constraint daily_attendance daily_attendance_present_needs_event CHECK (((attendance_status <> ALL (ARRAY['hadir'::text, 'terlambat'::text])) OR (check_in_event_id IS NOT NULL) OR (source = 'manual_adjustment'::text)))
 constraint daily_attendance daily_attendance_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
@@ -645,6 +670,29 @@ constraint import_rows import_rows_school_id_fkey FOREIGN KEY (school_id) REFERE
 constraint import_rows import_rows_school_id_not_null NOT NULL school_id
 constraint import_rows import_rows_status_check CHECK ((status = ANY (ARRAY['valid'::text, 'invalid'::text, 'committed'::text, 'skipped'::text])))
 constraint import_rows import_rows_status_not_null NOT NULL status
+constraint leave_requests leave_requests_created_at_not_null NOT NULL created_at
+constraint leave_requests leave_requests_decided_by_user_id_fkey FOREIGN KEY (decided_by_user_id) REFERENCES users(id)
+constraint leave_requests leave_requests_decision_check CHECK (((status = 'pending'::text) OR ((decided_by_user_id IS NOT NULL) AND (decided_at IS NOT NULL))))
+constraint leave_requests leave_requests_end_date_not_null NOT NULL end_date
+constraint leave_requests leave_requests_id_not_null NOT NULL id
+constraint leave_requests leave_requests_leave_type_not_null NOT NULL leave_type
+constraint leave_requests leave_requests_no_overlap EXCLUDE USING gist (school_id WITH =, student_id WITH =, daterange(start_date, end_date, '[]'::text) WITH &&) WHERE ((status = ANY (ARRAY['pending'::text, 'approved'::text])))
+constraint leave_requests leave_requests_pkey PRIMARY KEY (id)
+constraint leave_requests leave_requests_range_check CHECK (((end_date >= start_date) AND ((end_date - start_date) <= 30)))
+constraint leave_requests leave_requests_reason_check CHECK ((length(TRIM(BOTH FROM reason)) >= 5))
+constraint leave_requests leave_requests_reason_not_null NOT NULL reason
+constraint leave_requests leave_requests_requested_by_user_id_fkey FOREIGN KEY (requested_by_user_id) REFERENCES users(id)
+constraint leave_requests leave_requests_requested_by_user_id_not_null NOT NULL requested_by_user_id
+constraint leave_requests leave_requests_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint leave_requests leave_requests_school_id_id_unique UNIQUE (school_id, id)
+constraint leave_requests leave_requests_school_id_not_null NOT NULL school_id
+constraint leave_requests leave_requests_start_date_not_null NOT NULL start_date
+constraint leave_requests leave_requests_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text, 'cancelled'::text])))
+constraint leave_requests leave_requests_status_not_null NOT NULL status
+constraint leave_requests leave_requests_student_fk FOREIGN KEY (school_id, student_id) REFERENCES students(school_id, id)
+constraint leave_requests leave_requests_student_id_not_null NOT NULL student_id
+constraint leave_requests leave_requests_type_check CHECK ((leave_type = ANY (ARRAY['izin'::text, 'sakit'::text, 'dispensasi'::text])))
+constraint leave_requests leave_requests_updated_at_not_null NOT NULL updated_at
 constraint membership_invitations membership_invitations_accepted_check CHECK (((accepted_at IS NULL) = (accepted_user_id IS NULL)))
 constraint membership_invitations membership_invitations_accepted_user_id_fkey FOREIGN KEY (accepted_user_id) REFERENCES users(id)
 constraint membership_invitations membership_invitations_created_at_not_null NOT NULL created_at
@@ -824,6 +872,7 @@ policy devices tenant_isolation ALL (school_id = app_school_id()) (school_id = a
 policy holidays tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy import_batches tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy import_rows tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy leave_requests tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy membership_invitations own_invitations_read SELECT (email = ( SELECT u.email
    FROM users u
   WHERE (u.id = app_user_id()))) 
@@ -854,6 +903,7 @@ rls failed_jobs enabled=false forced=false
 rls holidays enabled=true forced=true
 rls import_batches enabled=true forced=true
 rls import_rows enabled=true forced=true
+rls leave_requests enabled=true forced=true
 rls membership_invitations enabled=true forced=true
 rls membership_roles enabled=true forced=true
 rls password_reset_tokens enabled=false forced=false

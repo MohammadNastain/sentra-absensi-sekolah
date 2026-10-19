@@ -55,7 +55,7 @@ final class ReviewQueue
     {
         return $this->database->runInSchool($school->id, fn () => DB::transaction(function () use ($school, $actor, $eventId, $decision, $reason) {
             // attendance_events append-only (tanpa hak UPDATE): serialisasi lewat kunci baris harian.
-            $event = DB::selectOne("SELECT id, student_id, attendance_date, event_type FROM attendance_events WHERE school_id = ? AND id = ? AND result = 'needs_review'", [$school->id, $eventId])
+            $event = DB::selectOne("SELECT id, student_id, attendance_date, event_type, is_late, late_minutes FROM attendance_events WHERE school_id = ? AND id = ? AND result = 'needs_review'", [$school->id, $eventId])
                 ?? throw new NotFoundHttpException;
 
             $daily = DB::selectOne(
@@ -67,10 +67,21 @@ final class ReviewQueue
                 throw ApiProblem::invalidStateTransition('Event ini sudah diselesaikan.');
             }
 
-            $from = ['attendance_status' => $daily->attendance_status, 'check_out_event_id' => $daily->check_out_event_id];
+            $from = ['attendance_status' => $daily->attendance_status, 'check_in_event_id' => $daily->check_in_event_id, 'check_out_event_id' => $daily->check_out_event_id];
             $to = $from;
 
-            if ($decision === 'accept') {
+            if ($decision === 'accept' && $event->event_type === 'check_in') {
+                // Scan masuk yang bentrok dengan alpa final: terima = status menjadi hadir/terlambat sesuai scan.
+                if ($daily->check_in_event_id !== null) {
+                    throw ApiProblem::invalidStateTransition('Catatan masuk hari itu sudah ada.');
+                }
+                $status = $event->is_late ? 'terlambat' : 'hadir';
+                DB::update(
+                    "UPDATE daily_attendance SET attendance_status = ?, absence_basis = NULL, check_in_event_id = ?, late_minutes = ?, source = 'manual_adjustment', version = version + 1, updated_at = now() WHERE id = ? AND school_id = ?",
+                    [$status, $eventId, $event->is_late ? $event->late_minutes : null, $daily->id, $school->id],
+                );
+                $to = ['attendance_status' => $status, 'check_in_event_id' => $eventId];
+            } elseif ($decision === 'accept') {
                 if ($daily->check_out_event_id !== null) {
                     throw ApiProblem::invalidStateTransition('Catatan pulang hari itu sudah ada.');
                 }

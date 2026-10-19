@@ -22,9 +22,10 @@ final class AssistedAttendance
     /**
      * Hasil minimal untuk siswa aktif dengan penempatan berjalan hari ini.
      *
+     * @param  list<string>|null  $classScope  batasi pada kelas tertentu (wali kelas); null = semua
      * @return list<array{id: string, full_name: string, student_number: string, class_name: string}>
      */
-    public function search(School $school, string $query): array
+    public function search(School $school, string $query, ?array $classScope = null): array
     {
         $term = trim($query);
         if (mb_strlen($term) < 2) {
@@ -32,15 +33,16 @@ final class AssistedAttendance
         }
         $like = '%'.addcslashes($term, '%_\\').'%';
         $today = now($school->timezone)->toDateString();
+        $scopeSql = $classScope === null ? '' : ($classScope === [] ? ' AND false' : ' AND en.class_id IN ('.implode(',', array_fill(0, count($classScope), '?')).')');
 
         $rows = DB::select(
             "SELECT s.id, s.full_name, s.student_number, c.name AS class_name
              FROM students s
              JOIN class_enrollments en ON en.school_id = s.school_id AND en.student_id = s.id AND en.start_date <= ? AND (en.end_date IS NULL OR en.end_date >= ?)
              JOIN classes c ON c.school_id = en.school_id AND c.id = en.class_id
-             WHERE s.school_id = ? AND s.status = 'active' AND (s.full_name ILIKE ? OR s.student_number ILIKE ?)
+             WHERE s.school_id = ? AND s.status = 'active' AND (s.full_name ILIKE ? OR s.student_number ILIKE ?){$scopeSql}
              ORDER BY s.full_name, s.id LIMIT 10",
-            [$today, $today, $school->id, $like, $like],
+            [$today, $today, $school->id, $like, $like, ...($classScope ?? [])],
         );
 
         return array_values(array_map(fn ($r) => [

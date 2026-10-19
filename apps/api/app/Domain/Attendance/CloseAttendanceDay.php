@@ -62,6 +62,7 @@ final class CloseAttendanceDay
     {
         return DB::transaction(function () use ($school, $date) {
             $required = $this->materialize($school, $date);
+            $this->applyLeave($school, $date);
             $markedAbsent = 0;
             $health = null;
 
@@ -130,11 +131,52 @@ final class CloseAttendanceDay
     }
 
     /**
+     * Menerapkan izin/sakit/dispensasi yang disetujui pada baris harian satu tanggal. Hanya baris tanpa check-in yang
+     * berstatus belum_tercatat, alpa sementara, atau alpa final yang berubah (scan menang, D-13); alpa final yang
+     * digantikan dicatat di `attendance_adjustments`. Idempoten. Konteks sekolah (RLS) harus sudah aktif.
+     *
+     * @param  list<string>|null  $studentIds  batasi pada siswa tertentu; null = semua
+     * @return int jumlah baris yang berubah
+     */
+    public function applyLeave(School $school, string $date, ?array $studentIds = null): int
+    {
+        $only = '';
+        $args = [$school->id, $date];
+        if ($studentIds !== null) {
+            if ($studentIds === []) {
+                return 0;
+            }
+            $only = ' AND d.student_id IN ('.implode(',', array_fill(0, count($studentIds), '?')).')';
+            array_push($args, ...$studentIds);
+        }
+        $from = "FROM daily_attendance d
+             JOIN leave_requests l ON l.school_id = d.school_id AND l.student_id = d.student_id AND l.status = 'approved'
+                 AND d.attendance_date BETWEEN l.start_date AND l.end_date
+             WHERE d.school_id = ? AND d.attendance_date = ? AND d.check_in_event_id IS NULL
+               AND d.attendance_status IN ('belum_tercatat', 'alpa_belum_diverifikasi', 'alpa'){$only}";
+
+        DB::insert(
+            "INSERT INTO attendance_adjustments (school_id, daily_attendance_id, student_id, attendance_date, adjustment_type, from_value, to_value, reason, status, requested_by_user_id, decided_by_user_id, decided_at)
+             SELECT d.school_id, d.id, d.student_id, d.attendance_date, 'status_change', jsonb_build_object('attendance_status', 'alpa'),
+                    jsonb_build_object('attendance_status', l.leave_type, 'leave_request_id', l.id), 'Izin yang disetujui menggantikan alpa final', 'approved', l.decided_by_user_id, l.decided_by_user_id, now()
+             {$from} AND d.attendance_status = 'alpa'",
+            $args,
+        );
+
+        return DB::update(
+            "UPDATE daily_attendance u SET attendance_status = x.leave_type, leave_request_id = x.leave_id, absence_basis = NULL, version = u.version + 1, updated_at = now()
+             FROM (SELECT d.id, l.leave_type, l.id AS leave_id {$from}) x WHERE u.id = x.id AND u.school_id = ?",
+            [...$args, $school->id],
+        );
+    }
+
+    /**
      * Membuat baris harian untuk siswa aktif yang wajib hadir (kelas berjalan, ada jadwal, bukan libur).
      *
+     * @param  list<string>|null  $only  batasi pada siswa tertentu; null = semua
      * @return list<string> id siswa wajib hadir
      */
-    private function materialize(School $school, string $date): array
+    public function materialize(School $school, string $date, ?array $only = null): array
     {
         $day = Carbon::parse($date);
         $enrollments = DB::select(
@@ -146,6 +188,9 @@ final class CloseAttendanceDay
 
         $byClass = [];
         foreach ($enrollments as $row) {
+            if ($only !== null && ! in_array((string) $row->student_id, $only, true)) {
+                continue;
+            }
             $byClass[(string) $row->class_id][] = (string) $row->student_id;
         }
 

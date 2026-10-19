@@ -2494,6 +2494,159 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/leave-requests:
+    get:
+      tags: [school]
+      operationId: listLeaveRequests
+      summary: "Daftar izin/sakit/dispensasi"
+      description: "Izin: school.leave.manage. Menunggu lebih dulu; wali kelas hanya siswa kelasnya. Filter status opsional."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: status, in: query, required: false, schema: { type: string, enum: [pending, approved, rejected, cancelled] } }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeaveRequestsEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    post:
+      tags: [school]
+      operationId: createLeaveRequest
+      summary: "Ajukan izin/sakit/dispensasi untuk siswa"
+      description: "Izin: school.leave.manage. Rentang maksimal 31 hari; tumpang tindih dengan izin menunggu/disetujui = 409."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateLeaveRequest" }
+      responses:
+        "201":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeaveRequestEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/leave-requests/students:
+    get:
+      tags: [school]
+      operationId: searchLeaveStudents
+      summary: "Cari siswa untuk pengajuan izin"
+      description: "Izin: school.leave.manage. Wali kelas hanya siswa kelasnya. Maksimal 10 hasil."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: q, in: query, required: true, schema: { type: string, maxLength: 100 } }
+      responses:
+        "200":
+          description: "Hasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AssistStudentsEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/leave-requests/{leave}/attachment:
+    post:
+      tags: [school]
+      operationId: attachLeaveFile
+      summary: "Unggah lampiran (PDF/JPG/PNG, maks 5 MB)"
+      description: "Izin: school.leave.manage. Disimpan privat; mengganti lampiran sebelumnya. Hanya untuk izin menunggu/disetujui (409 selain itu)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: leave, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/LeaveAttachmentRequest" }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeaveRequestEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    get:
+      tags: [school]
+      operationId: downloadLeaveFile
+      summary: "Unduh lampiran izin"
+      description: "Izin: school.leave.manage. Tanpa cache; 404 bila tidak ada."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: leave, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/leave-requests/{leave}/decision:
+    post:
+      tags: [school]
+      operationId: decideLeaveRequest
+      summary: "Setujui atau tolak izin"
+      description: "Izin: school.leave.approve. Persetujuan memproyeksikan status ke absensi harian tanggal yang sudah berjalan (scan menang atas izin). Penolakan wajib beralasan."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: leave, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeaveDecisionRequest" }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeaveDecisionEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/leave-requests/{leave}/cancel:
+    post:
+      tags: [school]
+      operationId: cancelLeaveRequest
+      summary: "Batalkan izin"
+      description: "Izin: school.leave.manage; membatalkan izin yang sudah disetujui membutuhkan school.leave.approve dan mengembalikan hari-harinya ke belum_tercatat."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: leave, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReasonRequest" }
+      responses:
+        "200":
+          description: "Berhasil."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeaveCancelEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
   /schools/{school}/attendance/assist-report:
     get:
       tags: [school]
@@ -2702,7 +2855,7 @@ components:
       enum: [school_admin, principal, homeroom_teacher, duty_officer, terminal_operator]
     Permission:
       type: string
-      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review, school.attendance.verify]
+      enum: [school.profile.view, school.profile.update, school.members.view, school.members.manage, school.audit.view, school.academic.view, school.academic.manage, school.students.view, school.students.manage, school.schedule.view, school.schedule.manage, school.credentials.view, school.credentials.manage, school.devices.view, school.devices.manage, school.attendance.view, school.attendance.assist, school.attendance.review, school.attendance.verify, school.leave.manage, school.leave.approve]
     SchoolStatus:
       type: string
       enum: [trial, active, suspended, terminated]
@@ -3677,6 +3830,78 @@ components:
             required: { type: integer }
             marked_absent: { type: integer }
             health: { type: [string, "null"] }
+    LeaveRequest:
+      type: object
+      required: [id, student_id, student_name, student_number, class_name, leave_type, start_date, end_date, reason, status, has_attachment, attachment_name, decision_note, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        student_id: { type: string, format: uuid }
+        student_name: { type: string }
+        student_number: { type: string }
+        class_name: { type: [string, "null"] }
+        leave_type: { type: string, enum: [izin, sakit, dispensasi] }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        reason: { type: string }
+        status: { type: string, enum: [pending, approved, rejected, cancelled] }
+        has_attachment: { type: boolean }
+        attachment_name: { type: [string, "null"] }
+        decision_note: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+    LeaveRequestsEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/LeaveRequest" }
+    LeaveRequestEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/LeaveRequest" }
+    CreateLeaveRequest:
+      type: object
+      required: [student_id, leave_type, start_date, end_date, reason]
+      properties:
+        student_id: { type: string, format: uuid }
+        leave_type: { type: string, enum: [izin, sakit, dispensasi] }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        reason: { type: string, minLength: 5, maxLength: 500 }
+    LeaveAttachmentRequest:
+      type: object
+      required: [file]
+      properties:
+        file: { type: string, format: binary }
+    LeaveDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [approve, reject] }
+        note: { type: [string, "null"], minLength: 10, maxLength: 500, description: "Wajib bila reject." }
+    LeaveDecisionEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          allOf:
+            - { $ref: "#/components/schemas/LeaveRequest" }
+            - type: object
+              required: [projected_days]
+              properties:
+                projected_days: { type: integer }
+    LeaveCancelEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data:
+          allOf:
+            - { $ref: "#/components/schemas/LeaveRequest" }
+            - type: object
+              required: [reverted_days]
+              properties:
+                reverted_days: { type: integer }
     ReviewQueueEnvelope:
       type: object
       required: [data]

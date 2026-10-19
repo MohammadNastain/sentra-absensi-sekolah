@@ -137,3 +137,84 @@ test("Tahap 4: mode bantuan di terminal — login petugas, kredensial salah, car
   await page.getByRole("dialog").getByRole("button", { name: "Cabut", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 });
+
+test("Tahap 5A: pengaturan aturan alpa dan penahanan/pelepasan hari", async ({ page }) => {
+  await loginAsAdmin(page);
+  await nav(page, "Kehadiran").click();
+
+  await test.step("Pengaturan: jam batas wajib dan divalidasi, lalu dimatikan kembali", async () => {
+    const settings = page.getByRole("region", { name: "Aturan alpa" });
+    await expect(settings.getByRole("checkbox")).toBeVisible();
+    if (!(await settings.getByRole("checkbox").isChecked())) await settings.getByRole("checkbox").check();
+    await settings.getByLabel("Jam batas (waktu lokal sekolah)").fill("05:00");
+    await settings.getByRole("button", { name: "Simpan" }).click();
+    await expect(settings.getByText(/Jam batas harus setelah batas masuk/).first()).toBeVisible();
+
+    await settings.getByLabel("Jam batas (waktu lokal sekolah)").fill("23:00");
+    await settings.getByRole("button", { name: "Simpan" }).click();
+    await expect(settings.getByText("Pengaturan disimpan.")).toBeVisible();
+
+    await settings.getByRole("checkbox").uncheck();
+    await settings.getByRole("button", { name: "Simpan" }).click();
+    await expect(settings.getByText("Pengaturan disimpan.")).toBeVisible();
+  });
+
+  await test.step("Verifikasi: tandai hari bergangguan lalu lepas penahanan", async () => {
+    const panel = page.getByRole("region", { name: "Verifikasi alpa" });
+    await panel.getByLabel("Tanggal").fill("2026-01-05");
+    await expect(panel.getByText("Tidak ada alpa sementara pada tanggal ini.")).toBeVisible();
+
+    await panel.getByRole("button", { name: "Tandai hari bergangguan" }).click();
+    const submit = panel.getByRole("button", { name: "Tandai bergangguan" });
+    await expect(submit).toBeDisabled();
+    await panel.getByLabel(/Alasan/).fill("Uji e2e: terminal gerbang mati");
+    await submit.click();
+    await expect(panel.getByText("Hari ditandai bergangguan; aturan alpa ditahan.")).toBeVisible();
+    await expect(panel.getByText(/Aturan alpa ditahan untuk hari ini/)).toBeVisible();
+    await expect(panel.getByText("Ditandai bergangguan oleh petugas.")).toBeVisible();
+
+    await panel.getByRole("button", { name: "Lepas penahanan" }).click();
+    await panel.getByLabel(/Alasan/).fill("Uji e2e: sudah diperiksa normal");
+    await panel.getByRole("button", { name: "Lepas penahanan" }).last().click();
+    await expect(panel.getByText("Penahanan dilepas; aturan alpa dijalankan.")).toBeVisible();
+    await expect(panel.getByText(/Aturan alpa ditahan untuk hari ini/)).toBeHidden();
+  });
+});
+
+test("Tahap 5B: ajukan izin dengan lampiran, setujui, lalu batalkan", async ({ page }) => {
+  await loginAsAdmin(page);
+  await nav(page, "Izin").click();
+  await expect(page.getByRole("heading", { name: "Izin dan sakit", exact: true })).toBeVisible();
+
+  const form = page.getByRole("region", { name: "Ajukan izin" });
+  await form.getByLabel("Cari siswa").fill("Candra");
+  await form.getByRole("button", { name: "Cari" }).click();
+  await form.getByRole("listitem").filter({ hasText: "Candra Wijaya" }).getByRole("button", { name: "Pilih" }).click();
+
+  await form.getByLabel("Jenis").selectOption("sakit");
+  await form.getByLabel("Mulai").fill("2026-02-02");
+  await form.getByLabel("Sampai").fill("2026-02-03");
+  const submit = form.getByRole("button", { name: "Ajukan" });
+  await expect(submit).toBeDisabled();
+  await form.getByLabel("Alasan").fill("Demam tinggi (uji e2e)");
+  await form.getByLabel(/Lampiran/).setInputFiles({ name: "surat.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%uji\n") });
+  await submit.click();
+  await expect(page.getByText("Pengajuan tersimpan dan menunggu keputusan.")).toBeVisible();
+
+  const row = page.getByRole("listitem").filter({ hasText: "Demam tinggi (uji e2e)" }).first();
+  await expect(row.getByText("Menunggu")).toBeVisible();
+  await expect(row.getByRole("link", { name: /Unduh lampiran/ })).toBeVisible();
+
+  await row.getByRole("button", { name: "Setujui" }).click();
+  await row.getByRole("button", { name: "Setujui izin" }).click();
+  await expect(page.getByText("Izin disetujui.")).toBeVisible();
+  await expect(row.getByText("Disetujui")).toBeVisible();
+
+  await row.getByRole("button", { name: "Batalkan" }).click();
+  const cancel = row.getByRole("button", { name: "Batalkan izin" });
+  await expect(cancel).toBeDisabled();
+  await row.getByLabel(/Alasan/).fill("Pembersihan uji e2e izin");
+  await cancel.click();
+  await expect(page.getByText("Izin dibatalkan.")).toBeVisible();
+  await expect(row.getByText("Dibatalkan")).toBeVisible();
+});
