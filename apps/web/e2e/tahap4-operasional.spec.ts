@@ -271,3 +271,12 @@ test("Tahap 5E: dashboard menampilkan tren kehadiran dan rentang dapat diganti",
   await trend.getByLabel("Rentang").selectOption("30");
   await expect(trend.getByRole("img").or(trend.getByText("Belum ada data kehadiran pada rentang ini."))).toBeVisible();
 });
+
+test("Tahap 5 sisa: riwayat koreksi dapat dimuat", async ({ page }) => {
+  await loginAsAdmin(page);
+  await nav(page, "Koreksi").click();
+  const history = page.getByRole("region", { name: "Riwayat koreksi" });
+  await history.getByLabel("Dari").fill("2026-01-01");
+  await history.getByRole("button", { name: "Tampilkan" }).click();
+  await expect(history.getByRole("listitem").first().or(history.getByText("Tidak ada koreksi pada rentang ini."))).toBeVisible();
+});

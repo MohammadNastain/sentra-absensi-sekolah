@@ -31,11 +31,12 @@ final class CloseAttendanceDay
     ) {}
 
     /**
-     * Menjalankan penutupan untuk semua sekolah (job terjadwal) pada tanggal lokal masing-masing.
+     * Menjalankan penutupan untuk semua sekolah (job terjadwal) pada tanggal lokal masing-masing. Tanpa `$date`,
+     * `$backfillDays` hari sebelumnya ikut dijalankan agar hari yang terlewat pulih sendiri.
      *
      * @return array<string, array{required: int, marked_absent: int, health: string|null}> per kode sekolah
      */
-    public function runForAllSchools(?string $date = null): array
+    public function runForAllSchools(?string $date = null, int $backfillDays = 0): array
     {
         /** @var list<School> $schools */
         $schools = $this->database->runAsPlatform(fn () => School::query()->get()->all());
@@ -44,6 +45,18 @@ final class CloseAttendanceDay
         foreach ($schools as $school) {
             try {
                 $local = $date ?? Carbon::now()->setTimezone($school->timezone)->toDateString();
+                // Pemulihan: hari-hari sebelumnya yang terlewat (server mati) dijalankan lagi; run() idempoten dan
+                // menghormati keputusan manusia (penahanan/pelepasan, alpa terverifikasi).
+                if ($date === null) {
+                    for ($back = $backfillDays; $back >= 1; $back--) {
+                        $past = Carbon::parse($local)->subDays($back)->toDateString();
+                        try {
+                            $this->database->runInSchool($school->id, fn () => $this->run($school, $past));
+                        } catch (\Throwable $e) {
+                            report($e);
+                        }
+                    }
+                }
                 $results[$school->code] = $this->database->runInSchool($school->id, fn () => $this->run($school, $local));
             } catch (\Throwable $e) {
                 report($e);

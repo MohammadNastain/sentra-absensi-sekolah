@@ -92,7 +92,80 @@ export default function CorrectionsPage() {
           ))}
         </ul>
       </section>
+      {can("school.attendance.review") ? <HistoryPanel /> : null}
     </>
+  );
+}
+
+type HistoryItem = Schemas["CorrectionHistoryItem"];
+
+const TYPE_LABELS: Record<string, string> = {
+  status_change: "Ubah status",
+  check_in_time: "Jam masuk",
+  check_out_time: "Jam pulang",
+  early_leave_decision: "Pulang awal",
+  review_resolution: "Hasil tinjauan",
+};
+
+function valueOf(v: HistoryItem["from"]): string {
+  if (v === null) return "—";
+  const first = v.attendance_status ?? v.early_leave_status ?? Object.values(v)[0];
+
+  return typeof first === "string" ? label(first) : "—";
+}
+
+/** Riwayat semua koreksi pada rentang tanggal (izin tinjau). */
+function HistoryPanel() {
+  const { code, profile } = useSchool();
+  const today = schoolToday(profile.timezone);
+  const [from, setFrom] = useState(() => `${today.slice(0, 8)}01`);
+  const [to, setTo] = useState(today);
+  const [items, setItems] = useState<HistoryItem[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    try {
+      const { data, error: problem } = await api.GET("/schools/{school}/attendance/corrections/history", { params: { path: { school: code }, query: { from, to } } });
+      if (problem !== undefined) setError(toFormFailure(problem).message);
+      else if (data) setItems(data.data);
+    } catch (e) {
+      setError(toFormFailure(e).message);
+    }
+  }
+
+  return (
+    <section aria-labelledby="corr-history-title" className={CARD}>
+      <h2 id="corr-history-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        Riwayat koreksi
+      </h2>
+      {error ? <FormAlert>{error}</FormAlert> : null}
+      <form noValidate onSubmit={load} className="flex flex-wrap items-end gap-3">
+        <TextField label="Dari" name="hist-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        <TextField label="Sampai" name="hist-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        <PrimaryButton type="submit">Tampilkan</PrimaryButton>
+      </form>
+      {items?.length === 0 ? <p className="text-sm text-zinc-600 dark:text-zinc-400">Tidak ada koreksi pada rentang ini.</p> : null}
+      <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        {items?.map((h) => (
+          <li key={h.id} className="space-y-1 py-3 text-sm">
+            <div className="flex flex-wrap justify-between gap-2">
+              <span>
+                <span className="font-medium text-zinc-900 dark:text-zinc-100">{h.student_name}</span>
+                <span className="ml-2 text-zinc-500">{formatDate(h.attendance_date)}</span>
+              </span>
+              <span className="text-zinc-700 dark:text-zinc-300">
+                {TYPE_LABELS[h.adjustment_type] ?? h.adjustment_type}: {valueOf(h.from)} → <span className="font-medium">{valueOf(h.to)}</span> · {label(h.status)}
+              </span>
+            </div>
+            <p className="text-zinc-600 dark:text-zinc-400">
+              {h.reason} <span className="text-zinc-500">(oleh {h.requested_by}{h.decided_by ? `, diputuskan ${h.decided_by}` : ""})</span>
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
