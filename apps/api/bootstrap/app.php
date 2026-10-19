@@ -6,6 +6,7 @@ use App\Http\Middleware\RequireAssistSession;
 use App\Http\Middleware\RequireSchoolPermission;
 use App\Http\Middleware\RequireTerminalHeader;
 use App\Http\Middleware\ResetDatabaseContext;
+use App\Http\Middleware\SecurityHeaders;
 use App\Support\Http\ProblemRenderer;
 use App\Support\Http\RequestId;
 use Illuminate\Foundation\Application;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(RequestId::class);
+        $middleware->append(SecurityHeaders::class);
         $middleware->append(ResetDatabaseContext::class);
         $middleware->appendToGroup('web', EnsureUserActive::class);
         $middleware->alias([
