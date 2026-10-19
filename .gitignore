@@ -36,3 +36,6 @@ Thumbs.db
 *.log
 
 playwright-report/
+
+# Cadangan basis data lokal
+backups/
