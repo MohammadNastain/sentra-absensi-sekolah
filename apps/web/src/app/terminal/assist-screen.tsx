@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { terminalApi, type AssistSession, type AssistStudent, type TerminalFailure, type TerminalScan } from "@/lib/terminal-api";
+import { Backdrop, Brand, GLASS, TERMINAL_BUTTON, TERMINAL_INPUT, TERMINAL_PRIMARY } from "./terminal-ui";
 
 const REASONS: [string, string][] = [
   ["card_forgotten", "Kartu tertinggal"],
@@ -10,9 +11,9 @@ const REASONS: [string, string][] = [
   ["other", "Lainnya"],
 ];
 
-const INPUT = "w-full rounded-lg bg-white px-4 py-3 text-lg text-zinc-900";
-const BUTTON = "rounded-lg bg-zinc-700 px-5 py-3 text-lg font-medium hover:bg-zinc-600 disabled:opacity-60";
-const PRIMARY = "rounded-lg bg-brand-600 px-5 py-3 text-lg font-semibold hover:bg-brand-500 disabled:opacity-60";
+const INPUT = TERMINAL_INPUT;
+const BUTTON = TERMINAL_BUTTON;
+const PRIMARY = TERMINAL_PRIMARY;
 
 /**
  * Mode bantuan di terminal: petugas login, mencari siswa, memverifikasi visual, lalu mencatat. Token sesi hanya
@@ -53,31 +54,38 @@ export function AssistScreen({ onClose, onFailure, onRecorded }: { onClose: () =
   );
 
   return (
-    <main className="flex min-h-screen flex-col items-center gap-6 bg-zinc-950 p-6 text-white">
-      <header className="flex w-full max-w-2xl items-center justify-between">
-        <h1 className="text-2xl font-bold">Mode bantuan</h1>
-        <button type="button" onClick={close} className={BUTTON}>
-          {session ? "Akhiri sesi" : "Kembali"}
-        </button>
-      </header>
-      {error ? (
-        <p role="alert" className="w-full max-w-2xl rounded-lg bg-red-700 p-3">
-          {error}
-        </p>
-      ) : null}
-      {session === null ? (
-        <LoginForm
-          onSession={(next) => {
-            tokenRef.current = next.token;
-            setError(null);
-            setSession(next);
-          }}
-          onFailure={handle}
-        />
-      ) : (
-        <AssistForm session={session} onFailure={handle} onError={setError} onRecorded={onRecorded} />
-      )}
-    </main>
+    <Backdrop>
+      <main className="flex flex-1 flex-col items-center gap-6 p-6">
+        <header className={`${GLASS} flex w-full max-w-2xl items-center justify-between gap-4 px-5 py-4`}>
+          <div className="flex items-center gap-4">
+            <Brand />
+            <h1 className="border-l border-white/15 pl-4 text-2xl font-bold">Mode bantuan</h1>
+          </div>
+          <button type="button" onClick={close} className={BUTTON}>
+            {session ? "Akhiri sesi" : "Kembali"}
+          </button>
+        </header>
+        {error ? (
+          <p role="alert" className="w-full max-w-2xl animate-pop rounded-2xl border border-red-400/30 bg-red-500/20 p-3 text-red-100">
+            {error}
+          </p>
+        ) : null}
+        <div className={`${GLASS} w-full max-w-2xl animate-rise p-6`}>
+          {session === null ? (
+            <LoginForm
+              onSession={(next) => {
+                tokenRef.current = next.token;
+                setError(null);
+                setSession(next);
+              }}
+              onFailure={handle}
+            />
+          ) : (
+            <AssistForm session={session} onFailure={handle} onError={setError} onRecorded={onRecorded} />
+          )}
+        </div>
+      </main>
+    </Backdrop>
   );
 }
 
@@ -96,8 +104,8 @@ function LoginForm({ onSession, onFailure }: { onSession: (session: AssistSessio
   }
 
   return (
-    <form onSubmit={submit} className="flex w-full max-w-md flex-col gap-3">
-      <p className="text-zinc-300">Masuk sebagai Admin atau Petugas Piket untuk mencatat kehadiran secara manual.</p>
+    <form onSubmit={submit} className="flex w-full flex-col gap-3">
+      <p className="text-white/70">Masuk sebagai Admin atau Petugas Piket untuk mencatat kehadiran secara manual.</p>
       <label htmlFor="assist-email" className="sr-only">
         Email
       </label>
@@ -175,9 +183,9 @@ function AssistForm({
 
   return (
     <div className="flex w-full max-w-2xl flex-col gap-4">
-      <p className="text-zinc-400">Petugas: {session.officer_name}</p>
+      <p className="text-white/55">Petugas: {session.officer_name}</p>
       {result ? (
-        <p role="status" className="rounded-lg bg-brand-700 p-4 text-xl font-semibold">
+        <p role="status" className="animate-pop rounded-2xl border border-emerald-400/30 bg-emerald-500/20 p-4 text-xl font-semibold text-emerald-100">
           {result.student?.display_name}: {result.message} ({result.recorded_at_local})
         </p>
       ) : null}
@@ -193,13 +201,13 @@ function AssistForm({
               Cari
             </button>
           </form>
-          {students?.length === 0 ? <p className="text-zinc-400">Tidak ada siswa aktif yang cocok.</p> : null}
+          {students?.length === 0 ? <p className="text-white/55">Tidak ada siswa aktif yang cocok.</p> : null}
           <ul className="space-y-2">
             {students?.map((s) => (
               <li key={s.id}>
-                <button type="button" onClick={() => setSelected(s)} className="flex w-full items-center justify-between rounded-lg bg-zinc-800 px-4 py-3 text-left hover:bg-zinc-700">
+                <button type="button" onClick={() => setSelected(s)} className="flex w-full items-center justify-between rounded-2xl bg-white/[0.06] px-4 py-3 text-left transition hover:bg-white/[0.13]">
                   <span className="text-lg font-medium">{s.full_name}</span>
-                  <span className="text-zinc-400">
+                  <span className="text-white/55">
                     {s.student_number} · {s.class_name}
                   </span>
                 </button>
@@ -210,9 +218,9 @@ function AssistForm({
       ) : (
         <form onSubmit={record} className="flex flex-col gap-3">
           <p className="text-2xl font-bold">
-            {selected.full_name} <span className="text-lg font-normal text-zinc-400">{selected.class_name}</span>
+            {selected.full_name} <span className="text-lg font-normal text-white/55">{selected.class_name}</span>
           </p>
-          <label htmlFor="assist-reason" className="text-sm text-zinc-300">
+          <label htmlFor="assist-reason" className="text-sm text-white/70">
             Alasan
           </label>
           <select id="assist-reason" value={reason} onChange={(e) => setReason(e.target.value)} className={INPUT}>
@@ -222,7 +230,7 @@ function AssistForm({
               </option>
             ))}
           </select>
-          <label htmlFor="assist-note" className="text-sm text-zinc-300">
+          <label htmlFor="assist-note" className="text-sm text-white/70">
             {reason === "other" ? "Catatan (wajib)" : "Catatan (opsional)"}
           </label>
           <textarea id="assist-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} className={INPUT} />
