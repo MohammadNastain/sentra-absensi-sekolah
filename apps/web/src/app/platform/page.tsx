@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { usePlatformNav } from "@/lib/platform-nav";
+import { hasRememberedSchool, rememberSchool, usePlatformNav } from "@/lib/platform-nav";
 import { FormAlert, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
@@ -30,7 +30,13 @@ export default function PlatformPage() {
         const target = redirectFor(problem);
         if (target) router.replace(target);
         else if (problem !== undefined) setError(toFormFailure(problem).message);
-        else setSchools(data?.data ?? []);
+        else {
+          const list = data?.data ?? [];
+          setSchools(list);
+          // Menu sekolah di sidebar langsung tersedia sejak login: pilih sekolah aktif pertama bila belum ada pilihan.
+          const first = list.find((school) => school.status === "active") ?? list[0];
+          if (first && !hasRememberedSchool()) rememberSchool(first.code);
+        }
       })
       .catch((e) => {
         if (!cancelled) setError(toFormFailure(e).message);
