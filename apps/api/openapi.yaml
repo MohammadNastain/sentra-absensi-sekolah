@@ -3833,6 +3833,12 @@ components:
       properties:
         effective_until: { type: [string, "null"], format: date }
         is_active: { type: boolean }
+        check_in_start: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        check_in_deadline: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        late_grace_minutes: { type: integer, minimum: 0, maximum: 120 }
+        check_out_start: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+        scheduled_check_out: { type: string, pattern: "^[0-9]{2}:[0-9]{2}$" }
+      description: "Jam dikoreksi sebagai satu paket (kelima field jam bersama) dan hanya bila jadwal belum dipakai sesi absensi (409 bila sudah)."
     CalendarDay:
       type: object
       required: [date, day_of_week, holiday, schedule]

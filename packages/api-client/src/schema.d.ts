@@ -2771,10 +2771,16 @@ export interface components {
             /** Format: date */
             effective_from: string;
         };
+        /** @description Jam dikoreksi sebagai satu paket (kelima field jam bersama) dan hanya bila jadwal belum dipakai sesi absensi (409 bila sudah). */
         ScheduleUpdate: {
             /** Format: date */
             effective_until?: string | null;
             is_active?: boolean;
+            check_in_start?: string;
+            check_in_deadline?: string;
+            late_grace_minutes?: number;
+            check_out_start?: string;
+            scheduled_check_out?: string;
         };
         CalendarDay: {
             /** Format: date */
