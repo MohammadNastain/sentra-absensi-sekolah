@@ -81,7 +81,7 @@ export default function InvitationsPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Undangan</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Undangan</h1>
 
       <InviteForm
         code={code}
@@ -92,7 +92,7 @@ export default function InvitationsPage() {
       />
 
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Daftar undangan</h2>
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Daftar undangan</h2>
         <div className="w-48">
           <SelectField
             label="Status"
@@ -122,15 +122,15 @@ export default function InvitationsPage() {
       {items && items.length === 0 ? <p className="text-zinc-600 dark:text-zinc-400">Belum ada undangan.</p> : null}
 
       {items && items.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200/70 bg-white shadow-card dark:border-zinc-800 dark:bg-zinc-900">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+            <thead className="border-b border-zinc-200 bg-zinc-50/70 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Email</th>
-                <th scope="col" className="px-4 py-3 font-medium">Peran</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                <th scope="col" className="px-4 py-3 font-medium">Berlaku sampai</th>
-                <th scope="col" className="px-4 py-3 font-medium">Aksi</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Email</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Peran</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Berlaku sampai</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -222,8 +222,8 @@ function InviteForm({ code, onCreated }: { code: string; onCreated: (invitation:
   }
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Undang anggota baru</h2>
+    <section className="rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Undang anggota baru</h2>
       <form onSubmit={submit} noValidate className="mt-4 max-w-xl space-y-4">
         {failure ? <FormAlert>{failure.message}</FormAlert> : null}
         {sent ? (

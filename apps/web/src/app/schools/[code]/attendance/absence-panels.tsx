@@ -9,7 +9,7 @@ import { useSchool } from "../school-context";
 
 type PendingAbsences = Schemas["PendingAbsencesEnvelope"]["data"];
 
-const CARD = "space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900";
+const CARD = "space-y-4 rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900";
 
 const HEALTH_REASONS: Record<string, string> = {
   NO_SCANS: "Tidak ada satu pun scan yang tercatat padahal ada siswa wajib hadir.",
@@ -82,7 +82,7 @@ export function AbsenceSettingsPanel() {
   return (
     <section aria-labelledby="absence-settings-title" className={CARD}>
       <div>
-        <h2 id="absence-settings-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="absence-settings-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Aturan alpa
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -200,7 +200,7 @@ export function AbsenceVerificationPanel({ canHold }: { canHold: boolean }) {
   return (
     <section aria-labelledby="absence-title" className={CARD}>
       <div>
-        <h2 id="absence-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="absence-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Verifikasi alpa
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Periksa daftar alpa sementara, lalu verifikasi yang benar-benar tidak hadir. Yang sudah hadir akan tergantikan otomatis oleh scan.</p>

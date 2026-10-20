@@ -28,7 +28,7 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Dibatalkan",
 };
 const label = (value: string) => STATUS_LABELS[value] ?? (value === "" ? "—" : value);
-const CARD = "space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900";
+const CARD = "space-y-4 rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900";
 
 /** Koreksi absensi: admin mengoreksi langsung, wali kelas mengajukan, admin memutuskan. */
 export default function CorrectionsPage() {
@@ -58,7 +58,7 @@ export default function CorrectionsPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Koreksi absensi</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Koreksi absensi</h1>
       {notice ? <FormAlert tone="success">{notice}</FormAlert> : null}
       {error ? <FormAlert>{error}</FormAlert> : null}
       <CorrectionForm
@@ -69,7 +69,7 @@ export default function CorrectionsPage() {
         }}
       />
       <section aria-labelledby="corr-list-title" className={CARD}>
-        <h2 id="corr-list-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="corr-list-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Pengajuan koreksi
         </h2>
         {items === null && !error ? (
@@ -137,7 +137,7 @@ function HistoryPanel() {
 
   return (
     <section aria-labelledby="corr-history-title" className={CARD}>
-      <h2 id="corr-history-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+      <h2 id="corr-history-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
         Riwayat koreksi
       </h2>
       {error ? <FormAlert>{error}</FormAlert> : null}
@@ -230,7 +230,7 @@ function CorrectionForm({ direct, onDone }: { direct: boolean; onDone: (message:
   return (
     <section aria-labelledby="corr-new-title" className={CARD}>
       <div>
-        <h2 id="corr-new-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="corr-new-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           {direct ? "Koreksi langsung" : "Ajukan koreksi"}
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">

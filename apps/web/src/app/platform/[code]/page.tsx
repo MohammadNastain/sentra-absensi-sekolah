@@ -61,7 +61,7 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
       {school ? (
         <>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{school.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">{school.name}</h1>
             <StatusBadge status={school.status} />
             <span className="font-mono text-sm text-zinc-500">{school.code}</span>
           </div>
@@ -77,8 +77,8 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
 
 function Card({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{title}</h2>
+    <section className="rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{title}</h2>
       {description ? <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{description}</p> : null}
       <div className="mt-4 max-w-xl">{children}</div>
     </section>

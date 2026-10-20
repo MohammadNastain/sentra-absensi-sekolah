@@ -41,7 +41,7 @@ export default function PlatformPage() {
   return (
     <AppShell context="Platform" userLabel={me?.email}>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Sekolah</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Sekolah</h1>
         <Link
           href="/platform/new"
           className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
@@ -63,14 +63,14 @@ export default function PlatformPage() {
       ) : null}
 
       {schools && schools.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200/70 bg-white shadow-card dark:border-zinc-800 dark:bg-zinc-900">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+            <thead className="border-b border-zinc-200 bg-zinc-50/70 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Nama</th>
-                <th scope="col" className="px-4 py-3 font-medium">Kode</th>
-                <th scope="col" className="px-4 py-3 font-medium">Jenjang</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Nama</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Kode</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Jenjang</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Status</th>
               </tr>
             </thead>
             <tbody>

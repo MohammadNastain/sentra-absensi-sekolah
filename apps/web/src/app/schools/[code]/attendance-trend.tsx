@@ -3,7 +3,7 @@
 import type { Schemas } from "@sentra/api-client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { FormAlert, SelectField } from "@/components/ui";
+import { FormAlert, SelectField, Skeleton } from "@/components/ui";
 import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
@@ -55,9 +55,9 @@ export function AttendanceTrend() {
   if (error && !points) return <FormAlert>{error}</FormAlert>;
   if (!points) {
     return (
-      <p role="status" className="text-zinc-600 dark:text-zinc-400">
-        Memuat tren kehadiran…
-      </p>
+      <div role="status" aria-label="Memuat tren kehadiran">
+        <Skeleton className="h-80" />
+      </div>
     );
   }
 
@@ -69,11 +69,14 @@ export function AttendanceTrend() {
     .map((p, i) => (p.attendance_percentage === null ? null : `${x(i).toFixed(1)},${y(p.attendance_percentage).toFixed(1)}`))
     .filter((v): v is string => v !== null)
     .join(" ");
+  const firstIdx = points.findIndex((p) => p.attendance_percentage !== null);
+  const lastIdx = points.length - 1 - [...points].reverse().findIndex((p) => p.attendance_percentage !== null);
+  const area = `${x(firstIdx).toFixed(1)},${y(0).toFixed(1)} ${line} ${x(lastIdx).toFixed(1)},${y(0).toFixed(1)}`;
 
   return (
-    <section aria-labelledby="trend-title" className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <section aria-labelledby="trend-title" className="space-y-4 rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-card dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id="trend-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="trend-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Tren kehadiran
         </h2>
         <div className="w-40">
@@ -100,18 +103,36 @@ export function AttendanceTrend() {
       ) : (
         <>
           <svg role="img" aria-label={`Grafik persentase kehadiran ${points.length} hari terakhir`} viewBox={`0 0 ${W} ${H}`} className="h-auto w-full text-emerald-600 dark:text-emerald-400">
+            <defs>
+              <linearGradient id="trend-area" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
+                <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+              </linearGradient>
+            </defs>
             {[0, 50, 100].map((g) => (
               <g key={g}>
-                <line x1={PAD.l} x2={W - PAD.r} y1={y(g)} y2={y(g)} className="stroke-zinc-200 dark:stroke-zinc-800" />
+                <line x1={PAD.l} x2={W - PAD.r} y1={y(g)} y2={y(g)} strokeDasharray="3 5" className="stroke-zinc-200 dark:stroke-zinc-800" />
                 <text x={PAD.l - 6} y={y(g) + 4} textAnchor="end" className="fill-zinc-500 text-[10px]">
                   {g}%
                 </text>
               </g>
             ))}
-            <polyline points={line} fill="none" stroke="currentColor" strokeWidth={2} />
+            <polygon points={`${area}`} fill="url(#trend-area)" className="animate-fade [animation-delay:500ms]" />
+            <polyline
+              key={`${span}-${line}`}
+              points={line}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              pathLength={1}
+              strokeDasharray={1}
+              className="animate-draw"
+            />
             {points.map((p, i) =>
               p.attendance_percentage === null ? null : (
-                <circle key={p.date} cx={x(i)} cy={y(p.attendance_percentage)} r={3} fill="currentColor">
+                <circle key={p.date} cx={x(i)} cy={y(p.attendance_percentage)} r={3.5} fill="white" stroke="currentColor" strokeWidth={2} className="animate-pop transition-[r] hover:[r:5.5px]" style={{ animationDelay: `${400 + i * 30}ms` }}>
                   <title>{`${formatDate(p.date)}: ${p.attendance_percentage.toFixed(2)}%`}</title>
                 </circle>
               ),

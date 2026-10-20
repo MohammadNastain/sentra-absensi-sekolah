@@ -132,13 +132,13 @@ export default function StudentImportPage() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Impor siswa</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Impor siswa</h1>
         <Link href={`/schools/${code}/students`} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
           Kembali ke daftar siswa
         </Link>
       </div>
 
-      <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="space-y-3 rounded-2xl border border-zinc-200/70 bg-white shadow-card p-4 dark:border-zinc-800 dark:bg-zinc-900">
         <p className="text-sm text-zinc-700 dark:text-zinc-300">
           Unggah file CSV atau XLSX (maksimal 5 MB dan 5.000 baris). Kolom wajib: <code>nomor_induk</code>,{" "}
           <code>nama_lengkap</code>. Kolom opsional: <code>nisn</code> (10 digit; format sel sebagai teks agar angka nol di depan tidak
@@ -172,22 +172,22 @@ export default function StudentImportPage() {
 
       {history.length > 0 ? (
         <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Riwayat impor</h2>
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Riwayat impor</h2>
+          <div className="overflow-x-auto rounded-2xl border border-zinc-200/70 bg-white shadow-card dark:border-zinc-800 dark:bg-zinc-900">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+              <thead className="border-b border-zinc-200 bg-zinc-50/70 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
                 <tr>
-                  <th scope="col" className="px-4 py-3 font-medium">File</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Diunggah</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Baris</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Aksi</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">File</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Diunggah</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Baris</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {history.map((item) => (
                   <tr key={item.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
-                    <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{item.original_filename}</td>
+                    <td className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100">{item.original_filename}</td>
                     <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{formatDate(item.created_at.slice(0, 10))}</td>
                     <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{STATUS_LABEL[item.status]}</td>
                     <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
@@ -262,9 +262,9 @@ function BatchPanel({
   }, [showRows, code, batch.id, batch.status, filter, page]);
 
   return (
-    <section aria-label="Hasil impor" className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <section aria-label="Hasil impor" className="space-y-4 rounded-2xl border border-zinc-200/70 bg-white shadow-card p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{batch.original_filename}</h2>
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">{batch.original_filename}</h2>
         <span role="status" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
           {STATUS_LABEL[batch.status]}
         </span>
@@ -326,7 +326,7 @@ function BatchPanel({
           {rows && rows.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                <thead className="border-b border-zinc-200 bg-zinc-50/70 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
                   <tr>
                     <th scope="col" className="px-3 py-2 font-medium">Baris</th>
                     {COLUMNS.map((c) => (

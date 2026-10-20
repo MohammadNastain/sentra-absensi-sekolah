@@ -51,7 +51,7 @@ export default function AcademicYearsPage() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Tahun ajaran</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Tahun ajaran</h1>
         {canManage ? <PrimaryButton onClick={() => setAction({ kind: "create" })}>Tahun ajaran baru</PrimaryButton> : null}
       </div>
 
@@ -66,21 +66,21 @@ export default function AcademicYearsPage() {
       ) : null}
 
       {years && years.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200/70 bg-white shadow-card dark:border-zinc-800 dark:bg-zinc-900">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+            <thead className="border-b border-zinc-200 bg-zinc-50/70 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Tahun ajaran</th>
-                <th scope="col" className="px-4 py-3 font-medium">Mulai</th>
-                <th scope="col" className="px-4 py-3 font-medium">Selesai</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                {canManage ? <th scope="col" className="px-4 py-3 font-medium">Aksi</th> : null}
+                <th scope="col" className="px-4 py-3 font-semibold">Tahun ajaran</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Mulai</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Selesai</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                {canManage ? <th scope="col" className="px-4 py-3 font-semibold">Aksi</th> : null}
               </tr>
             </thead>
             <tbody>
               {years.map((year) => (
                 <tr key={year.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
-                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{year.name}</td>
+                  <td className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100">{year.name}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{formatDate(year.start_date)}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{formatDate(year.end_date)}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{year.is_active ? "Aktif" : "Tidak aktif"}</td>

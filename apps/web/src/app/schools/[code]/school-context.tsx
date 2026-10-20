@@ -12,6 +12,8 @@ export interface SchoolContextValue {
   profile: SchoolProfile;
   /** ID user yang sedang login (null selagi dimuat). */
   meId: string | null;
+  /** Nama user yang sedang login (null selagi dimuat). */
+  meName: string | null;
   setProfile: (profile: SchoolProfile) => void;
   can: (permission: PermissionCode) => boolean;
 }

@@ -84,7 +84,7 @@ export default function CalendarPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Kalender</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Kalender</h1>
 
       <div className="flex flex-wrap items-end gap-3">
         <SecondaryButton type="button" onClick={() => setMonth((m) => shiftMonth(m, -1))}>
