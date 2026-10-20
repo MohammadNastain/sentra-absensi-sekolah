@@ -169,17 +169,20 @@ final class RecordScanAction
 
         $checkInAt = null;
         $checkInTime = null;
-        if ($daily->check_in_event_id !== null) {
-            $checkInTime = Carbon::parse((string) DB::table('attendance_events')->where('id', $daily->check_in_event_id)->value('occurred_at_server'))->setTimezone($school->timezone);
+        // Jam hasil koreksi (override) berlaku sebagai catatan masuk/pulang walau tanpa event, jadi scan ulang tetap duplikat.
+        $checkInSource = $daily->check_in_time_override ?? ($daily->check_in_event_id === null ? null : DB::table('attendance_events')->where('id', $daily->check_in_event_id)->value('occurred_at_server'));
+        if ($checkInSource !== null) {
+            $checkInTime = Carbon::parse((string) $checkInSource)->setTimezone($school->timezone);
             $checkInAt = (int) $checkInTime->secondsSinceMidnight();
         }
         $checkOutTime = null;
-        if ($daily->check_out_event_id !== null) {
-            $checkOutTime = Carbon::parse((string) DB::table('attendance_events')->where('id', $daily->check_out_event_id)->value('occurred_at_server'))->setTimezone($school->timezone);
+        $checkOutSource = $daily->check_out_time_override ?? ($daily->check_out_event_id === null ? null : DB::table('attendance_events')->where('id', $daily->check_out_event_id)->value('occurred_at_server'));
+        if ($checkOutSource !== null) {
+            $checkOutTime = Carbon::parse((string) $checkOutSource)->setTimezone($school->timezone);
         }
 
         $nowSeconds = (int) $local->secondsSinceMidnight();
-        $hasCheckOut = $daily->check_out_event_id !== null;
+        $hasCheckOut = $checkOutSource !== null;
         $decision = $assist === null
             ? $this->machine->decide($window, $nowSeconds, $checkInAt, $hasCheckOut)
             : $this->machine->decideAssisted($window, $nowSeconds, $checkInAt, $hasCheckOut, $assist['event_type']);
@@ -324,7 +327,7 @@ final class RecordScanAction
         );
     }
 
-    /** @return object{id: string, attendance_status: string, check_in_event_id: string|null, check_out_event_id: string|null, leave_request_id: string|null} */
+    /** @return object{id: string, attendance_status: string, check_in_event_id: string|null, check_out_event_id: string|null, leave_request_id: string|null, check_in_time_override: string|null, check_out_time_override: string|null} */
     private function lockDaily(string $schoolId, string $studentId, string $date): object
     {
         DB::insert(
@@ -333,7 +336,7 @@ final class RecordScanAction
         );
 
         return DB::selectOne(
-            'SELECT id, attendance_status, check_in_event_id, check_out_event_id, leave_request_id FROM daily_attendance WHERE school_id = ? AND student_id = ? AND attendance_date = ? FOR UPDATE',
+            'SELECT id, attendance_status, check_in_event_id, check_out_event_id, leave_request_id, check_in_time_override, check_out_time_override FROM daily_attendance WHERE school_id = ? AND student_id = ? AND attendance_date = ? FOR UPDATE',
             [$schoolId, $studentId, $date],
         ) ?? throw new \LogicException('Baris harian tidak ditemukan setelah dibuat.');
     }
