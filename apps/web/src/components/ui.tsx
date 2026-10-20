@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/AppShell";
 import { IconCheck, IconClock, IconShield, IconUsers } from "@/components/icons";
+import { LogoStage } from "@/components/LogoStage";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const FIELD =
@@ -26,8 +27,11 @@ export function AuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <main className="grid min-h-dvh flex-1 lg:grid-cols-[1.05fr_1fr]">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-brand-sidebar-from via-brand-900 to-brand-sidebar-to text-white lg:flex lg:flex-col lg:justify-between lg:p-14">
+    <main className="relative grid min-h-dvh flex-1 lg:grid-cols-[1.05fr_1fr]">
+      <div className="absolute right-4 top-4 z-20 sm:right-8 sm:top-6">
+        <ThemeToggle />
+      </div>
+      <section className="relative flex flex-col items-center overflow-hidden bg-gradient-to-br from-brand-sidebar-from via-brand-900 to-brand-sidebar-to px-6 pb-24 pt-5 text-white sm:px-10 lg:items-stretch lg:justify-between lg:p-14 lg:pb-14">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <div className="absolute -right-24 -top-24 size-[28rem] animate-float rounded-full bg-brand-400/15 blur-3xl" />
           <div className="absolute -bottom-32 -left-20 size-[26rem] animate-float rounded-full bg-gold-400/10 blur-3xl [animation-delay:-3s]" />
@@ -41,7 +45,7 @@ export function AuthShell({
           </svg>
         </div>
 
-        <div className="relative flex items-center gap-3">
+        <div className="relative flex items-center gap-3 self-start">
           <BrandMark size={46} />
           <span className="leading-tight">
             <span className="block text-2xl font-bold tracking-tight">Sentra</span>
@@ -49,14 +53,16 @@ export function AuthShell({
           </span>
         </div>
 
-        <div className="relative max-w-md">
-          <h2 className="animate-rise text-4xl font-bold leading-[1.15] tracking-tight">
+        <LogoStage className="relative -my-2 h-64 w-full max-w-md sm:h-80 lg:-my-6 lg:h-[min(36rem,56vh)] lg:max-w-none" />
+
+        <div className="relative max-w-md text-center lg:text-left">
+          <h2 className="animate-rise text-2xl font-bold sm:text-3xl lg:text-4xl leading-[1.15] tracking-tight">
             Kehadiran siswa, tercatat rapi dan <span className="text-gold-400">dapat dipercaya.</span>
           </h2>
-          <p className="mt-4 animate-rise text-base leading-relaxed text-brand-50/75 [animation-delay:100ms]">
+          <p className="mt-3 animate-rise text-sm leading-relaxed sm:text-base lg:mt-4 text-brand-50/75 [animation-delay:100ms]">
             Dari gerbang sekolah sampai laporan bulanan. Satu sistem untuk petugas piket, wali kelas, dan pimpinan sekolah.
           </p>
-          <ul className="mt-8 space-y-3">
+          <ul className="mt-8 hidden space-y-3 lg:block">
             {HIGHLIGHTS.map(({ icon: Icon, text }, i) => (
               <li key={text} className="flex animate-rise items-center gap-3 text-sm text-brand-50/90" style={{ animationDelay: `${200 + i * 90}ms` }}>
                 <span className="flex size-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
@@ -68,19 +74,14 @@ export function AuthShell({
           </ul>
         </div>
 
-        <p className="relative flex items-center gap-2 text-xs text-brand-100/60">
+        <p className="relative hidden items-center gap-2 text-xs text-brand-100/60 lg:flex">
           <IconCheck width={16} height={16} /> Sentra Absensi Sekolah
         </p>
       </section>
 
-      <section className="relative flex items-center justify-center px-4 py-12 sm:px-8">
-        <ThemeToggle className="absolute right-4 top-4 sm:right-8 sm:top-6" />
-        <div className="w-full max-w-md animate-rise rounded-3xl border border-zinc-200/70 bg-white p-8 shadow-lift sm:p-10 dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="mb-6 flex items-center gap-2.5 lg:hidden">
-            <BrandMark size={34} />
-            <span className="font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Sentra Absensi Sekolah</span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{title}</h1>
+      <section className="relative z-10 -mt-16 flex items-start justify-center px-4 pb-10 sm:px-8 lg:mt-0 lg:items-center lg:py-12">
+        <div className="w-full max-w-md animate-rise rounded-3xl border border-zinc-200/70 bg-white p-6 shadow-lift sm:p-10 dark:border-zinc-800 dark:bg-zinc-900">
+                    <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{title}</h1>
           {description ? <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{description}</p> : null}
           <div className="mt-7">{children}</div>
           {footer ? <div className="mt-6 text-sm text-zinc-600 dark:text-zinc-400">{footer}</div> : null}
