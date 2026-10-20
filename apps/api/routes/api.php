@@ -115,6 +115,10 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
 
     Route::get('members', [MemberController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersView))->name('members.index');
+    Route::post('members/accounts', [MemberController::class, 'storeAccount'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersManage))->name('members.accounts.store');
+    Route::put('members/{membership}/password', [MemberController::class, 'setPassword'])->whereUuid('membership')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersManage))->name('members.password');
     Route::get('members/{membership}', [MemberController::class, 'show'])->whereUuid('membership')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersView))->name('members.show');
     Route::put('members/{membership}/roles', [MemberController::class, 'updateRoles'])->whereUuid('membership')

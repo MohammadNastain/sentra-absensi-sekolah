@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CardSheet, type CardData } from "@/components/QrCard";
+import { downloadCardsZip } from "@/lib/qr-download";
 import { FormAlert, PrimaryButton, SecondaryButton, SelectField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, type FormFailure } from "@/lib/errors";
@@ -14,6 +15,7 @@ export function ClassCardsPanel({ classId, className, onClose }: { classId: stri
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<FormFailure | null>(null);
   const [cards, setCards] = useState<CardData[] | null>(null);
+  const [zipping, setZipping] = useState(false);
 
   async function issue() {
     setPending(true);
@@ -47,16 +49,32 @@ export function ClassCardsPanel({ classId, className, onClose }: { classId: stri
         ) : (
           <>
             <FormAlert tone="success">
-              {cards.length} kartu diterbitkan. Kode QR hanya tampil sekarang; cetak sebelum menutup dialog ini.
+              {cards.length} kartu diterbitkan. Kode QR hanya tampil sekarang; unduh atau cetak sebelum menutup dialog ini.
             </FormAlert>
             <CardSheet schoolName={profile.name} cards={cards} />
           </>
         )}
         <div className="flex justify-end gap-2">
           {cards.length > 0 ? (
-            <SecondaryButton type="button" onClick={() => window.print()}>
-              Cetak
-            </SecondaryButton>
+            <>
+              <SecondaryButton
+                type="button"
+                disabled={zipping}
+                onClick={async () => {
+                  setZipping(true);
+                  try {
+                    await downloadCardsZip(cards, profile.name, `kartu-qr-${className.replace(/\s+/g, "-").toLowerCase()}.zip`);
+                  } finally {
+                    setZipping(false);
+                  }
+                }}
+              >
+                {zipping ? "Menyiapkan…" : `Unduh semua (${cards.length} PNG, ZIP)`}
+              </SecondaryButton>
+              <SecondaryButton type="button" onClick={() => window.print()}>
+                Cetak
+              </SecondaryButton>
+            </>
           ) : null}
           <PrimaryButton type="button" onClick={onClose}>
             Selesai

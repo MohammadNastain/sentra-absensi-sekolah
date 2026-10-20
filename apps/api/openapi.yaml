@@ -647,6 +647,65 @@ paths:
         "401": { $ref: "#/components/responses/Unauthenticated" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/members/accounts:
+    post:
+      tags: [school]
+      operationId: createMemberAccount
+      summary: "Buat akun anggota langsung (email + password), tanpa undangan surel"
+      description: "Izin: school.members.manage. Peran homeroom_teacher juga membuat data guru yang tertaut. Email yang sudah terdaftar ditolak (409)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberAccountCreate" }
+      responses:
+        "201":
+          description: "Akun dan keanggotaan dibuat."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/members/{membership}/password:
+    put:
+      tags: [school]
+      operationId: setMemberPassword
+      summary: "Tetapkan password baru anggota (tanpa surel)"
+      description: "Izin: school.members.manage."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: membership
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, minLength: 10 }
+      responses:
+        "200":
+          description: "Password diperbarui."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message: { type: string }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
   /schools/{school}/members/{membership}:
     get:
       tags: [school]
@@ -3367,6 +3426,18 @@ components:
           items: { $ref: "#/components/schemas/Role" }
         joined_at: { type: string, format: date-time }
         ended_at: { type: [string, "null"], format: date-time }
+    MemberAccountCreate:
+      type: object
+      required: [name, email, password, roles]
+      properties:
+        name: { type: string, maxLength: 200 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 10 }
+        employee_number: { type: [string, "null"], maxLength: 50 }
+        roles:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/Role" }
     MemberEnvelope:
       type: object
       required: [data]

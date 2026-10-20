@@ -68,6 +68,8 @@ final class RouteMatrix
             'GET api/v1/schools/{school}' => Permission::SchoolProfileView,
             'PATCH api/v1/schools/{school}' => Permission::SchoolProfileUpdate,
             'GET api/v1/schools/{school}/members' => Permission::SchoolMembersView,
+            'POST api/v1/schools/{school}/members/accounts' => Permission::SchoolMembersManage,
+            'PUT api/v1/schools/{school}/members/{membership}/password' => Permission::SchoolMembersManage,
             'GET api/v1/schools/{school}/members/{membership}' => Permission::SchoolMembersView,
             'PUT api/v1/schools/{school}/members/{membership}/roles' => Permission::SchoolMembersManage,
             'POST api/v1/schools/{school}/members/{membership}/suspend' => Permission::SchoolMembersManage,
