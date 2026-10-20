@@ -3309,7 +3309,7 @@ components:
         address: { type: [string, "null"], maxLength: 500 }
     SchoolProfile:
       type: object
-      required: [code, npsn, name, education_levels, timezone, address, status, my_roles, my_permissions]
+      required: [code, npsn, name, education_levels, timezone, address, status, my_roles, my_permissions, acting_as_platform_admin]
       properties:
         code: { type: string }
         npsn: { type: [string, "null"] }
@@ -3320,6 +3320,9 @@ components:
         timezone: { $ref: "#/components/schemas/Timezone" }
         address: { type: [string, "null"] }
         status: { $ref: "#/components/schemas/SchoolStatus" }
+        acting_as_platform_admin:
+          type: boolean
+          description: "True bila yang mengakses adalah Super Admin (bukan anggota sekolah), D-21."
         my_roles:
           type: array
           items: { $ref: "#/components/schemas/Role" }

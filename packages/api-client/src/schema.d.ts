@@ -2316,6 +2316,8 @@ export interface components {
             timezone: components["schemas"]["Timezone"];
             address: string | null;
             status: components["schemas"]["SchoolStatus"];
+            /** @description True bila yang mengakses adalah Super Admin (bukan anggota sekolah), D-21. */
+            acting_as_platform_admin: boolean;
             my_roles: components["schemas"]["Role"][];
             my_permissions: components["schemas"]["Permission"][];
         };

@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { use, useEffect, useMemo, useState } from "react";
 import { AppShell, type NavItem } from "@/components/AppShell";
-import { IconBook, IconBuilding, IconCalendar, IconChart, IconCheck, IconClock, IconDevice, IconEdit, IconGrad, IconHome, IconMail, IconShield, IconSun, IconUserPlus, IconUsers } from "@/components/icons";
 import { LogoutButton } from "@/components/LogoutButton";
+import { PlatformBanner } from "@/components/PlatformBanner";
 import { Skeleton } from "@/components/ui";
 import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
+import { platformItems, rememberSchool } from "@/lib/platform-nav";
+import { buildSchoolNav } from "@/lib/school-nav";
 import { redirectFor, useMe } from "@/lib/use-me";
 import { SchoolProvider, type PermissionCode, type SchoolProfile } from "./school-context";
 
@@ -30,7 +32,10 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
         const target = redirectFor(error);
         if (target) router.replace(target);
         else if (error !== undefined) setBlocked(toFormFailure(error).message);
-        else if (data) setProfile(data.data);
+        else if (data) {
+          setProfile(data.data);
+          if (data.data.acting_as_platform_admin) rememberSchool(code);
+        }
       })
       .catch((e) => {
         if (!cancelled) setBlocked(toFormFailure(e).message);
@@ -77,51 +82,14 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
     );
   }
 
-  const base = `/schools/${code}`;
-  const on = (path: string) => pathname.startsWith(`${base}/${path}`);
-  const nav: NavItem[] = [{ href: base, label: "Ringkasan", icon: IconHome, group: "Utama", active: pathname === base }];
-
-  if (value.can("school.attendance.assist") || value.can("school.attendance.review")) {
-    nav.push({ href: `${base}/attendance`, label: "Kehadiran", icon: IconCheck, group: "Kehadiran", active: on("attendance") });
-  }
-  if (value.can("school.attendance.correction_request")) {
-    nav.push({ href: `${base}/corrections`, label: "Koreksi", icon: IconEdit, group: "Kehadiran", active: on("corrections") });
-  }
-  if (value.can("school.leave.manage")) {
-    nav.push({ href: `${base}/leave`, label: "Izin", icon: IconMail, group: "Kehadiran", active: on("leave") });
-  }
-  if (value.can("school.reports.export")) {
-    nav.push({ href: `${base}/reports`, label: "Laporan", icon: IconChart, group: "Kehadiran", active: on("reports") });
-  }
-  if (value.can("school.academic.view")) {
-    nav.push({ href: `${base}/academic-years`, label: "Tahun ajaran", icon: IconBook, group: "Akademik", active: on("academic-years") });
-    nav.push({ href: `${base}/classes`, label: "Kelas", icon: IconBuilding, group: "Akademik", active: on("classes") });
-    nav.push({ href: `${base}/teachers`, label: "Guru", icon: IconGrad, group: "Akademik", active: on("teachers") });
-  }
-  if (value.can("school.students.view")) {
-    nav.push({ href: `${base}/students`, label: "Siswa", icon: IconUsers, group: "Akademik", active: on("students") });
-  }
-  if (value.can("school.schedule.view")) {
-    nav.push({ href: `${base}/schedules`, label: "Jadwal", icon: IconClock, group: "Jadwal", active: on("schedules") });
-    nav.push({ href: `${base}/holidays`, label: "Libur", icon: IconSun, group: "Jadwal", active: on("holidays") });
-    nav.push({ href: `${base}/calendar`, label: "Kalender", icon: IconCalendar, group: "Jadwal", active: on("calendar") });
-  }
-  if (value.can("school.members.view")) {
-    nav.push({ href: `${base}/members`, label: "Anggota", icon: IconUsers, group: "Administrasi", active: on("members") });
-  }
-  if (value.can("school.members.manage")) {
-    nav.push({ href: `${base}/invitations`, label: "Undangan", icon: IconUserPlus, group: "Administrasi", active: on("invitations") });
-  }
-  if (value.can("school.devices.view")) {
-    nav.push({ href: `${base}/devices`, label: "Perangkat", icon: IconDevice, group: "Administrasi", active: on("devices") });
-  }
-  if (value.can("school.audit.view")) {
-    nav.push({ href: `${base}/audit`, label: "Audit", icon: IconShield, group: "Administrasi", active: on("audit") });
-  }
+  const schoolNav = buildSchoolNav(code, pathname, value.can);
+  // Super Admin melihat menu Platform dan menu sekolah dalam satu sidebar.
+  const nav: NavItem[] = value.profile.acting_as_platform_admin ? [...platformItems(pathname), ...schoolNav.map((item) => ({ ...item, group: `Sekolah · ${item.group}` }))] : schoolNav;
 
   return (
     <SchoolProvider value={value}>
       <AppShell context={value.profile.name} nav={nav} userLabel={me?.email} userName={me?.name}>
+        {value.profile.acting_as_platform_admin ? <PlatformBanner code={code} /> : null}
         {props.children}
       </AppShell>
     </SchoolProvider>

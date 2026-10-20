@@ -94,10 +94,10 @@ it('T11: konteks sisa dari luar request tidak dipakai oleh request berikutnya', 
     $this->actingAs($user)->getJson('/api/v1/schools/sekolah-b')->assertNotFound();
 });
 
-it('T13: Super Admin bukan anggota mendapat 404 pada rute sekolah', function () {
+it('T13: Super Admin tanpa lulus 2FA mendapat 404 pada rute sekolah', function () {
     $admin = $this->makePlatformAdmin(User::factory()->withConfirmedTwoFactor()->create());
 
-    $this->actingAsPlatformAdminWithTwoFactor($admin)->getJson('/api/v1/schools/sekolah-a')->assertNotFound();
+    $this->actingAs($admin)->getJson('/api/v1/schools/sekolah-a')->assertNotFound();
 });
 
 it('menolak izin yang tidak dimiliki peran dengan 403 PERMISSION_DENIED', function () {

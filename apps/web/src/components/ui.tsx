@@ -186,12 +186,15 @@ export function TextAreaField({
   error?: string;
   hint?: string;
 } & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "name">) {
+  // `id` dapat diberikan bila dua kolom dengan `name` sama ada di satu halaman; label selalu menunjuk kolomnya sendiri.
+  const id = area.id ?? name;
+
   return (
     <div>
-      <label htmlFor={name} className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+      <label htmlFor={id} className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200">
         {label}
       </label>
-      <textarea id={name} name={name} rows={3} aria-invalid={error ? true : undefined} className={FIELD} {...area} />
+      <textarea name={name} rows={3} aria-invalid={error ? true : undefined} className={FIELD} {...area} id={id} />
       {error ? (
         <p className="mt-1.5 text-sm text-red-700 dark:text-red-400">{error}</p>
       ) : hint ? (

@@ -22,6 +22,9 @@ final class TenantContext
 
     private ?Device $device = null;
 
+    /** True bila Super Admin (bukan anggota) sedang mengakses sekolah ini (D-21). */
+    private bool $platformAccess = false;
+
     /** @var list<Role> */
     private array $roles = [];
 
@@ -33,6 +36,23 @@ final class TenantContext
         $this->school = $school;
         $this->membership = $membership;
         $this->roles = $roles;
+    }
+
+    /**
+     * Konteks akses Super Admin (D-21): bertindak sebagai Admin Sekolah tanpa menjadi anggota; keanggotaan yang
+     * diberikan hanya objek di memori (tidak pernah disimpan).
+     *
+     * @param  list<Role>  $roles
+     */
+    public function enterPlatformAdmin(School $school, SchoolMembership $virtual, array $roles): void
+    {
+        $this->enter($school, $virtual, $roles);
+        $this->platformAccess = true;
+    }
+
+    public function isPlatformAccess(): bool
+    {
+        return $this->platformAccess;
     }
 
     /** Konteks terminal: sekolah berasal dari perangkat yang lolos guard `device`; tidak ada keanggotaan/peran. */
@@ -54,6 +74,7 @@ final class TenantContext
         $this->school = null;
         $this->membership = null;
         $this->device = null;
+        $this->platformAccess = false;
         $this->roles = [];
     }
 

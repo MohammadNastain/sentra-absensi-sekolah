@@ -66,6 +66,12 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">{school.name}</h1>
             <StatusBadge status={school.status} />
             <span className="font-mono text-sm text-zinc-500">{school.code}</span>
+            <Link
+              href={`/schools/${school.code}`}
+              className="ml-auto inline-flex items-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+            >
+              Buka sekolah
+            </Link>
           </div>
 
           <ProfileSection school={school} onSaved={setSchool} />

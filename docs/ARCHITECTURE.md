@@ -161,7 +161,7 @@ Logika bisnis ditempatkan di kelas **Action/Service** dalam `Domain/*` (mis. `Re
 **Catatan implementasi RLS:**
 - `app.school_id` diset di awal request (`set_config(..., false)`) dan di-reset saat request selesai. Koneksi persisten PDO dan PgBouncer mode *transaction pooling* **dilarang** selama RLS bergantung pada setting sesi.
 - Job queue wajib membawa `school_id` dan menyetel konteks sebelum query (base class `TenantAwareJob`).
-- Operasi platform (Super Admin) hanya menyentuh tabel `schools`, yang tidak memakai RLS tenant, dan tabel platform. Super Admin **tidak** memiliki akses ke data siswa secara default [REKOMENDASI, TERBUKA D-21].
+- Operasi platform (Super Admin) hanya menyentuh tabel `schools`, yang tidak memakai RLS tenant, dan tabel platform. Super Admin (lulus 2FA) dapat mengakses sekolah mana pun sebagai Admin Sekolah virtual (D-21): bukan anggota, tanpa baris keanggotaan, dan setiap request tercatat di audit log sekolah (`platform.access.request`).
 - Migrasi dijalankan dengan role owner terpisah.
 
 ---
