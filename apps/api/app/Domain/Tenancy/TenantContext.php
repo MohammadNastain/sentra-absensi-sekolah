@@ -7,6 +7,7 @@ use App\Domain\Identity\Role;
 use App\Models\Device;
 use App\Models\School;
 use App\Models\SchoolMembership;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
@@ -22,6 +23,11 @@ final class TenantContext
 
     private ?Device $device = null;
 
+    /** Id izin dukungan bila Super Admin sedang masuk lewat akses dukungan (D-21); null untuk anggota biasa. */
+    private ?string $supportGrantId = null;
+
+    private ?Carbon $supportExpiresAt = null;
+
     /** @var list<Role> */
     private array $roles = [];
 
@@ -33,6 +39,29 @@ final class TenantContext
         $this->school = $school;
         $this->membership = $membership;
         $this->roles = $roles;
+    }
+
+    /**
+     * Konteks akses dukungan: Super Admin bertindak sebagai Admin Sekolah tanpa menjadi anggota; keanggotaan
+     * yang diberikan hanya objek di memori (tidak pernah disimpan).
+     *
+     * @param  list<Role>  $roles
+     */
+    public function enterSupport(School $school, SchoolMembership $virtual, array $roles, string $grantId, Carbon $expiresAt): void
+    {
+        $this->enter($school, $virtual, $roles);
+        $this->supportGrantId = $grantId;
+        $this->supportExpiresAt = $expiresAt;
+    }
+
+    public function supportExpiresAt(): ?Carbon
+    {
+        return $this->supportExpiresAt;
+    }
+
+    public function isSupport(): bool
+    {
+        return $this->supportGrantId !== null;
     }
 
     /** Konteks terminal: sekolah berasal dari perangkat yang lolos guard `device`; tidak ada keanggotaan/peran. */
@@ -54,6 +83,8 @@ final class TenantContext
         $this->school = null;
         $this->membership = null;
         $this->device = null;
+        $this->supportGrantId = null;
+        $this->supportExpiresAt = null;
         $this->roles = [];
     }
 

@@ -330,6 +330,13 @@ column students.status text nullable=NO
 column students.status_changed_at timestamp with time zone nullable=YES
 column students.student_number text nullable=NO
 column students.updated_at timestamp with time zone nullable=NO
+column support_grants.created_at timestamp with time zone nullable=NO
+column support_grants.ended_at timestamp with time zone nullable=YES
+column support_grants.expires_at timestamp with time zone nullable=NO
+column support_grants.id uuid nullable=NO
+column support_grants.reason text nullable=NO
+column support_grants.school_id uuid nullable=NO
+column support_grants.user_id uuid nullable=NO
 column teachers.created_at timestamp with time zone nullable=NO
 column teachers.employee_number text nullable=YES
 column teachers.full_name text nullable=NO
@@ -387,6 +394,7 @@ index CREATE INDEX school_memberships_user_id_index ON public.school_memberships
 index CREATE INDEX student_credentials_student_index ON public.student_credentials USING btree (school_id, student_id, issued_at DESC)
 index CREATE INDEX students_full_name_trgm ON public.students USING gin (full_name gin_trgm_ops)
 index CREATE INDEX students_school_name_index ON public.students USING btree (school_id, full_name)
+index CREATE INDEX support_grants_lookup_index ON public.support_grants USING btree (user_id, school_id, expires_at DESC) WHERE (ended_at IS NULL)
 index CREATE INDEX teachers_school_name_index ON public.teachers USING btree (school_id, full_name)
 index CREATE UNIQUE INDEX academic_years_one_active ON public.academic_years USING btree (school_id) WHERE is_active
 index CREATE UNIQUE INDEX academic_years_pkey ON public.academic_years USING btree (id)
@@ -460,6 +468,7 @@ index CREATE UNIQUE INDEX students_nisn_unique ON public.students USING btree (s
 index CREATE UNIQUE INDEX students_pkey ON public.students USING btree (id)
 index CREATE UNIQUE INDEX students_school_id_id_unique ON public.students USING btree (school_id, id)
 index CREATE UNIQUE INDEX students_school_number_unique ON public.students USING btree (school_id, student_number)
+index CREATE UNIQUE INDEX support_grants_pkey ON public.support_grants USING btree (id)
 index CREATE UNIQUE INDEX teachers_employee_number_unique ON public.teachers USING btree (school_id, employee_number) WHERE (employee_number IS NOT NULL)
 index CREATE UNIQUE INDEX teachers_membership_id_unique ON public.teachers USING btree (membership_id)
 index CREATE UNIQUE INDEX teachers_pkey ON public.teachers USING btree (id)
@@ -922,6 +931,17 @@ constraint students students_status_check CHECK ((status = ANY (ARRAY['active'::
 constraint students students_status_not_null NOT NULL status
 constraint students students_student_number_not_null NOT NULL student_number
 constraint students students_updated_at_not_null NOT NULL updated_at
+constraint support_grants support_grants_created_at_not_null NOT NULL created_at
+constraint support_grants support_grants_expires_at_not_null NOT NULL expires_at
+constraint support_grants support_grants_id_not_null NOT NULL id
+constraint support_grants support_grants_pkey PRIMARY KEY (id)
+constraint support_grants support_grants_reason_check CHECK ((length(btrim(reason)) >= 10))
+constraint support_grants support_grants_reason_not_null NOT NULL reason
+constraint support_grants support_grants_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint support_grants support_grants_school_id_not_null NOT NULL school_id
+constraint support_grants support_grants_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
+constraint support_grants support_grants_user_id_not_null NOT NULL user_id
+constraint support_grants support_grants_window_check CHECK ((expires_at > created_at))
 constraint teachers teachers_created_at_not_null NOT NULL created_at
 constraint teachers teachers_employee_number_not_blank CHECK (((employee_number IS NULL) OR (btrim(employee_number) <> ''::text)))
 constraint teachers teachers_full_name_not_blank CHECK ((btrim(full_name) <> ''::text))
@@ -984,6 +1004,7 @@ policy school_memberships own_memberships_read SELECT (user_id = app_user_id())
 policy school_memberships tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy student_credentials tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy students tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy support_grants platform_only ALL app_is_platform() app_is_platform()
 policy teachers tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 rls academic_years enabled=true forced=true
 rls assist_sessions enabled=true forced=true
@@ -1014,5 +1035,6 @@ rls school_memberships enabled=true forced=true
 rls schools enabled=false forced=false
 rls student_credentials enabled=true forced=true
 rls students enabled=true forced=true
+rls support_grants enabled=true forced=true
 rls teachers enabled=true forced=true
 rls users enabled=false forced=false

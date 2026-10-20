@@ -395,6 +395,25 @@ export interface paths {
         patch: operations["updateSchool"];
         trace?: never;
     };
+    "/platform/schools/{school}/support-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status akses dukungan Super Admin ke sekolah */
+        get: operations["getSupportSession"];
+        put?: never;
+        /** Mulai akses dukungan (break-glass): alasan wajib, berbatas waktu, teraudit */
+        post: operations["startSupportSession"];
+        /** Akhiri akses dukungan */
+        delete: operations["endSupportSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/schools/{school}/suspend": {
         parameters: {
             query?: never;
@@ -2316,6 +2335,11 @@ export interface components {
             timezone: components["schemas"]["Timezone"];
             address: string | null;
             status: components["schemas"]["SchoolStatus"];
+            /**
+             * Format: date-time
+             * @description Terisi bila sesi ini adalah akses dukungan Super Admin (D-21): batas waktu sesi.
+             */
+            support_expires_at: string | null;
             my_roles: components["schemas"]["Role"][];
             my_permissions: components["schemas"]["Permission"][];
         };
@@ -2395,6 +2419,16 @@ export interface components {
             roles: components["schemas"]["Role"][];
             /** Format: date-time */
             expires_at: string;
+        };
+        SupportSessionStart: {
+            reason: string;
+        };
+        SupportSessionEnvelope: {
+            data: {
+                active: boolean;
+                /** Format: date-time */
+                expires_at: string | null;
+            };
         };
         ReasonRequired: {
             reason: string;
@@ -4230,6 +4264,87 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getSupportSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status sesi dukungan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportSessionEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    startSupportSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupportSessionStart"];
+            };
+        };
+        responses: {
+            /** @description Sesi dukungan dibuka. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportSessionEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    endSupportSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sesi diakhiri. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     suspendSchool: {

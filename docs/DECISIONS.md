@@ -60,7 +60,7 @@ Setelah diputuskan, butir dipindahkan ke `docs/adr/NNNN-judul.md` (format: konte
 | D-04 | Penyimpanan token device | Cookie HttpOnly di origin terminal; token di-hash di DB |
 | D-06 | PostgreSQL RLS | Ya, sebagai pertahanan berlapis (menambah kompleksitas pengujian, sudah diperhitungkan) |
 | D-20 | Realtime dashboard | Polling |
-| D-21 | Akses Super Admin ke data siswa | Tidak ada. Akses dukungan (*break-glass*) teraudit ditunda |
+| D-21 | Akses Super Admin ke data siswa | Tidak ada secara default. **Akses dukungan (*break-glass*) teraudit diterapkan:** Super Admin (lulus 2FA) membuka sesi per sekolah dengan alasan wajib (min. 10 karakter), berlaku 60 menit, lalu bertindak sebagai Admin Sekolah virtual (bukan anggota). Setiap request dicatat di audit log sekolah (`platform.support.*`; GET berulang dalam 60 detik dicatat sekali); sekolah tertangguhkan tetap dapat dibuka, yang diakhiri (terminated) tidak |
 | D-22 | Sekolah `suspended` | Login dashboard & terminal ditolak; data tetap utuh. Konfirmasi kebijakan komersial. |
 | D-25 | 2FA & reset password | TOTP wajib Super Admin; reset oleh Admin Sekolah; reset via email setelah penyedia email dipilih |
 | D-26 | Retensi (usulan awal, wajib ditinjau hukum) | Event & harian: selama siswa aktif + 5 tahun · Audit log: 5 tahun · IP address: 90 hari · Foto: dihapus 30 hari setelah siswa keluar · Staging impor: 30 hari · File ekspor: 7 hari |

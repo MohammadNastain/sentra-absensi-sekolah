@@ -34,6 +34,7 @@ final class AuditRedactor
         'schedule' => ['scope_type', 'grade_level', 'class_id', 'day_of_week', 'check_in_start', 'check_in_deadline', 'late_grace_minutes', 'check_out_start', 'scheduled_check_out', 'effective_from', 'effective_until', 'is_active'],
         'class_enrollment' => ['student_id', 'class_id', 'start_date', 'end_date'],
         'school_class' => ['name', 'grade_level', 'academic_year_id', 'homeroom_teacher_id', 'status'],
+        'support_grant' => ['expires_at', 'method', 'path'],
         'auth' => ['email'],
     ];
 

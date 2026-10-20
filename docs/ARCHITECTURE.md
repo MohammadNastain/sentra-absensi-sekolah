@@ -161,7 +161,7 @@ Logika bisnis ditempatkan di kelas **Action/Service** dalam `Domain/*` (mis. `Re
 **Catatan implementasi RLS:**
 - `app.school_id` diset di awal request (`set_config(..., false)`) dan di-reset saat request selesai. Koneksi persisten PDO dan PgBouncer mode *transaction pooling* **dilarang** selama RLS bergantung pada setting sesi.
 - Job queue wajib membawa `school_id` dan menyetel konteks sebelum query (base class `TenantAwareJob`).
-- Operasi platform (Super Admin) hanya menyentuh tabel `schools`, yang tidak memakai RLS tenant, dan tabel platform. Super Admin **tidak** memiliki akses ke data siswa secara default [REKOMENDASI, TERBUKA D-21].
+- Operasi platform (Super Admin) hanya menyentuh tabel `schools`, yang tidak memakai RLS tenant, dan tabel platform. Super Admin **tidak** memiliki akses ke data siswa secara default. Untuk perbaikan masalah tersedia akses dukungan (*break-glass*, D-21): sesi per sekolah dengan alasan wajib, berbatas 60 menit, berperan Admin Sekolah virtual, dan setiap request tercatat di audit log sekolah (tabel `support_grants`, endpoint `/platform/schools/{school}/support-session`).
 - Migrasi dijalankan dengan role owner terpisah.
 
 ---
@@ -328,6 +328,7 @@ Konvensi: REST JSON, prefiks `/api/v1`, error format **RFC 9457 (problem+json)**
 | GET, PATCH | `/api/v1/platform/schools/{school}` |
 | POST | `/api/v1/platform/schools/{school}/suspend` · `/activate` |
 | POST | `/api/v1/platform/schools/{school}/admins` (buat Admin Sekolah pertama) |
+| GET, POST, DELETE | `/api/v1/platform/schools/{school}/support-session` (akses dukungan, D-21) |
 
 ### 11.3 Tenant (prefiks `/api/v1/schools/{school}`, keanggotaan divalidasi per request)
 Semua path di tabel ini **relatif terhadap prefiks tersebut** (D-34). Endpoint lengkap Tahap 1 (auth, undangan, anggota, audit) ada di `TAHAP_1_FONDASI.md` §6.

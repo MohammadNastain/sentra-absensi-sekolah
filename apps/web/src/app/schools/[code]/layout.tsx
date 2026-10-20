@@ -6,6 +6,7 @@ import { use, useEffect, useMemo, useState } from "react";
 import { AppShell, type NavItem } from "@/components/AppShell";
 import { IconBook, IconBuilding, IconCalendar, IconChart, IconCheck, IconClock, IconDevice, IconEdit, IconGrad, IconHome, IconMail, IconShield, IconSun, IconUserPlus, IconUsers } from "@/components/icons";
 import { LogoutButton } from "@/components/LogoutButton";
+import { SupportBanner } from "@/components/SupportBanner";
 import { Skeleton } from "@/components/ui";
 import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
@@ -122,6 +123,7 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
   return (
     <SchoolProvider value={value}>
       <AppShell context={value.profile.name} nav={nav} userLabel={me?.email} userName={me?.name}>
+        {value.profile.support_expires_at ? <SupportBanner code={code} expiresAt={value.profile.support_expires_at} /> : null}
         {props.children}
       </AppShell>
     </SchoolProvider>
