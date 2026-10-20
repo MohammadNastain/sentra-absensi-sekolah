@@ -223,3 +223,27 @@ it('wali kelas mengajukan koreksi jam masuk, admin menyetujui, jam berlaku', fun
     $this->actingAs($this->admin)->postJson(corrUrl("/correction-requests/{$id}/decision"), ['decision' => 'approve'])->assertOk();
     expect(corrDaily()->attendance_status)->toBe('hadir');
 });
+
+it('scan ulang setelah koreksi jam masuk tetap duplikat dan tidak menimpa hasil koreksi', function () {
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_in_time', 'value' => '06:30']))->assertCreated();
+
+    Carbon::setTestNow(Carbon::parse('2026-10-19 07:20:00', 'Asia/Jakarta'));
+    scan($this->token)->assertJsonPath('data.result', 'duplicate')->assertJsonPath('data.code', 'ALREADY_CHECKED_IN');
+    $row = corrDaily();
+    expect($row->attendance_status)->toBe('hadir')->and($row->check_in_event_id)->toBeNull();
+
+    // Pulang normal setelah jam pulang dibuka tetap diterima, dengan jam masuk hasil koreksi.
+    Carbon::setTestNow(Carbon::parse('2026-10-19 14:05:00', 'Asia/Jakarta'));
+    scan($this->token)->assertJsonPath('data.result', 'accepted')->assertJsonPath('data.code', 'CHECK_OUT_OK');
+    expect(corrDaily()->check_out_event_id)->not->toBeNull();
+});
+
+it('scan ulang setelah koreksi jam pulang dinyatakan sudah pulang', function () {
+    Carbon::setTestNow(Carbon::parse('2026-10-19 06:30:00', 'Asia/Jakarta'));
+    scan($this->token)->assertJsonPath('data.code', 'CHECK_IN_OK');
+    Carbon::setTestNow(Carbon::parse('2026-10-19 10:00:00', 'Asia/Jakarta'));
+    $this->actingAs($this->admin)->postJson(corrUrl('/corrections'), corrBody(['type' => 'check_out_time', 'value' => '09:30']))->assertCreated();
+
+    Carbon::setTestNow(Carbon::parse('2026-10-19 14:05:00', 'Asia/Jakarta'));
+    scan($this->token)->assertJsonPath('data.result', 'duplicate')->assertJsonPath('data.code', 'ALREADY_CHECKED_OUT');
+});
