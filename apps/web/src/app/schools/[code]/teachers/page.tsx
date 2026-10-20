@@ -77,7 +77,7 @@ export default function TeachersPage() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Guru</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Guru</h1>
         {canManage ? <PrimaryButton onClick={() => setAction({ kind: "create" })}>Tambah guru</PrimaryButton> : null}
       </div>
 
@@ -121,21 +121,21 @@ export default function TeachersPage() {
       {teachers && teachers.length === 0 ? <p className="text-zinc-600 dark:text-zinc-400">Tidak ada guru.</p> : null}
 
       {teachers && teachers.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200/70 bg-white shadow-card dark:border-zinc-800 dark:bg-zinc-900">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+            <thead className="border-b border-zinc-200 bg-zinc-50/70 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Nama</th>
-                <th scope="col" className="px-4 py-3 font-medium">Nomor pegawai</th>
-                <th scope="col" className="px-4 py-3 font-medium">Akun login</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                {canManage ? <th scope="col" className="px-4 py-3 font-medium">Aksi</th> : null}
+                <th scope="col" className="px-4 py-3 font-semibold">Nama</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Nomor pegawai</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Akun login</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                {canManage ? <th scope="col" className="px-4 py-3 font-semibold">Aksi</th> : null}
               </tr>
             </thead>
             <tbody>
               {teachers.map((teacher) => (
                 <tr key={teacher.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
-                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{teacher.full_name}</td>
+                  <td className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100">{teacher.full_name}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{teacher.employee_number ?? "-"}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{teacher.account?.email ?? "Tanpa akun"}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">

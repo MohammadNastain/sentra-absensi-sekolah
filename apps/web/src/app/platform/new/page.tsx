@@ -38,9 +38,9 @@ export default function NewSchoolPage() {
         <Link href="/platform" className="text-sm text-emerald-700 hover:underline dark:text-emerald-400">
           ← Semua sekolah
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Sekolah baru</h1>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Sekolah baru</h1>
       </div>
-      <div className="max-w-xl rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="max-w-xl rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <SchoolForm
           mode="create"
           failure={failure}

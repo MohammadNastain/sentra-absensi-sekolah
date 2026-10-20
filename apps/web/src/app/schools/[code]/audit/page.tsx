@@ -55,7 +55,7 @@ export default function AuditPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Audit</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Audit</h1>
 
       <form
         noValidate
@@ -92,7 +92,7 @@ export default function AuditPage() {
           {logs.map((log) => (
             <li
               key={log.id}
-              className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+              className="rounded-2xl border border-zinc-200/70 bg-white shadow-card p-4 dark:border-zinc-800 dark:bg-zinc-900"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">{log.action}</p>

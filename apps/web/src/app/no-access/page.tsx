@@ -8,7 +8,7 @@ export default function NoAccessPage() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 space-y-8 px-4 py-10">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Belum ada akses sekolah</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Belum ada akses sekolah</h1>
         <LogoutButton />
       </header>
       <p className="text-zinc-600 dark:text-zinc-400">

@@ -132,9 +132,9 @@ export default function TwoFactorSetupPage() {
 
   return (
     <AppShell context="Keamanan akun" userLabel={me?.email}>
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Verifikasi dua langkah (2FA)</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Verifikasi dua langkah (2FA)</h1>
 
-      <section className="max-w-xl rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="max-w-xl rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900">
         {step.name === "loading" ? (
           <p role="status" className="text-zinc-600 dark:text-zinc-400">
             Memuat…

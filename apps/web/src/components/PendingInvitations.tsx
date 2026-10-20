@@ -67,7 +67,7 @@ export function PendingInvitations() {
 
   return (
     <section aria-labelledby="pending-title" className="space-y-3">
-      <h2 id="pending-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+      <h2 id="pending-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
         Undangan untuk Anda
       </h2>
       {error ? <FormAlert>{error}</FormAlert> : null}
@@ -75,7 +75,7 @@ export function PendingInvitations() {
         {items.map((invitation) => (
           <li
             key={invitation.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200/70 bg-white shadow-card p-4 dark:border-zinc-800 dark:bg-zinc-900"
           >
             <div>
               <p className="font-medium text-zinc-900 dark:text-zinc-50">{invitation.school.name ?? "Sekolah"}</p>

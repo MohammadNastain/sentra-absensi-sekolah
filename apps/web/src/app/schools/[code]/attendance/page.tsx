@@ -31,7 +31,7 @@ export default function AttendanceOperationsPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Kehadiran</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Kehadiran</h1>
       {canAssist ? <AssistPanel /> : null}
       {canReview ? <ReviewQueuePanel /> : null}
       {canVerify ? <AbsenceVerificationPanel canHold={canReview} /> : null}
@@ -41,7 +41,7 @@ export default function AttendanceOperationsPage() {
   );
 }
 
-const CARD = "space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900";
+const CARD = "space-y-4 rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900";
 
 function AssistPanel() {
   const { code } = useSchool();
@@ -117,7 +117,7 @@ function AssistPanel() {
   return (
     <section aria-labelledby="assist-title" className={CARD}>
       <div>
-        <h2 id="assist-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="assist-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Pencatatan mode bantuan
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -248,7 +248,7 @@ function ReviewQueuePanel() {
   return (
     <section aria-labelledby="review-title" className={CARD}>
       <div>
-        <h2 id="review-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="review-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Antrean tinjauan
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Scan yang perlu keputusan (pulang tanpa catatan masuk, atau masuk pada siswa yang sudah dinyatakan alpa). Terima untuk mencatat pulang, atau tolak untuk mengabaikan; keduanya wajib beralasan.</p>
@@ -336,7 +336,7 @@ function AssistReportPanel() {
   return (
     <section aria-labelledby="report-title" className={CARD}>
       <div>
-        <h2 id="report-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="report-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Laporan anomali mode bantuan
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Petugas atau siswa yang berulang dapat menandakan penyalahgunaan mode bantuan.</p>

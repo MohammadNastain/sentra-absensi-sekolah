@@ -15,7 +15,7 @@ type LeaveType = Schemas["CreateLeaveRequest"]["leave_type"];
 
 const TYPE_LABELS: Record<string, string> = { izin: "Izin", sakit: "Sakit", dispensasi: "Dispensasi" };
 const STATUS_LABELS: Record<string, string> = { pending: "Menunggu", approved: "Disetujui", rejected: "Ditolak", cancelled: "Dibatalkan" };
-const CARD = "space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900";
+const CARD = "space-y-4 rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900";
 
 /** Izin/sakit/dispensasi: pengajuan, lampiran, keputusan, dan pembatalan. */
 export default function LeavePage() {
@@ -45,7 +45,7 @@ export default function LeavePage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Izin dan sakit</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Izin dan sakit</h1>
       {notice ? <FormAlert tone="success">{notice}</FormAlert> : null}
       {error ? <FormAlert>{error}</FormAlert> : null}
       <NewLeaveForm
@@ -56,7 +56,7 @@ export default function LeavePage() {
         }}
       />
       <section aria-labelledby="leave-list-title" className={CARD}>
-        <h2 id="leave-list-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="leave-list-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Daftar pengajuan
         </h2>
         {items === null && !error ? (
@@ -159,7 +159,7 @@ function NewLeaveForm({ timeZone, onCreated }: { timeZone: string; onCreated: ()
 
   return (
     <section aria-labelledby="leave-new-title" className={CARD}>
-      <h2 id="leave-new-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+      <h2 id="leave-new-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
         Ajukan izin
       </h2>
       {error ? <FormAlert>{error}</FormAlert> : null}

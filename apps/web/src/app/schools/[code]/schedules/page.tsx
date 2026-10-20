@@ -93,7 +93,7 @@ export default function SchedulesPage() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Jadwal absensi</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Jadwal absensi</h1>
         {canManage ? <PrimaryButton onClick={() => setCreating(true)}>Terbitkan versi jadwal</PrimaryButton> : null}
       </div>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -121,22 +121,22 @@ export default function SchedulesPage() {
       {versions && versions.length === 0 ? <p className="text-zinc-600 dark:text-zinc-400">Belum ada jadwal.</p> : null}
 
       {versions && versions.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200/70 bg-white shadow-card dark:border-zinc-800 dark:bg-zinc-900">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+            <thead className="border-b border-zinc-200 bg-zinc-50/70 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Cakupan</th>
-                <th scope="col" className="px-4 py-3 font-medium">Hari</th>
-                <th scope="col" className="px-4 py-3 font-medium">Absen masuk</th>
-                <th scope="col" className="px-4 py-3 font-medium">Absen pulang</th>
-                <th scope="col" className="px-4 py-3 font-medium">Berlaku</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Cakupan</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Hari</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Absen masuk</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Absen pulang</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Berlaku</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Status</th>
               </tr>
             </thead>
             <tbody>
               {versions.map(({ key, sample, days }) => (
                 <tr key={key} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
-                  <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{scopeLabel(sample)}</td>
+                  <td className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100">{scopeLabel(sample)}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{daysLabel(days)}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
                     {sample.check_in_start}–{sample.check_in_deadline} (+{sample.late_grace_minutes} mnt)

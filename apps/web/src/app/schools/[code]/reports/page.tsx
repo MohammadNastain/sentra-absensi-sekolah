@@ -26,7 +26,7 @@ const REPORTS: { value: Report; label: string }[] = [
 ];
 const REPORT_LABEL = Object.fromEntries(REPORTS.map((r) => [r.value, r.label]));
 const STATUS_LABEL: Record<string, string> = { queued: "Mengantre", running: "Diproses", done: "Siap", failed: "Gagal" };
-const CARD = "space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900";
+const CARD = "space-y-4 rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900";
 const CELL = "px-2 py-1 text-right tabular-nums";
 
 type Row = { key: string; name: string; sub?: string; metrics: Metrics };
@@ -149,12 +149,12 @@ export default function ReportsPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Laporan kehadiran</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Laporan kehadiran</h1>
       {notice ? <FormAlert tone="success">{notice}</FormAlert> : null}
       {error ? <FormAlert>{error}</FormAlert> : null}
 
       <section aria-labelledby="rep-filter-title" className={CARD}>
-        <h2 id="rep-filter-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="rep-filter-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Filter
         </h2>
         <form noValidate onSubmit={preview} className="grid max-w-3xl gap-4 sm:grid-cols-2">
@@ -264,7 +264,7 @@ export default function ReportsPage() {
       ) : null}
 
       <section aria-labelledby="rep-exports-title" className={CARD}>
-        <h2 id="rep-exports-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="rep-exports-title" className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
           Ekspor saya
         </h2>
         {exports.length === 0 ? <p className="text-sm text-zinc-600 dark:text-zinc-400">Belum ada ekspor.</p> : null}

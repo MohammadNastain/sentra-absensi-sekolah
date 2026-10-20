@@ -34,7 +34,7 @@ export default function SchoolsPage() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 space-y-8 px-4 py-10">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Pilih sekolah</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Pilih sekolah</h1>
         <LogoutButton />
       </header>
 
@@ -55,7 +55,7 @@ export default function SchoolsPage() {
                 {usable ? (
                   <Link
                     href={`/schools/${entry.school.code}`}
-                    className="block rounded-xl border border-zinc-200 bg-white p-4 hover:border-emerald-600 dark:border-zinc-800 dark:bg-zinc-900"
+                    className="block rounded-2xl border border-zinc-200/70 bg-white shadow-card p-4 hover:border-emerald-600 dark:border-zinc-800 dark:bg-zinc-900"
                   >
                     <p className="font-medium text-zinc-900 dark:text-zinc-50">{entry.school.name}</p>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">{entry.roles.map(roleLabel).join(", ")}</p>
