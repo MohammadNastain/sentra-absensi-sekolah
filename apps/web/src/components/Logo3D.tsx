@@ -37,6 +37,13 @@ function Emblem() {
     });
     g.translate(0, 0, -DEPTH / 2);
 
+    // Sisi belakang dicerminkan supaya logo terbaca benar saat berputar penuh 360 derajat.
+    const normal = g.getAttribute("normal");
+    const uv = g.getAttribute("uv");
+    for (let i = 0; i < uv.count; i++) {
+      if (normal.getZ(i) < -0.5) uv.setX(i, -uv.getX(i));
+    }
+
     return g;
   }, []);
 
@@ -127,9 +134,9 @@ function Scene({ still }: { still: boolean }) {
     if (!rig.current || still) return;
     const t = state.clock.elapsedTime;
     // Berayun pelan dan mengambang; kursor menambah kemiringan.
-    const yaw = Math.sin(t * 0.6) * 0.55 + state.pointer.x * 0.45;
+    // Putar penuh 360 derajat tanpa henti; kursor hanya memiringkan sumbu atas-bawah.
+    rig.current.rotation.y = t * 0.55;
     const pitch = Math.sin(t * 0.45) * 0.12 - state.pointer.y * 0.3;
-    rig.current.rotation.y = THREE.MathUtils.lerp(rig.current.rotation.y, yaw, 0.06);
     rig.current.rotation.x = THREE.MathUtils.lerp(rig.current.rotation.x, pitch, 0.06);
     rig.current.position.y = Math.sin(t * 0.9) * 0.06;
   });
@@ -174,7 +181,7 @@ export default function Logo3D({ className }: { className?: string }) {
   if (mode === "webgl") {
     return (
       <div className={className} aria-label="Logo Sentra" role="img">
-        <Canvas camera={{ position: [0, 0, 4.7], fov: 38 }} dpr={[1, 2]} gl={{ alpha: true, antialias: true }} frameloop={still ? "demand" : "always"}>
+        <Canvas camera={{ position: [0, 0, 5.0], fov: 38 }} dpr={[1, 2]} gl={{ alpha: true, antialias: true }} frameloop={still ? "demand" : "always"}>
           <Suspense fallback={null}>
             <Scene still={still} />
           </Suspense>
