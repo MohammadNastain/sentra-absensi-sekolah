@@ -84,6 +84,10 @@ export default function TerminalPage() {
         </StatusBadge>
         <h1 className="mt-2 text-4xl font-bold">Perangkat dicabut</h1>
         <p className="max-w-lg text-xl text-white/70">Terminal ini tidak lagi berwenang. Hubungi admin sekolah untuk mendaftarkan ulang.</p>
+        {/* Browser masih menyimpan identitas perangkat lama; kode pairing baru menimpanya. */}
+        <button type="button" onClick={() => setPhase("pairing")} className={`${TERMINAL_PRIMARY} mt-4 text-xl`}>
+          Pasangkan perangkat baru
+        </button>
       </CenterScreen>
     );
   }
