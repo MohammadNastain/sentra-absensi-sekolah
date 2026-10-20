@@ -79,10 +79,10 @@ export function CameraScanner({ onValue, paused }: { onValue: (value: string) =>
   }, []);
 
   return (
-    <div className="relative overflow-hidden rounded-xl bg-black">
+    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl">
       <video ref={videoRef} playsInline muted className="aspect-video w-full object-cover" aria-label="Pratinjau kamera" />
       <canvas ref={canvasRef} className="hidden" />
-      <div className="pointer-events-none absolute inset-0 m-auto h-3/5 w-3/5 rounded-2xl border-4 border-white/70" aria-hidden />
+      <div className="pointer-events-none absolute inset-0 m-auto h-3/5 w-3/5 rounded-3xl border-4 border-brand-300/80 shadow-[0_0_0_9999px_rgb(7_13_24/0.45)]" aria-hidden />
       {error ? <p role="alert" className="absolute inset-x-0 bottom-0 bg-red-700 p-3 text-center text-sm text-white">{error}</p> : null}
     </div>
   );
