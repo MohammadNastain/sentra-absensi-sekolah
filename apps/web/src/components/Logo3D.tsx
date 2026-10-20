@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -130,15 +130,68 @@ function Sparks() {
 
 function Scene({ still }: { still: boolean }) {
   const rig = useRef<THREE.Group>(null);
-  useFrame((state) => {
-    if (!rig.current || still) return;
+  const { gl, invalidate } = useThree();
+  // yaw/pitch = sudut saat ini; vy/vp = kecepatan sisa (inersia) setelah dilepas.
+  const drag = useRef({ active: false, x: 0, y: 0, yaw: still ? -0.3 : 0, pitch: 0, vy: 0, vp: 0 });
+
+  useEffect(() => {
+    const el = gl.domElement;
+    const d = drag.current;
+    const down = (e: PointerEvent) => {
+      d.active = true;
+      d.x = e.clientX;
+      d.y = e.clientY;
+      d.vy = 0;
+      d.vp = 0;
+      el.setPointerCapture(e.pointerId);
+    };
+    const move = (e: PointerEvent) => {
+      if (!d.active) return;
+      const dx = (e.clientX - d.x) * 0.012;
+      const dy = (e.clientY - d.y) * 0.008;
+      d.x = e.clientX;
+      d.y = e.clientY;
+      d.yaw += dx;
+      d.pitch = THREE.MathUtils.clamp(d.pitch + dy, -0.9, 0.9);
+      d.vy = dx * 60;
+      d.vp = 0;
+      invalidate();
+    };
+    const up = (e: PointerEvent) => {
+      if (!d.active) return;
+      d.active = false;
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      invalidate();
+    };
+    el.addEventListener("pointerdown", down);
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+
+    return () => {
+      el.removeEventListener("pointerdown", down);
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+      el.removeEventListener("pointercancel", up);
+    };
+  }, [gl, invalidate]);
+
+  useFrame((state, delta) => {
+    const g = rig.current;
+    if (!g) return;
+    const d = drag.current;
     const t = state.clock.elapsedTime;
-    // Berayun pelan dan mengambang; kursor menambah kemiringan.
-    // Putar penuh 360 derajat tanpa henti; kursor hanya memiringkan sumbu atas-bawah.
-    rig.current.rotation.y = t * 0.55;
-    const pitch = Math.sin(t * 0.45) * 0.12 - state.pointer.y * 0.3;
-    rig.current.rotation.x = THREE.MathUtils.lerp(rig.current.rotation.x, pitch, 0.06);
-    rig.current.position.y = Math.sin(t * 0.9) * 0.06;
+
+    if (!d.active) {
+      // Lepas: lanjutkan putaran otomatis, dengan inersia dari lemparan terakhir yang meredup.
+      d.yaw += (still ? 0 : 0.55) * delta + d.vy * delta;
+      d.vy *= Math.pow(0.04, delta);
+      d.pitch += (0 - d.pitch) * Math.min(1, delta * 2.2);
+      if (Math.abs(d.vy) > 0.002 || Math.abs(d.pitch) > 0.002) invalidate();
+    }
+    g.rotation.y = d.yaw;
+    g.rotation.x = d.pitch + (still ? 0 : Math.sin(t * 0.45) * 0.1);
+    g.position.y = still ? 0 : Math.sin(t * 0.9) * 0.06;
   });
 
   return (
@@ -147,7 +200,7 @@ function Scene({ still }: { still: boolean }) {
       <directionalLight position={[3, 4, 5]} intensity={2.2} color="#ffffff" />
       <pointLight position={[-3, -2, 3]} intensity={18} color="#3b82f6" />
       <pointLight position={[3, -1, -2]} intensity={10} color="#fbbf24" />
-      <group ref={rig} rotation={[0, still ? -0.3 : 0, 0]}>
+      <group ref={rig}>
         <Emblem />
         <Ring radius={1.62} tilt={[1.15, 0.25, -0.35]} spin={0.55} color="#3d8bff" orbs={1} />
         <Ring radius={1.42} tilt={[-1.0, 0.5, 0.5]} spin={-0.4} color="#7dd3fc" orbs={1} />
@@ -180,7 +233,7 @@ export default function Logo3D({ className }: { className?: string }) {
 
   if (mode === "webgl") {
     return (
-      <div className={className} aria-label="Logo Sentra" role="img">
+      <div className={`${className ?? ""} cursor-grab touch-pan-y active:cursor-grabbing`} aria-label="Logo Sentra" role="img">
         <Canvas camera={{ position: [0, 0, 5.0], fov: 38 }} dpr={[1, 2]} gl={{ alpha: true, antialias: true }} frameloop={still ? "demand" : "always"}>
           <Suspense fallback={null}>
             <Scene still={still} />
