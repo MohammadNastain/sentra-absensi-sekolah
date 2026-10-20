@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/AppShell";
 import { IconCheck, IconClock, IconShield, IconUsers } from "@/components/icons";
+import { LogoStage } from "@/components/LogoStage";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const FIELD =
@@ -48,6 +49,8 @@ export function AuthShell({
             <span className="block text-xs font-medium uppercase tracking-[0.16em] text-brand-200/80">Absensi Sekolah</span>
           </span>
         </div>
+
+        <LogoStage className="relative -my-4 h-[min(30rem,46vh)] w-full" />
 
         <div className="relative max-w-md">
           <h2 className="animate-rise text-4xl font-bold leading-[1.15] tracking-tight">
