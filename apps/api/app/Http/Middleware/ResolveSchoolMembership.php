@@ -6,7 +6,6 @@ use App\Domain\Audit\AuditLogger;
 use App\Domain\Identity\Role;
 use App\Domain\Identity\SessionPolicy;
 use App\Domain\Tenancy\DatabaseContext;
-use App\Domain\Tenancy\SupportAccess;
 use App\Domain\Tenancy\TenantContext;
 use App\Models\School;
 use App\Models\SchoolMembership;
@@ -15,7 +14,6 @@ use App\Support\Http\ApiProblem;
 use Closure;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -26,15 +24,14 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * - {school} tidak ada, bukan anggota, atau keanggotaan ended → 404 (tidak membedakan, anti enumerasi)
  * - sekolah suspended/terminated → 403 SCHOOL_UNAVAILABLE
  * - keanggotaan suspended → 403 MEMBERSHIP_SUSPENDED
- * Super Admin tidak mendapat pengecualian (T13), kecuali memegang izin akses dukungan yang aktif untuk sekolah itu
- * (D-21): ia lolos sebagai Admin Sekolah virtual, dan setiap request tercatat di audit log sekolah.
+ * Pengecualian (D-21): Super Admin yang lulus 2FA lolos ke sekolah mana pun sebagai Admin Sekolah virtual, dan
+ * setiap request-nya tercatat di audit log sekolah. Tanpa 2FA ia tetap 404 (T13).
  */
 final class ResolveSchoolMembership
 {
     public function __construct(
         private readonly DatabaseContext $database,
         private readonly TenantContext $tenant,
-        private readonly SupportAccess $support,
         private readonly AuditLogger $audit,
     ) {}
 
@@ -58,12 +55,9 @@ final class ResolveSchoolMembership
             ->where('user_id', $user->id)
             ->first();
 
-        if ($school !== null && $membership === null && $user->isPlatformAdmin() && SessionPolicy::twoFactorPassed($request, $user)) {
-            $grant = $this->support->active($user, $school);
-
-            if ($grant !== null && $school->status !== School::STATUS_TERMINATED) {
-                return $this->handleSupport($request, $next, $user, $school, $grant['id'], $grant['expires_at']);
-            }
+        if ($school !== null && $membership === null && $user->isPlatformAdmin() && SessionPolicy::twoFactorPassed($request, $user)
+            && $school->status !== School::STATUS_TERMINATED) {
+            return $this->handlePlatformAdmin($request, $next, $user, $school);
         }
 
         if ($school === null || $membership === null || $membership->status === SchoolMembership::STATUS_ENDED) {
@@ -89,35 +83,34 @@ final class ResolveSchoolMembership
     }
 
     /**
-     * Super Admin dengan izin dukungan aktif: keanggotaan virtual berperan Admin Sekolah. Read-only dalam arti
-     * penyimpanan (tidak ada baris keanggotaan); aksi tetap lewat izin Admin Sekolah dan tercatat di audit.
+     * Super Admin (lulus 2FA) mengakses sekolah mana pun sebagai Admin Sekolah virtual (D-21): tidak ada baris
+     * keanggotaan yang disimpan, dan setiap request tercatat di audit log sekolah.
      */
-    private function handleSupport(Request $request, Closure $next, User $user, School $school, string $grantId, Carbon $expiresAt): Response
+    private function handlePlatformAdmin(Request $request, Closure $next, User $user, School $school): Response
     {
         $virtual = new SchoolMembership(['school_id' => $school->id, 'user_id' => $user->id, 'status' => SchoolMembership::STATUS_ACTIVE]);
         $virtual->setRelation('school', $school);
 
         $this->database->setSchool($school->id);
-        $this->tenant->enterSupport($school, $virtual, [Role::SchoolAdmin], $grantId, $expiresAt);
-        $this->recordRequest($request, $user, $school, $grantId);
+        $this->tenant->enterPlatformAdmin($school, $virtual, [Role::SchoolAdmin]);
+        $this->recordRequest($request, $user, $school);
 
-        $route = $request->route();
-        $route?->setParameter('school', $school);
+        $request->route()?->setParameter('school', $school);
 
         return $next($request);
     }
 
-    /** Setiap request dukungan dicatat; GET yang sama dalam 60 detik dicatat sekali agar polling tidak membanjiri audit. */
-    private function recordRequest(Request $request, User $user, School $school, string $grantId): void
+    /** Setiap request dicatat; GET yang sama dalam 60 detik dicatat sekali agar polling tidak membanjiri audit. */
+    private function recordRequest(Request $request, User $user, School $school): void
     {
         $path = '/'.ltrim($request->path(), '/');
 
-        if ($request->isMethodSafe() && ! Cache::add("support-audit:{$grantId}:{$path}", 1, 60)) {
+        if ($request->isMethodSafe() && ! Cache::add("platform-audit:{$user->id}:{$path}", 1, 60)) {
             return;
         }
 
         $this->audit->record(
-            'platform.support.request', $school->id, 'support_grant', $grantId,
+            'platform.access.request', $school->id, 'platform_access', $school->id,
             null, ['method' => $request->method(), 'path' => $path], null, $user,
         );
     }

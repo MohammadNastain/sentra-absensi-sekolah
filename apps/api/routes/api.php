@@ -7,7 +7,6 @@ use App\Http\Controllers\Invitation\PublicInvitationController;
 use App\Http\Controllers\Me\MyInvitationController;
 use App\Http\Controllers\Me\MySchoolsController;
 use App\Http\Controllers\Platform\PlatformSchoolController;
-use App\Http\Controllers\Platform\PlatformSupportController;
 use App\Http\Controllers\School\AbsenceController;
 use App\Http\Controllers\School\AcademicYearController;
 use App\Http\Controllers\School\AttendanceController;
@@ -103,9 +102,6 @@ Route::middleware(['auth:sanctum', EnsurePlatformAdmin::class])->prefix('platfor
     Route::patch('schools/{school}', [PlatformSchoolController::class, 'update'])->name('schools.update');
     Route::post('schools/{school}/suspend', [PlatformSchoolController::class, 'suspend'])->name('schools.suspend');
     Route::post('schools/{school}/activate', [PlatformSchoolController::class, 'activate'])->name('schools.activate');
-    Route::get('schools/{school}/support-session', [PlatformSupportController::class, 'show'])->name('schools.support.show');
-    Route::post('schools/{school}/support-session', [PlatformSupportController::class, 'store'])->name('schools.support.store');
-    Route::delete('schools/{school}/support-session', [PlatformSupportController::class, 'destroy'])->name('schools.support.destroy');
     Route::post('schools/{school}/invitations', [PlatformSchoolController::class, 'inviteAdmin'])
         ->middleware(EnsureEmailTransportReady::ALIAS)->name('schools.invitations.store');
 });

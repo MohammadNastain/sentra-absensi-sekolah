@@ -62,9 +62,6 @@ final class RouteMatrix
             'PATCH api/v1/platform/schools/{school}' => 'platform',
             'POST api/v1/platform/schools/{school}/suspend' => 'platform',
             'POST api/v1/platform/schools/{school}/activate' => 'platform',
-            'GET api/v1/platform/schools/{school}/support-session' => 'platform',
-            'POST api/v1/platform/schools/{school}/support-session' => 'platform',
-            'DELETE api/v1/platform/schools/{school}/support-session' => 'platform',
             'POST api/v1/platform/schools/{school}/invitations' => 'platform',
 
             // Sekolah

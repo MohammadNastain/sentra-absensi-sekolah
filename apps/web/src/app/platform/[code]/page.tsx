@@ -66,11 +66,16 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">{school.name}</h1>
             <StatusBadge status={school.status} />
             <span className="font-mono text-sm text-zinc-500">{school.code}</span>
+            <Link
+              href={`/schools/${school.code}`}
+              className="ml-auto inline-flex items-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+            >
+              Buka sekolah
+            </Link>
           </div>
 
           <ProfileSection school={school} onSaved={setSchool} />
           <StatusSection school={school} onChanged={setSchool} />
-          <SupportSection school={school} />
           <InviteAdminSection school={school} />
         </>
       ) : null}
@@ -235,94 +240,6 @@ function InviteAdminSection({ school }: { school: School }) {
         <TextField label="Email" name="email" type="email" autoComplete="off" error={failure?.fields.email} required />
         <PrimaryButton type="submit" pending={pending}>
           Kirim undangan
-        </PrimaryButton>
-      </form>
-    </Card>
-  );
-}
-
-/** Akses dukungan (break-glass, D-21): Super Admin masuk ke sekolah sebagai Admin Sekolah, berbatas waktu dan teraudit. */
-function SupportSection({ school }: { school: School }) {
-  const router = useRouter();
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-  const [failure, setFailure] = useState<FormFailure | null>(null);
-  const path = { params: { path: { school: school.code } } };
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .GET("/platform/schools/{school}/support-session", { params: { path: { school: school.code } } })
-      .then(({ data }) => {
-        if (!cancelled) setExpiresAt(data?.data.expires_at ?? null);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [school.code]);
-
-  async function start(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const reason = String(new FormData(event.currentTarget).get("reason") ?? "").trim();
-    setPending(true);
-    setFailure(null);
-
-    const outcome = await attempt(async () => {
-      await api.ensureCsrfCookie();
-      return api.POST("/platform/schools/{school}/support-session", { ...path, body: { reason } });
-    });
-
-    if (!outcome.ok) {
-      setPending(false);
-      setFailure(outcome.failure);
-      return;
-    }
-    router.push(`/schools/${school.code}`);
-  }
-
-  async function end() {
-    setPending(true);
-    await attempt(async () => {
-      await api.ensureCsrfCookie();
-      return api.DELETE("/platform/schools/{school}/support-session", path);
-    });
-    setPending(false);
-    setExpiresAt(null);
-  }
-
-  if (expiresAt) {
-    const until = new Date(expiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-
-    return (
-      <Card title="Akses dukungan aktif" description={`Anda dapat membuka dan mengubah data sekolah ini sebagai Admin Sekolah sampai pukul ${until}.`}>
-        <div className="flex flex-wrap gap-3">
-          <Link href={`/schools/${school.code}`} className="inline-flex items-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700">
-            Buka sekolah
-          </Link>
-          <button
-            type="button"
-            onClick={end}
-            disabled={pending}
-            className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-          >
-            Akhiri akses
-          </button>
-        </div>
-      </Card>
-    );
-  }
-
-  return (
-    <Card
-      title="Akses dukungan"
-      description="Untuk memperbaiki masalah di sekolah ini. Anda masuk sebagai Admin Sekolah selama 60 menit; alasan wajib diisi, dan semua yang Anda buka atau ubah tercatat di audit sekolah."
-    >
-      <form onSubmit={start} noValidate className="space-y-4">
-        {failure ? <FormAlert>{failure.message}</FormAlert> : null}
-        <TextAreaField id="support-reason" label="Alasan akses" name="reason" error={failure?.fields.reason} hint="Minimal 10 karakter. Jelaskan masalah yang akan diperbaiki." />
-        <PrimaryButton type="submit" pending={pending}>
-          Masuk ke sekolah
         </PrimaryButton>
       </form>
     </Card>

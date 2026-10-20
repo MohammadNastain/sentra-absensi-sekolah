@@ -6,7 +6,7 @@ import { use, useEffect, useMemo, useState } from "react";
 import { AppShell, type NavItem } from "@/components/AppShell";
 import { IconBook, IconBuilding, IconCalendar, IconChart, IconCheck, IconClock, IconDevice, IconEdit, IconGrad, IconHome, IconMail, IconShield, IconSun, IconUserPlus, IconUsers } from "@/components/icons";
 import { LogoutButton } from "@/components/LogoutButton";
-import { SupportBanner } from "@/components/SupportBanner";
+import { PlatformBanner } from "@/components/PlatformBanner";
 import { Skeleton } from "@/components/ui";
 import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
@@ -85,6 +85,10 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
   if (value.can("school.attendance.assist") || value.can("school.attendance.review")) {
     nav.push({ href: `${base}/attendance`, label: "Kehadiran", icon: IconCheck, group: "Kehadiran", active: on("attendance") });
   }
+  if (value.can("school.devices.view") || value.can("school.attendance.assist")) {
+    // Terminal pemindai QR/RFID untuk murid (layar penuh, dipasangkan lewat menu Perangkat).
+    nav.push({ href: "/terminal", label: "Terminal scan", icon: IconDevice, group: "Kehadiran", active: false });
+  }
   if (value.can("school.attendance.correction_request")) {
     nav.push({ href: `${base}/corrections`, label: "Koreksi", icon: IconEdit, group: "Kehadiran", active: on("corrections") });
   }
@@ -123,7 +127,7 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
   return (
     <SchoolProvider value={value}>
       <AppShell context={value.profile.name} nav={nav} userLabel={me?.email} userName={me?.name}>
-        {value.profile.support_expires_at ? <SupportBanner code={code} expiresAt={value.profile.support_expires_at} /> : null}
+        {value.profile.acting_as_platform_admin ? <PlatformBanner code={code} /> : null}
         {props.children}
       </AppShell>
     </SchoolProvider>

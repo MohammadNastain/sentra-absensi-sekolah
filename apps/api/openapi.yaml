@@ -499,54 +499,6 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
-  /platform/schools/{school}/support-session:
-    get:
-      tags: [platform]
-      operationId: getSupportSession
-      summary: "Status akses dukungan Super Admin ke sekolah"
-      parameters:
-        - $ref: "#/components/parameters/SchoolCode"
-      responses:
-        "200":
-          description: "Status sesi dukungan."
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/SupportSessionEnvelope" }
-        "401": { $ref: "#/components/responses/Unauthenticated" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
-    post:
-      tags: [platform]
-      operationId: startSupportSession
-      summary: "Mulai akses dukungan (break-glass): alasan wajib, berbatas waktu, teraudit"
-      parameters:
-        - $ref: "#/components/parameters/SchoolCode"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/SupportSessionStart" }
-      responses:
-        "201":
-          description: "Sesi dukungan dibuka."
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/SupportSessionEnvelope" }
-        "401": { $ref: "#/components/responses/Unauthenticated" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "422": { $ref: "#/components/responses/ValidationFailed" }
-    delete:
-      tags: [platform]
-      operationId: endSupportSession
-      summary: "Akhiri akses dukungan"
-      parameters:
-        - $ref: "#/components/parameters/SchoolCode"
-      responses:
-        "204": { description: "Sesi diakhiri." }
-        "401": { $ref: "#/components/responses/Unauthenticated" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
   /platform/schools/{school}/suspend:
     post:
       tags: [platform]
@@ -3357,7 +3309,7 @@ components:
         address: { type: [string, "null"], maxLength: 500 }
     SchoolProfile:
       type: object
-      required: [code, npsn, name, education_levels, timezone, address, status, my_roles, my_permissions, support_expires_at]
+      required: [code, npsn, name, education_levels, timezone, address, status, my_roles, my_permissions, acting_as_platform_admin]
       properties:
         code: { type: string }
         npsn: { type: [string, "null"] }
@@ -3368,10 +3320,9 @@ components:
         timezone: { $ref: "#/components/schemas/Timezone" }
         address: { type: [string, "null"] }
         status: { $ref: "#/components/schemas/SchoolStatus" }
-        support_expires_at:
-          type: [string, "null"]
-          format: date-time
-          description: "Terisi bila sesi ini adalah akses dukungan Super Admin (D-21): batas waktu sesi."
+        acting_as_platform_admin:
+          type: boolean
+          description: "True bila yang mengakses adalah Super Admin (bukan anggota sekolah), D-21."
         my_roles:
           type: array
           items: { $ref: "#/components/schemas/Role" }
@@ -3473,21 +3424,6 @@ components:
           type: array
           items: { $ref: "#/components/schemas/Role" }
         expires_at: { type: string, format: date-time }
-    SupportSessionStart:
-      type: object
-      required: [reason]
-      properties:
-        reason: { type: string, minLength: 10, maxLength: 500 }
-    SupportSessionEnvelope:
-      type: object
-      required: [data]
-      properties:
-        data:
-          type: object
-          required: [active, expires_at]
-          properties:
-            active: { type: boolean }
-            expires_at: { type: [string, "null"], format: date-time }
     ReasonRequired:
       type: object
       required: [reason]

@@ -73,6 +73,7 @@ export default function PlatformPage() {
                 <th scope="col" className="px-4 py-3 font-semibold">Kode</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Jenjang</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                <th scope="col" className="px-4 py-3 text-right font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -90,6 +91,14 @@ export default function PlatformPage() {
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{school.education_levels.join(", ")}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={school.status} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/schools/${school.code}`}
+                      className="inline-flex items-center rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-700"
+                    >
+                      Buka sekolah
+                    </Link>
                   </td>
                 </tr>
               ))}

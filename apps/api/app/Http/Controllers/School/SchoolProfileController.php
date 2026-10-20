@@ -40,7 +40,7 @@ final class SchoolProfileController extends Controller
             'timezone' => $school->timezone,
             'address' => $school->address,
             'status' => $school->status,
-            'support_expires_at' => $tenant->supportExpiresAt()?->toIso8601String(),
+            'acting_as_platform_admin' => $tenant->isPlatformAccess(),
             'my_roles' => array_map(fn ($role) => $role->value, $tenant->roles()),
             'my_permissions' => array_map(fn ($p) => $p->value, $tenant->permissions()),
         ];
