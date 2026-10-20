@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { terminalApi, type TerminalConfig, type TerminalFailure, type TerminalRecent, type TerminalScan } from "@/lib/terminal-api";
 import { AssistScreen } from "./assist-screen";
 import { CameraScanner } from "./camera-scanner";
+import { Backdrop, Brand, CenterScreen, GLASS, ResultIcon, ScanFrame, TERMINAL_BUTTON, TERMINAL_INPUT, TERMINAL_PRIMARY } from "./terminal-ui";
 
 type Phase = "loading" | "pairing" | "ready" | "revoked" | "unavailable";
 type Display =
@@ -18,11 +19,14 @@ const RECENT_MS = 15_000;
 /** Pemindai keyboard-wedge mengetik puluhan karakter per detik; jeda lebih lama dari ini berarti ketikan manusia. */
 const WEDGE_MAX_GAP_MS = 120;
 
-const TONES: Record<string, string> = {
-  accepted: "bg-brand-600 text-white",
-  duplicate: "bg-sky-600 text-white",
-  rejected: "bg-red-700 text-white",
-  needs_review: "bg-amber-500 text-zinc-950",
+type Tone = { card: string; glow: string; kind: "accepted" | "duplicate" | "rejected" | "needs_review" };
+
+/** Warna hasil scan. Hijau = tercatat, biru = sudah tercatat, merah = ditolak, kuning = perlu tinjauan. */
+const TONES: Record<string, Tone> = {
+  accepted: { card: "from-emerald-500 to-emerald-700", glow: "from-emerald-500/35", kind: "accepted" },
+  duplicate: { card: "from-sky-500 to-sky-700", glow: "from-sky-500/35", kind: "duplicate" },
+  rejected: { card: "from-red-500 to-red-700", glow: "from-red-500/35", kind: "rejected" },
+  needs_review: { card: "from-amber-400 to-amber-600", glow: "from-amber-400/35", kind: "needs_review" },
 };
 
 export default function TerminalPage() {
@@ -61,29 +65,52 @@ export default function TerminalPage() {
     void loadConfig();
   }, [loadConfig]);
 
-  if (phase === "loading") return <Screen><p role="status" className="text-xl">Memuat terminal…</p></Screen>;
+  if (phase === "loading") {
+    return (
+      <CenterScreen>
+        <Brand />
+        <p role="status" className="mt-6 animate-glow text-xl text-white/70">
+          Memuat terminal…
+        </p>
+      </CenterScreen>
+    );
+  }
   if (phase === "pairing") return <PairingScreen onPaired={loadConfig} />;
   if (phase === "revoked") {
     return (
-      <Screen tone="bg-red-800">
-        <h1 className="text-4xl font-bold">Perangkat dicabut</h1>
-        <p className="mt-3 text-xl">Terminal ini tidak lagi berwenang. Hubungi admin sekolah untuk mendaftarkan ulang.</p>
-      </Screen>
+      <CenterScreen glow="from-red-500/30">
+        <StatusBadge tone="red">
+          <path d="M7 7l10 10M17 7 7 17" />
+        </StatusBadge>
+        <h1 className="mt-2 text-4xl font-bold">Perangkat dicabut</h1>
+        <p className="max-w-lg text-xl text-white/70">Terminal ini tidak lagi berwenang. Hubungi admin sekolah untuk mendaftarkan ulang.</p>
+      </CenterScreen>
     );
   }
   if (phase === "unavailable" || config === null) {
     return (
-      <Screen tone="bg-amber-600">
-        <h1 className="text-4xl font-bold">Terminal tidak tersedia</h1>
-        <p className="mt-3 text-xl">{unavailableMessage || "Hubungi admin sekolah."}</p>
-      </Screen>
+      <CenterScreen glow="from-amber-400/30">
+        <StatusBadge tone="amber">
+          <path d="M12 7v6m0 4h.01" />
+        </StatusBadge>
+        <h1 className="mt-2 text-4xl font-bold">Terminal tidak tersedia</h1>
+        <p className="max-w-lg text-xl text-white/70">{unavailableMessage || "Hubungi admin sekolah."}</p>
+      </CenterScreen>
     );
   }
   return <ScanScreen config={config} onFailure={handleFailure} />;
 }
 
-function Screen({ children, tone = "bg-zinc-900" }: { children: React.ReactNode; tone?: string }) {
-  return <main className={`flex min-h-screen flex-col items-center justify-center gap-2 p-8 text-center text-white ${tone}`}>{children}</main>;
+function StatusBadge({ tone, children }: { tone: "red" | "amber"; children: React.ReactNode }) {
+  const style = tone === "red" ? "bg-red-500/20 ring-red-500/10 text-red-300" : "bg-amber-400/20 ring-amber-400/10 text-amber-300";
+
+  return (
+    <span className={`grid size-20 animate-pop place-items-center rounded-full ring-8 ${style}`}>
+      <svg viewBox="0 0 24 24" className="size-10" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+        {children}
+      </svg>
+    </span>
+  );
 }
 
 function PairingScreen({ onPaired }: { onPaired: () => void }) {
@@ -103,30 +130,37 @@ function PairingScreen({ onPaired }: { onPaired: () => void }) {
   }
 
   return (
-    <Screen>
-      <h1 className="text-3xl font-bold">Pasangkan terminal</h1>
-      <p className="max-w-md text-lg text-zinc-300">Masukkan kode pairing dari menu Perangkat di dashboard sekolah.</p>
-      <form onSubmit={submit} className="mt-4 flex w-full max-w-sm flex-col gap-3">
-        <label htmlFor="code" className="sr-only">
-          Kode pairing
-        </label>
-        <input
-          id="code"
-          name="code"
-          autoFocus
-          autoComplete="off"
-          autoCapitalize="characters"
-          spellCheck={false}
-          maxLength={20}
-          placeholder="XXXX-XXXX"
-          className="rounded-lg bg-white px-4 py-3 text-center font-mono text-3xl tracking-widest text-zinc-900"
-        />
-        {error ? <p role="alert" className="rounded-lg bg-red-700 p-3 text-base">{error}</p> : null}
-        <button type="submit" disabled={pending} className="rounded-lg bg-brand-600 px-4 py-3 text-xl font-semibold disabled:opacity-60">
-          {pending ? "Memasangkan…" : "Pasangkan"}
-        </button>
-      </form>
-    </Screen>
+    <CenterScreen>
+      <div className={`${GLASS} flex w-full max-w-md animate-rise flex-col items-center gap-2 p-8`}>
+        <Brand />
+        <h1 className="mt-6 text-3xl font-bold">Pasangkan terminal</h1>
+        <p className="max-w-sm text-lg text-white/65">Masukkan kode pairing dari menu Perangkat di dashboard sekolah.</p>
+        <form onSubmit={submit} className="mt-4 flex w-full flex-col gap-3">
+          <label htmlFor="code" className="sr-only">
+            Kode pairing
+          </label>
+          <input
+            id="code"
+            name="code"
+            autoFocus
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            maxLength={20}
+            placeholder="XXXX-XXXX"
+            className={`${TERMINAL_INPUT} text-center font-mono text-3xl tracking-[0.35em]`}
+          />
+          {error ? (
+            <p role="alert" className="animate-pop rounded-2xl border border-red-400/30 bg-red-500/20 p-3 text-base text-red-100">
+              {error}
+            </p>
+          ) : null}
+          <button type="submit" disabled={pending} className={`${TERMINAL_PRIMARY} text-xl`}>
+            {pending ? "Memasangkan…" : "Pasangkan"}
+          </button>
+        </form>
+      </div>
+    </CenterScreen>
   );
 }
 
@@ -241,42 +275,63 @@ function ScanScreen({ config, onFailure }: { config: TerminalConfig; onFailure: 
   }).format(new Date(now + offset));
   const date = new Intl.DateTimeFormat("id-ID", { timeZone: config.school.timezone, dateStyle: "full" }).format(new Date(now + offset));
 
-  const tone = display.kind === "result" ? (TONES[display.scan.result] ?? TONES.rejected) : display.kind === "error" ? TONES.rejected : "bg-zinc-800 text-white";
+  const tone: Tone | null =
+    display.kind === "result" ? (TONES[display.scan.result] ?? TONES.rejected) : display.kind === "error" ? TONES.rejected : null;
 
   if (assistOpen) {
     return <AssistScreen onClose={() => setAssistOpen(false)} onFailure={onFailure} onRecorded={() => void refreshRecent()} />;
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-zinc-950 text-white">
-      <header className="flex flex-wrap items-center justify-between gap-2 px-6 py-4">
-        <div>
-          <p className="text-lg font-semibold">{config.school.name}</p>
-          <p className="text-sm text-zinc-400">{config.device.name}</p>
+    <Backdrop glow={tone?.glow}>
+      <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-5 sm:px-10">
+        <div className="flex items-center gap-4">
+          <Brand />
+          <span className="hidden h-10 w-px bg-white/15 sm:block" />
+          <div className="hidden sm:block">
+            <p className="text-lg font-semibold">{config.school.name}</p>
+            <p className="flex items-center gap-2 text-sm text-white/55">
+              <span className={`size-2 animate-glow rounded-full ${online ? "bg-emerald-400" : "bg-amber-400"}`} />
+              {config.device.name}
+            </p>
+          </div>
         </div>
         <div className="text-right">
-          <p className="font-mono text-4xl tabular-nums" data-testid="clock">{clock}</p>
-          <p className="text-sm text-zinc-400">{date}</p>
+          <p className="font-mono text-5xl font-semibold tabular-nums tracking-tight" data-testid="clock">
+            {clock}
+          </p>
+          <p className="text-sm capitalize text-white/55">{date}</p>
         </div>
       </header>
 
-      {!online ? <p role="alert" className="bg-amber-500 px-6 py-2 text-center font-semibold text-zinc-950">Koneksi terputus. Scan tidak akan tercatat sampai tersambung kembali.</p> : null}
+      {!online ? (
+        <p role="alert" className="mx-6 animate-pop rounded-2xl bg-amber-400 px-6 py-2 text-center font-semibold text-zinc-950 sm:mx-10">
+          Koneksi terputus. Scan tidak akan tercatat sampai tersambung kembali.
+        </p>
+      ) : null}
 
-      <section className="grid flex-1 gap-4 p-6 lg:grid-cols-[2fr_1fr]">
+      <section className="grid flex-1 gap-5 px-6 pb-8 pt-3 sm:px-10 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-4">
-          <div role="status" aria-live="assertive" data-testid="scan-panel" className={`flex min-h-72 flex-1 flex-col items-center justify-center gap-2 rounded-2xl p-8 text-center ${tone}`}>
-            <Panel display={display} />
+          <div
+            role="status"
+            aria-live="assertive"
+            data-testid="scan-panel"
+            className={`relative flex min-h-[22rem] flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-[2rem] p-8 text-center text-white transition-colors duration-500 ${
+              tone ? `bg-gradient-to-br ${tone.card} shadow-2xl` : GLASS
+            }`}
+          >
+            <Panel display={display} tone={tone} />
           </div>
           {cameraOn ? <CameraScanner onValue={(v) => void submit(v)} paused={display.kind !== "idle"} /> : null}
-          <div className="flex flex-wrap items-center gap-3">
-            <button type="button" onClick={() => setCameraOn((v) => !v)} className="rounded-lg bg-zinc-700 px-4 py-2 font-medium hover:bg-zinc-600">
+          <div className={`${GLASS} flex flex-wrap items-center gap-3 p-3`}>
+            <button type="button" onClick={() => setCameraOn((v) => !v)} className={TERMINAL_BUTTON}>
               {cameraOn ? "Matikan kamera" : "Pakai kamera"}
             </button>
-            <button type="button" onClick={() => setAssistOpen(true)} className="rounded-lg bg-zinc-700 px-4 py-2 font-medium hover:bg-zinc-600">
+            <button type="button" onClick={() => setAssistOpen(true)} className={TERMINAL_BUTTON}>
               Mode bantuan
             </button>
             <form
-              className="flex flex-1 gap-2"
+              className="flex min-w-60 flex-1 gap-2"
               onSubmit={(event) => {
                 event.preventDefault();
                 const input = event.currentTarget.elements.namedItem("manual") as HTMLInputElement;
@@ -287,35 +342,56 @@ function ScanScreen({ config, onFailure }: { config: TerminalConfig; onFailure: 
               <label htmlFor="manual" className="sr-only">
                 Kode kartu (uji manual)
               </label>
-              <input id="manual" name="manual" autoComplete="off" spellCheck={false} placeholder="Tempel kode kartu (uji)" className="min-w-0 flex-1 rounded-lg bg-zinc-800 px-3 py-2 font-mono text-sm" />
-              <button type="submit" className="rounded-lg bg-zinc-700 px-4 py-2 font-medium hover:bg-zinc-600">
+              <input
+                id="manual"
+                name="manual"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="Tempel kode kartu (uji)"
+                className={`${TERMINAL_INPUT} min-w-0 flex-1 py-2.5 font-mono text-sm`}
+              />
+              <button type="submit" className={TERMINAL_BUTTON}>
                 Kirim
               </button>
             </form>
           </div>
         </div>
 
-        <aside aria-label="Transaksi terakhir" className="rounded-2xl bg-zinc-900 p-4">
-          <h2 className="mb-3 text-lg font-semibold">Transaksi terakhir</h2>
-          {recent.length === 0 ? <p className="text-zinc-400">Belum ada.</p> : null}
-          <ul className="space-y-2">
+        <aside aria-label="Transaksi terakhir" className={`${GLASS} flex flex-col p-5`}>
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <span className="size-2 animate-glow rounded-full bg-brand-300" />
+            Transaksi terakhir
+          </h2>
+          {recent.length === 0 ? <p className="rounded-2xl bg-white/5 p-4 text-white/55">Belum ada.</p> : null}
+          <ul className="space-y-2.5">
             {recent.map((row, index) => (
-              <li key={index} className="flex items-center justify-between gap-2 rounded-lg bg-zinc-800 px-3 py-2">
-                <span>
-                  <span className="block font-medium">{row.display_name ?? "—"}</span>
-                  <span className="text-sm text-zinc-400">{row.class_name ?? ""}</span>
+              <li
+                key={index}
+                className="flex animate-rise items-center gap-3 rounded-2xl bg-white/[0.06] px-3 py-2.5 transition hover:bg-white/10"
+                style={{ animationDelay: `${index * 40}ms` }}
+              >
+                <span className={`h-10 w-1 shrink-0 rounded-full ${barOf(row)}`} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">{row.display_name ?? "—"}</span>
+                  <span className="block truncate text-sm text-white/50">{row.class_name ?? ""}</span>
                 </span>
                 <span className="text-right text-sm">
                   <span className="block font-mono">{row.recorded_at_local}</span>
-                  <span className="text-zinc-400">{label(row)}</span>
+                  <span className="text-white/50">{label(row)}</span>
                 </span>
               </li>
             ))}
           </ul>
         </aside>
       </section>
-    </main>
+    </Backdrop>
   );
+}
+
+function barOf(row: TerminalRecent[number]): string {
+  if (row.result === "needs_review") return "bg-amber-400";
+  if (row.result === "duplicate" || row.event_type === "check_out") return "bg-sky-400";
+  return row.is_late ? "bg-amber-400" : "bg-emerald-400";
 }
 
 function label(row: TerminalRecent[number]): string {
@@ -325,14 +401,29 @@ function label(row: TerminalRecent[number]): string {
   return row.is_late ? "Masuk (terlambat)" : "Masuk";
 }
 
-function Panel({ display }: { display: Display }) {
-  if (display.kind === "processing") return <p className="text-3xl font-semibold">Memproses…</p>;
-  if (display.kind === "error") return <p className="text-3xl font-semibold">{display.message}</p>;
+function Panel({ display, tone }: { display: Display; tone: Tone | null }) {
+  if (display.kind === "processing") {
+    return (
+      <>
+        <span className="size-14 animate-spin rounded-full border-4 border-white/20 border-t-white" aria-hidden="true" />
+        <p className="text-3xl font-semibold">Memproses…</p>
+      </>
+    );
+  }
+  if (display.kind === "error") {
+    return (
+      <>
+        <ResultIcon kind="rejected" />
+        <p className="max-w-xl text-3xl font-semibold">{display.message}</p>
+      </>
+    );
+  }
   if (display.kind === "idle") {
     return (
       <>
-        <p className="text-4xl font-bold">Siap memindai</p>
-        <p className="text-xl text-zinc-300">Dekatkan kartu QR ke pemindai</p>
+        <ScanFrame active />
+        <p className="mt-2 text-4xl font-bold">Siap memindai</p>
+        <p className="text-xl text-white/60">Dekatkan kartu QR ke pemindai</p>
       </>
     );
   }
@@ -340,9 +431,16 @@ function Panel({ display }: { display: Display }) {
   const { scan } = display;
   return (
     <>
-      {scan.student ? <p className="text-5xl font-bold" data-testid="student-name">{scan.student.display_name}</p> : null}
-      {scan.student?.class_name ? <p className="text-2xl opacity-90">{scan.student.class_name}</p> : null}
-      <p className="mt-2 text-3xl font-semibold" data-testid="scan-code">{scan.message}</p>
+      <ResultIcon kind={tone?.kind ?? "rejected"} />
+      {scan.student ? (
+        <p className="mt-2 text-5xl font-bold tracking-tight" data-testid="student-name">
+          {scan.student.display_name}
+        </p>
+      ) : null}
+      {scan.student?.class_name ? <p className="rounded-full bg-white/20 px-4 py-1 text-xl font-medium">{scan.student.class_name}</p> : null}
+      <p className="mt-1 text-3xl font-semibold" data-testid="scan-code">
+        {scan.message}
+      </p>
     </>
   );
 }
