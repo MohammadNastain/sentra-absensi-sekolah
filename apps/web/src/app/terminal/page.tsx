@@ -19,7 +19,7 @@ const RECENT_MS = 15_000;
 const WEDGE_MAX_GAP_MS = 120;
 
 const TONES: Record<string, string> = {
-  accepted: "bg-emerald-600 text-white",
+  accepted: "bg-brand-600 text-white",
   duplicate: "bg-sky-600 text-white",
   rejected: "bg-red-700 text-white",
   needs_review: "bg-amber-500 text-zinc-950",
@@ -122,7 +122,7 @@ function PairingScreen({ onPaired }: { onPaired: () => void }) {
           className="rounded-lg bg-white px-4 py-3 text-center font-mono text-3xl tracking-widest text-zinc-900"
         />
         {error ? <p role="alert" className="rounded-lg bg-red-700 p-3 text-base">{error}</p> : null}
-        <button type="submit" disabled={pending} className="rounded-lg bg-emerald-600 px-4 py-3 text-xl font-semibold disabled:opacity-60">
+        <button type="submit" disabled={pending} className="rounded-lg bg-brand-600 px-4 py-3 text-xl font-semibold disabled:opacity-60">
           {pending ? "Memasangkan…" : "Pasangkan"}
         </button>
       </form>

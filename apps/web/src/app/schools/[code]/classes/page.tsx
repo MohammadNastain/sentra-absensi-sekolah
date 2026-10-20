@@ -193,7 +193,7 @@ export default function ClassesPage() {
                       <div className="flex gap-3">
                         <button
                           type="button"
-                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                           onClick={() => setAction({ kind: "edit", schoolClass })}
                         >
                           Ubah
@@ -201,7 +201,7 @@ export default function ClassesPage() {
                         <button
                           type="button"
                           disabled={busyId === schoolClass.id}
-                          className="font-medium text-emerald-700 hover:underline disabled:opacity-60 dark:text-emerald-400"
+                          className="font-medium text-brand-700 hover:underline disabled:opacity-60 dark:text-brand-400"
                           onClick={() => void toggleArchive(schoolClass)}
                         >
                           {schoolClass.status === "active" ? "Arsipkan" : "Aktifkan"}
@@ -209,7 +209,7 @@ export default function ClassesPage() {
                         {canCards && schoolClass.status === "active" ? (
                           <button
                             type="button"
-                            className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                            className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                             onClick={() => setAction({ kind: "cards", schoolClass })}
                           >
                             Cetak kartu QR

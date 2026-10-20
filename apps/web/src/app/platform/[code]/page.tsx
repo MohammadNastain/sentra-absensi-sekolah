@@ -49,7 +49,7 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
 
   return (
     <AppShell context="Platform" nav={nav} userLabel={me?.email} userName={me?.name}>
-      <Link href="/platform" className="text-sm text-emerald-700 hover:underline dark:text-emerald-400">
+      <Link href="/platform" className="text-sm text-brand-700 hover:underline dark:text-brand-400">
         ← Semua sekolah
       </Link>
 

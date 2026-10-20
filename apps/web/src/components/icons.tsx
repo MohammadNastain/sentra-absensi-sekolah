@@ -64,6 +64,11 @@ export const IconClock = (p: IconProps) => (
     <path d="M12 7.5V12l3 2" />
   </Svg>
 );
+export const IconMoon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M20 14.2A8 8 0 0 1 9.8 4a8 8 0 1 0 10.2 10.2z" />
+  </Svg>
+);
 export const IconSun = (p: IconProps) => (
   <Svg {...p}>
     <circle cx="12" cy="12" r="3.6" />

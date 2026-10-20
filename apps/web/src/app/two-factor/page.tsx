@@ -49,7 +49,7 @@ export default function TwoFactorPage() {
               setUseRecovery((v) => !v);
               setFailure(null);
             }}
-            className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+            className="font-medium text-brand-700 hover:underline dark:text-brand-400"
           >
             {useRecovery ? "Pakai kode authenticator" : "Pakai kode pemulihan"}
           </button>

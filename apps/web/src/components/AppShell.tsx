@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode, type SVGProps } from "react";
 import { api } from "@/lib/api";
 import { IconClose, IconLogout, IconMenu, IconShield } from "@/components/icons";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export interface NavItem {
   href: string;
@@ -19,7 +20,7 @@ export interface NavItem {
 export function BrandMark({ size = 40 }: { size?: number }) {
   return (
     <span
-      className="inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-700 text-white shadow-lg shadow-emerald-950/30 ring-1 ring-white/20"
+      className="inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 text-white shadow-lg shadow-brand-950/30 ring-1 ring-white/20"
       style={{ width: size, height: size }}
     >
       <IconShield width={size * 0.55} height={size * 0.55} />
@@ -95,7 +96,7 @@ function Sidebar({ nav, context, open, onClose }: { nav: NavItem[]; context: str
         className={`fixed inset-y-0 left-0 z-40 flex w-[17rem] shrink-0 flex-col bg-gradient-to-b from-brand-sidebar-from to-brand-sidebar-to text-white transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute -left-16 -top-16 size-56 rounded-full bg-emerald-400/10 blur-3xl" />
+          <div className="absolute -left-16 -top-16 size-56 rounded-full bg-brand-400/10 blur-3xl" />
           <div className="absolute -bottom-20 -right-10 size-64 rounded-full bg-gold-400/10 blur-3xl" />
         </div>
 
@@ -104,7 +105,7 @@ function Sidebar({ nav, context, open, onClose }: { nav: NavItem[]; context: str
             <BrandMark />
             <span className="leading-tight">
               <span className="block text-lg font-bold tracking-tight">Sentra</span>
-              <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-200/80">Absensi Sekolah</span>
+              <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-brand-200/80">Absensi Sekolah</span>
             </span>
           </Link>
           <button type="button" onClick={onClose} aria-label="Tutup menu" className="rounded-lg p-1.5 text-white/70 hover:bg-white/10 lg:hidden">
@@ -112,7 +113,7 @@ function Sidebar({ nav, context, open, onClose }: { nav: NavItem[]; context: str
           </button>
         </div>
 
-        <p className="relative mx-6 mb-3 truncate rounded-lg bg-white/5 px-3 py-2 text-xs font-medium text-emerald-100/90 ring-1 ring-white/10" title={context}>
+        <p className="relative mx-6 mb-3 truncate rounded-lg bg-white/5 px-3 py-2 text-xs font-medium text-brand-100/90 ring-1 ring-white/10" title={context}>
           {context}
         </p>
 
@@ -124,13 +125,13 @@ function Sidebar({ nav, context, open, onClose }: { nav: NavItem[]; context: str
 
               return (
                 <li key={item.href}>
-                  {showGroup ? <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/50">{item.group}</p> : null}
+                  {showGroup ? <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-200/50">{item.group}</p> : null}
                   <Link
                     href={item.href}
                     aria-current={item.active ? "page" : undefined}
                     className={`group relative flex items-center gap-3 rounded-l-2xl py-2 pl-4 pr-4 text-sm font-medium transition-all duration-200 ${
                       item.active
-                        ? "bg-[var(--background)] text-emerald-800 before:absolute before:-top-5 before:right-0 before:size-5 before:rounded-br-2xl before:shadow-[8px_8px_0_8px_var(--background)] before:content-[''] after:absolute after:-bottom-5 after:right-0 after:size-5 after:rounded-tr-2xl after:shadow-[8px_-8px_0_8px_var(--background)] after:content-[''] dark:text-emerald-300"
+                        ? "bg-[var(--background)] text-brand-800 before:absolute before:-top-5 before:right-0 before:size-5 before:rounded-br-2xl before:shadow-[8px_8px_0_8px_var(--background)] before:content-[''] after:absolute after:-bottom-5 after:right-0 after:size-5 after:rounded-tr-2xl after:shadow-[8px_-8px_0_8px_var(--background)] after:content-[''] dark:text-brand-300"
                         : "text-white/75 hover:translate-x-1 hover:bg-white/8 hover:text-white"
                     }`}
                   >
@@ -204,6 +205,8 @@ function TopBar({ context, userLabel, userName, onMenu }: { context: string; use
         <p className="hidden text-xs text-zinc-500 sm:block">Sentra Absensi Sekolah</p>
       </div>
 
+      <ThemeToggle />
+
       <div ref={box} className="relative">
         <button
           type="button"
@@ -212,7 +215,7 @@ function TopBar({ context, userLabel, userName, onMenu }: { context: string; use
           aria-expanded={menu}
           className="flex items-center gap-2.5 rounded-full bg-white py-1.5 pl-1.5 pr-4 shadow-card transition-shadow hover:shadow-lift dark:bg-zinc-900"
         >
-          <span className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-800 text-xs font-bold text-white">{initials(name)}</span>
+          <span className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-800 text-xs font-bold text-white">{initials(name)}</span>
           <span className="hidden max-w-40 truncate text-sm font-medium text-zinc-800 sm:inline dark:text-zinc-100">{name}</span>
         </button>
         {menu ? (

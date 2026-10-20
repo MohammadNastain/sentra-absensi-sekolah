@@ -102,7 +102,7 @@ export function AttendanceTrend() {
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Belum ada data kehadiran pada rentang ini.</p>
       ) : (
         <>
-          <svg role="img" aria-label={`Grafik persentase kehadiran ${points.length} hari terakhir`} viewBox={`0 0 ${W} ${H}`} className="h-auto w-full text-emerald-600 dark:text-emerald-400">
+          <svg role="img" aria-label={`Grafik persentase kehadiran ${points.length} hari terakhir`} viewBox={`0 0 ${W} ${H}`} className="h-auto w-full text-brand-600 dark:text-brand-400">
             <defs>
               <linearGradient id="trend-area" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />

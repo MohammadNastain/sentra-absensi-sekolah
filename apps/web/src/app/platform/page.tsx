@@ -46,7 +46,7 @@ export default function PlatformPage() {
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Sekolah</h1>
         <Link
           href="/platform/new"
-          className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           Sekolah baru
         </Link>
@@ -81,7 +81,7 @@ export default function PlatformPage() {
                   <td className="px-4 py-3">
                     <Link
                       href={`/platform/${school.code}`}
-                      className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                      className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                     >
                       {school.name}
                     </Link>

@@ -280,7 +280,7 @@ function LeaveRow({ item, canApprove, onChanged }: { item: Leave; canApprove: bo
       <p className="text-zinc-600 dark:text-zinc-400">{item.reason}</p>
       {item.decision_note ? <p className="text-zinc-500">Catatan keputusan: {item.decision_note}</p> : null}
       {item.has_attachment ? (
-        <a className="text-emerald-700 underline dark:text-emerald-400" href={`/api/v1/schools/${code}/leave-requests/${item.id}/attachment`}>
+        <a className="text-brand-700 underline dark:text-brand-400" href={`/api/v1/schools/${code}/leave-requests/${item.id}/attachment`}>
           Unduh lampiran{item.attachment_name ? ` (${item.attachment_name})` : ""}
         </a>
       ) : null}

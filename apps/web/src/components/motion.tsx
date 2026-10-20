@@ -64,8 +64,8 @@ export function Ring({
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
         <defs>
           <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--color-emerald-400)" />
-            <stop offset="100%" stopColor="var(--color-emerald-700)" />
+            <stop offset="0%" stopColor="var(--color-brand-400)" />
+            <stop offset="100%" stopColor="var(--color-brand-700)" />
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={stroke} className="stroke-zinc-100 dark:stroke-zinc-800" />

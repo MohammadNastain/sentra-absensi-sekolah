@@ -89,7 +89,7 @@ export default function AcademicYearsPage() {
                       <div className="flex gap-3">
                         <button
                           type="button"
-                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                           onClick={() => setAction({ kind: "edit", year })}
                         >
                           Ubah
@@ -97,7 +97,7 @@ export default function AcademicYearsPage() {
                         {!year.is_active ? (
                           <button
                             type="button"
-                            className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                            className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                             onClick={() => setAction({ kind: "activate", year })}
                           >
                             Aktifkan

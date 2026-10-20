@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/AppShell";
 import { IconCheck, IconClock, IconShield, IconUsers } from "@/components/icons";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const FIELD =
-  "mt-1.5 block w-full rounded-2xl border border-zinc-200/70 bg-white shadow-card px-3.5 py-2.5 text-zinc-900 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-red-500/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50";
+  "mt-1.5 block w-full rounded-2xl border border-zinc-200/70 bg-white shadow-card px-3.5 py-2.5 text-zinc-900 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-red-500/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50";
 
 const HIGHLIGHTS = [
   { icon: IconClock, text: "Scan QR dan RFID tercatat real-time" },
@@ -26,9 +27,9 @@ export function AuthShell({
 }) {
   return (
     <main className="grid min-h-dvh flex-1 lg:grid-cols-[1.05fr_1fr]">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-brand-sidebar-from via-emerald-900 to-brand-sidebar-to text-white lg:flex lg:flex-col lg:justify-between lg:p-14">
+      <section className="relative hidden overflow-hidden bg-gradient-to-br from-brand-sidebar-from via-brand-900 to-brand-sidebar-to text-white lg:flex lg:flex-col lg:justify-between lg:p-14">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute -right-24 -top-24 size-[28rem] animate-float rounded-full bg-emerald-400/15 blur-3xl" />
+          <div className="absolute -right-24 -top-24 size-[28rem] animate-float rounded-full bg-brand-400/15 blur-3xl" />
           <div className="absolute -bottom-32 -left-20 size-[26rem] animate-float rounded-full bg-gold-400/10 blur-3xl [animation-delay:-3s]" />
           <svg className="absolute inset-0 size-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -44,7 +45,7 @@ export function AuthShell({
           <BrandMark size={46} />
           <span className="leading-tight">
             <span className="block text-2xl font-bold tracking-tight">Sentra</span>
-            <span className="block text-xs font-medium uppercase tracking-[0.16em] text-emerald-200/80">Absensi Sekolah</span>
+            <span className="block text-xs font-medium uppercase tracking-[0.16em] text-brand-200/80">Absensi Sekolah</span>
           </span>
         </div>
 
@@ -52,12 +53,12 @@ export function AuthShell({
           <h2 className="animate-rise text-4xl font-bold leading-[1.15] tracking-tight">
             Kehadiran siswa, tercatat rapi dan <span className="text-gold-400">dapat dipercaya.</span>
           </h2>
-          <p className="mt-4 animate-rise text-base leading-relaxed text-emerald-50/75 [animation-delay:100ms]">
+          <p className="mt-4 animate-rise text-base leading-relaxed text-brand-50/75 [animation-delay:100ms]">
             Dari gerbang sekolah sampai laporan bulanan. Satu sistem untuk petugas piket, wali kelas, dan pimpinan sekolah.
           </p>
           <ul className="mt-8 space-y-3">
             {HIGHLIGHTS.map(({ icon: Icon, text }, i) => (
-              <li key={text} className="flex animate-rise items-center gap-3 text-sm text-emerald-50/90" style={{ animationDelay: `${200 + i * 90}ms` }}>
+              <li key={text} className="flex animate-rise items-center gap-3 text-sm text-brand-50/90" style={{ animationDelay: `${200 + i * 90}ms` }}>
                 <span className="flex size-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
                   <Icon width={18} height={18} />
                 </span>
@@ -67,12 +68,13 @@ export function AuthShell({
           </ul>
         </div>
 
-        <p className="relative flex items-center gap-2 text-xs text-emerald-100/60">
+        <p className="relative flex items-center gap-2 text-xs text-brand-100/60">
           <IconCheck width={16} height={16} /> Sentra Absensi Sekolah
         </p>
       </section>
 
-      <section className="flex items-center justify-center px-4 py-12 sm:px-8">
+      <section className="relative flex items-center justify-center px-4 py-12 sm:px-8">
+        <ThemeToggle className="absolute right-4 top-4 sm:right-8 sm:top-6" />
         <div className="w-full max-w-md animate-rise rounded-3xl border border-zinc-200/70 bg-white p-8 shadow-lift sm:p-10 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="mb-6 flex items-center gap-2.5 lg:hidden">
             <BrandMark size={34} />
@@ -128,7 +130,7 @@ export function SubmitButton({ pending, children }: { pending: boolean; children
     <button
       type="submit"
       disabled={pending}
-      className={`${BUTTON_BASE} w-full bg-gradient-to-b from-emerald-600 to-emerald-800 px-4 py-3 text-white shadow-md shadow-emerald-900/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-900/25`}
+      className={`${BUTTON_BASE} w-full bg-gradient-to-b from-brand-600 to-brand-800 px-4 py-3 text-white shadow-md shadow-brand-900/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-900/25`}
     >
       {pending ? "Memproses…" : children}
     </button>
@@ -231,7 +233,7 @@ export function PrimaryButton({
     <button
       {...button}
       disabled={pending || button.disabled}
-      className={`${BUTTON_BASE} bg-gradient-to-b from-emerald-600 to-emerald-800 px-4 py-2.5 text-sm text-white shadow-sm shadow-emerald-900/20 hover:-translate-y-0.5 hover:shadow-md`}
+      className={`${BUTTON_BASE} bg-gradient-to-b from-brand-600 to-brand-800 px-4 py-2.5 text-sm text-white shadow-sm shadow-brand-900/20 hover:-translate-y-0.5 hover:shadow-md`}
     >
       {pending ? "Memproses…" : children}
     </button>
@@ -254,7 +256,7 @@ export function SecondaryButton({
 
 export function TextLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="font-semibold text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400">
+    <Link href={href} className="font-semibold text-brand-700 underline-offset-4 hover:underline dark:text-brand-400">
       {children}
     </Link>
   );

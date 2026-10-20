@@ -183,7 +183,7 @@ function RowActions({
   onAction: (action: PendingAction) => void;
 }) {
   if (member.status === "ended") return <span className="text-zinc-400">-</span>;
-  const link = "font-medium text-emerald-700 hover:underline dark:text-emerald-400";
+  const link = "font-medium text-brand-700 hover:underline dark:text-brand-400";
   return (
     <div className="flex flex-wrap gap-x-3 gap-y-1">
       {!isSelf ? (

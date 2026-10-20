@@ -45,9 +45,9 @@ export default function SchoolHomePage() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-700 via-emerald-800 to-brand-sidebar-to p-7 text-white shadow-lift sm:p-9">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-sidebar-to p-7 text-white shadow-lift sm:p-9">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute -right-10 -top-16 size-64 animate-float rounded-full bg-emerald-300/15 blur-2xl" />
+          <div className="absolute -right-10 -top-16 size-64 animate-float rounded-full bg-brand-300/15 blur-2xl" />
           <div className="absolute -bottom-24 right-40 size-56 animate-float rounded-full bg-gold-400/15 blur-2xl [animation-delay:-3s]" />
         </div>
         <HeroArt />
@@ -57,7 +57,7 @@ export default function SchoolHomePage() {
             <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">{profile.my_roles.map(roleLabel).join(", ")}</span>
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{firstName ? `Halo, ${firstName}!` : "Selamat datang!"}</h1>
-          <p className="mt-2 text-base leading-relaxed text-emerald-50/80">
+          <p className="mt-2 text-base leading-relaxed text-brand-50/80">
             Ringkasan kehadiran <span className="font-semibold text-white">{profile.name}</span> hari ini, diperbarui otomatis.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -119,7 +119,7 @@ function HeroLink({ href, primary, children }: { href: string; primary?: boolean
     <Link
       href={href}
       className={`group inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 hover:-translate-y-0.5 ${
-        primary ? "bg-white text-emerald-800 shadow-md hover:shadow-lg" : "bg-white/10 text-white ring-1 ring-white/25 hover:bg-white/15"
+        primary ? "bg-white text-brand-800 shadow-md hover:shadow-lg" : "bg-white/10 text-white ring-1 ring-white/25 hover:bg-white/15"
       }`}
     >
       {children}

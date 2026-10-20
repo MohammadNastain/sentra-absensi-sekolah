@@ -12,7 +12,7 @@ const REASONS: [string, string][] = [
 
 const INPUT = "w-full rounded-lg bg-white px-4 py-3 text-lg text-zinc-900";
 const BUTTON = "rounded-lg bg-zinc-700 px-5 py-3 text-lg font-medium hover:bg-zinc-600 disabled:opacity-60";
-const PRIMARY = "rounded-lg bg-emerald-600 px-5 py-3 text-lg font-semibold hover:bg-emerald-500 disabled:opacity-60";
+const PRIMARY = "rounded-lg bg-brand-600 px-5 py-3 text-lg font-semibold hover:bg-brand-500 disabled:opacity-60";
 
 /**
  * Mode bantuan di terminal: petugas login, mencari siswa, memverifikasi visual, lalu mencatat. Token sesi hanya
@@ -177,7 +177,7 @@ function AssistForm({
     <div className="flex w-full max-w-2xl flex-col gap-4">
       <p className="text-zinc-400">Petugas: {session.officer_name}</p>
       {result ? (
-        <p role="status" className="rounded-lg bg-emerald-700 p-4 text-xl font-semibold">
+        <p role="status" className="rounded-lg bg-brand-700 p-4 text-xl font-semibold">
           {result.student?.display_name}: {result.message} ({result.recorded_at_local})
         </p>
       ) : null}

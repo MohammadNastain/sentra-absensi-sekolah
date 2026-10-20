@@ -133,7 +133,7 @@ export default function StudentImportPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Impor siswa</h1>
-        <Link href={`/schools/${code}/students`} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+        <Link href={`/schools/${code}/students`} className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-400">
           Kembali ke daftar siswa
         </Link>
       </div>
@@ -144,7 +144,7 @@ export default function StudentImportPage() {
           <code>nama_lengkap</code>. Kolom opsional: <code>nisn</code> (10 digit; format sel sebagai teks agar angka nol di depan tidak
           hilang), <code>tanggal_lahir</code> (TTTT-BB-HH), <code>kelas</code> (nama kelas aktif di tahun ajaran aktif).
         </p>
-        <a href={`${base}/template`} className="inline-block text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+        <a href={`${base}/template`} className="inline-block text-sm font-medium text-brand-700 hover:underline dark:text-brand-400">
           Unduh templat CSV
         </a>
         <form onSubmit={upload} noValidate className="flex flex-wrap items-end gap-3">
@@ -196,7 +196,7 @@ export default function StudentImportPage() {
                     <td className="px-4 py-3">
                       <button
                         type="button"
-                        className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                        className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                         onClick={() => {
                           setError(null);
                           setBatch(item);
@@ -296,7 +296,7 @@ function BatchPanel({
             {batch.invalid_rows > 0 ? (
               <a
                 href={`${base}/${batch.id}/failed-rows`}
-                className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-400"
               >
                 Unduh baris gagal untuk diperbaiki
               </a>

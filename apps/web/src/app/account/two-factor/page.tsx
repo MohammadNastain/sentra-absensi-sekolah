@@ -182,7 +182,7 @@ export default function TwoFactorSetupPage() {
               src={`data:image/svg+xml;utf8,${encodeURIComponent(step.svg)}`}
             />
             <details className="text-sm">
-              <summary className="cursor-pointer text-emerald-700 dark:text-emerald-400">Tidak bisa memindai? Masukkan kunci manual</summary>
+              <summary className="cursor-pointer text-brand-700 dark:text-brand-400">Tidak bisa memindai? Masukkan kunci manual</summary>
               <p className="mt-2 break-all rounded-lg bg-zinc-100 p-3 font-mono text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
                 {step.secret}
               </p>
