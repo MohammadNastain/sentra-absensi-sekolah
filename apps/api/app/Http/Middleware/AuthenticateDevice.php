@@ -67,6 +67,7 @@ final class AuthenticateDevice
 
         if ($device->last_seen_at === null || $device->last_seen_at->lt(now()->subSeconds(self::TOUCH_INTERVAL_SECONDS))) {
             DB::update('UPDATE devices SET last_seen_at = now() WHERE id = ?', [$device->id]);
+            DB::insert("INSERT INTO device_presence (school_id, device_id, minute_at) VALUES (?, ?, date_trunc('minute', now())) ON CONFLICT DO NOTHING", [$school->id, $device->id]);
         }
 
         return $next($request);

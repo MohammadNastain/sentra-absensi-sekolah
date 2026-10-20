@@ -52,7 +52,7 @@ Dipakai dua **nilai status berbeda**, bukan `alpa` + flag. Tujuannya agar query/
 ### Konsekuensi
 - Petugas perlu memverifikasi daftar harian. UI menyediakan verifikasi massal per kelas agar bebannya tetap ringan.
 - Bila verifikasi tidak dilakukan, status tetap sementara dan terlihat di dashboard sebagai pekerjaan tertunda.
-- Ambang kesehatan perangkat adalah pengaturan sekolah dengan nilai default yang perlu dikalibrasi saat pilot.
+- Ambang kesehatan perangkat saat ini berupa konfigurasi server (`HEALTH_OFFLINE_MINUTES`=10, `HEALTH_ERROR_RATE`=0.05 dengan minimal `HEALTH_ERROR_MIN_REQUESTS`=20), bukan pengaturan per sekolah; nilai perlu dikalibrasi saat pilot. Heartbeat dinilai dari jejak per menit (`device_presence`) hanya untuk terminal yang meninggalkan >= 5 jejak hari itu; error-rate dihitung dari cache (`CountScanOutcomes`).
 
 ### Pengujian (Tahap 5)
 | Kasus | Harapan |
