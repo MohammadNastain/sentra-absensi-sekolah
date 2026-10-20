@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { usePlatformNav } from "@/lib/platform-nav";
 import { FormAlert, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
@@ -16,6 +17,7 @@ type School = Schemas["School"];
 export default function PlatformPage() {
   const router = useRouter();
   const me = useMe();
+  const nav = usePlatformNav();
   const [schools, setSchools] = useState<School[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +41,7 @@ export default function PlatformPage() {
   }, [router]);
 
   return (
-    <AppShell context="Platform" userLabel={me?.email}>
+    <AppShell context="Platform" nav={nav} userLabel={me?.email} userName={me?.name}>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Sekolah</h1>
         <Link
