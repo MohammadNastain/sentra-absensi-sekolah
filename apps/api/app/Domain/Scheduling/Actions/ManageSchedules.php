@@ -18,7 +18,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 /**
  * Jadwal berversi. Membuat jadwal = menerbitkan versi baru yang berlaku mulai tanggal tertentu untuk satu
  * scope dan beberapa hari: versi sebelumnya yang masih berlaku pada tanggal itu ditutup sehari sebelumnya.
- * Jam sebuah versi tidak pernah diubah; yang bisa diubah hanya penutupannya (effective_until) dan status aktif.
+ * Jam sebuah versi hanya boleh dikoreksi selama belum dipakai sesi absensi; sesudahnya yang bisa diubah hanya
+ * penutupannya (effective_until) dan status aktif, dan perubahan jam harus berupa versi baru.
  */
 final class ManageSchedules
 {
@@ -90,7 +91,7 @@ final class ManageSchedules
     }
 
     /**
-     * @param  array{effective_until?: string|null, is_active?: bool}  $changes
+     * @param  array{effective_until?: string|null, is_active?: bool, check_in_start?: string, check_in_deadline?: string, late_grace_minutes?: int, check_out_start?: string, scheduled_check_out?: string}  $changes
      */
     public function update(School $school, User $actor, string $scheduleId, array $changes): Schedule
     {
@@ -102,6 +103,17 @@ final class ManageSchedules
             if (array_key_exists('effective_until', $changes) && $changes['effective_until'] !== null
                 && $changes['effective_until'] < $schedule->effective_from->toDateString()) {
                 throw ApiProblem::scheduleConflict('Tanggal berakhir tidak boleh sebelum tanggal mulai berlaku ('.$schedule->effective_from->toDateString().').');
+            }
+
+            $hours = ['check_in_start', 'check_in_deadline', 'late_grace_minutes', 'check_out_start', 'scheduled_check_out'];
+            $hoursChanged = false;
+            foreach ($hours as $field) {
+                if (array_key_exists($field, $changes) && (string) $changes[$field] !== substr((string) $schedule->{$field}, 0, str_contains($field, 'minutes') ? 99 : 5)) {
+                    $hoursChanged = true;
+                }
+            }
+            if ($hoursChanged && DB::table('attendance_sessions')->where('school_id', $school->id)->where('schedule_id', $schedule->id)->exists()) {
+                throw ApiProblem::scheduleConflict('Jadwal ini sudah dipakai absensi, jamnya tidak bisa diubah. Terbitkan versi baru yang berlaku mulai tanggal yang diinginkan.');
             }
 
             $schedule->fill($changes)->save();

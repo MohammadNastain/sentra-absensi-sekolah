@@ -11,6 +11,7 @@ import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
 import { roleLabel } from "@/lib/school-options";
 import { useSchool } from "../school-context";
+import { CreateAccountForm, SetPasswordForm } from "./account-forms";
 
 type Member = Schemas["Member"];
 type Role = Schemas["Role"];
@@ -21,6 +22,7 @@ type PendingAction =
   | { kind: "suspend"; member: Member }
   | { kind: "end"; member: Member }
   | { kind: "reset"; member: Member }
+  | { kind: "password"; member: Member }
   | { kind: "reactivate"; member: Member };
 
 const STATUS_LABELS: Record<Schemas["MembershipStatus"], string> = {
@@ -34,6 +36,7 @@ const ACTION_TITLES: Record<PendingAction["kind"], string> = {
   suspend: "Tangguhkan anggota",
   end: "Akhiri keanggotaan",
   reset: "Kirim tautan reset password",
+  password: "Atur password anggota",
   reactivate: "Aktifkan kembali anggota",
 };
 
@@ -47,6 +50,7 @@ export default function MembersPage() {
   const [error, setError] = useState<string | null>(null);
   const [action, setAction] = useState<PendingAction | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -73,6 +77,8 @@ export default function MembersPage() {
     <>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Anggota</h1>
+        <div className="flex flex-wrap items-end gap-3">
+        {canManage ? <PrimaryButton type="button" onClick={() => setCreating(true)}>Buat akun</PrimaryButton> : null}
         <div className="w-48">
           <SelectField
             label="Status"
@@ -88,6 +94,7 @@ export default function MembersPage() {
             <option value="suspended">Ditangguhkan</option>
             <option value="ended">Berakhir</option>
           </SelectField>
+        </div>
         </div>
       </div>
 
@@ -150,8 +157,25 @@ export default function MembersPage() {
 
       {meta ? <Pager meta={meta} onPage={setPage} /> : null}
 
-      <Dialog open={action !== null} title={action ? ACTION_TITLES[action.kind] : ""} onClose={() => setAction(null)}>
-        {action ? (
+      <Dialog open={creating} title="Buat akun anggota" onClose={() => setCreating(false)}>
+        {creating ? (
+          <CreateAccountForm
+            code={code}
+            onCancel={() => setCreating(false)}
+            onCreated={() => {
+              setNotice(null);
+              void load();
+            }}
+          />
+        ) : null}
+      </Dialog>
+
+      <Dialog open={action?.kind === "password"} title="Atur password anggota" onClose={() => setAction(null)}>
+        {action?.kind === "password" ? <SetPasswordForm code={code} member={action.member} onCancel={() => setAction(null)} /> : null}
+      </Dialog>
+
+      <Dialog open={action !== null && action.kind !== "password"} title={action ? ACTION_TITLES[action.kind] : ""} onClose={() => setAction(null)}>
+        {action && action.kind !== "password" ? (
           <ActionForm
             key={`${action.kind}:${action.member.id}`}
             action={action}
@@ -192,6 +216,11 @@ function RowActions({
         </button>
       ) : null}
       {member.status === "active" && !isSelf ? (
+        <button type="button" className={link} onClick={() => onAction({ kind: "password", member })}>
+          Atur password
+        </button>
+      ) : null}
+      {member.status === "active" && !isSelf ? (
         <button type="button" className={link} onClick={() => onAction({ kind: "reset", member })}>
           Kirim reset password
         </button>
@@ -222,7 +251,7 @@ function ActionForm({
   onCancel,
   onDone,
 }: {
-  action: PendingAction;
+  action: Exclude<PendingAction, { kind: "password" }>;
   code: string;
   onCancel: () => void;
   onDone: (member: Member | null) => void;

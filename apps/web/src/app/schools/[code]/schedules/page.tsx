@@ -27,7 +27,7 @@ const DAYS = [
 const SCOPE_LABEL: Record<Scope, string> = { school: "Seluruh sekolah", grade_level: "Per tingkat", class: "Per kelas" };
 
 /** Baris jadwal per hari digabung menjadi satu "versi" bila semua isinya sama kecuali hari. */
-type Version = { key: string; sample: Schedule; days: number[] };
+type Version = { key: string; sample: Schedule; days: number[]; ids: string[] };
 
 function groupVersions(rows: Schedule[]): Version[] {
   const map = new Map<string, Version>();
@@ -37,8 +37,10 @@ function groupVersions(rows: Schedule[]): Version[] {
       row.check_in_start, row.check_in_deadline, row.late_grace_minutes, row.check_out_start, row.scheduled_check_out,
     ].join("|");
     const existing = map.get(key);
-    if (existing) existing.days.push(row.day_of_week);
-    else map.set(key, { key, sample: row, days: [row.day_of_week] });
+    if (existing) {
+      existing.days.push(row.day_of_week);
+      existing.ids.push(row.id);
+    } else map.set(key, { key, sample: row, days: [row.day_of_week], ids: [row.id] });
   }
   return [...map.values()];
 }
@@ -66,6 +68,28 @@ export default function SchedulesPage() {
   const [scope, setScope] = useState<Scope | "">("");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Version | null>(null);
+  // Versi baru yang kolomnya diisi dari versi lama (dipakai bila jam jadwal lama sudah terkunci).
+  const [template, setTemplate] = useState<Version | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
+
+  async function toggleActive(version: Version) {
+    setToggling(version.key);
+    const outcome = await attempt(async () => {
+      await api.ensureCsrfCookie();
+      for (const id of version.ids) {
+        const result = await api.PATCH("/schools/{school}/schedules/{schedule}", {
+          params: { path: { school: code, schedule: id } },
+          body: { is_active: !version.sample.is_active },
+        });
+        if (result.error !== undefined) return result;
+      }
+      return { error: undefined };
+    });
+    setToggling(null);
+    if (!outcome.ok) setError(outcome.failure.message);
+    else void load();
+  }
 
   const load = useCallback(async () => {
     try {
@@ -84,7 +108,6 @@ export default function SchedulesPage() {
   }, [code, scope]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- memuat data daftar
     void load();
   }, [load]);
 
@@ -97,8 +120,9 @@ export default function SchedulesPage() {
         {canManage ? <PrimaryButton onClick={() => setCreating(true)}>Terbitkan versi jadwal</PrimaryButton> : null}
       </div>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Jadwal tidak diubah, melainkan diterbitkan sebagai versi baru yang berlaku mulai tanggal tertentu; versi sebelumnya otomatis
-        berakhir sehari sebelumnya. Prioritas: jadwal kelas, lalu tingkat, lalu seluruh sekolah.
+        Salah isi jam? Klik «Ubah» untuk memperbaikinya. Jadwal yang sudah dipakai absensi tidak bisa diubah supaya riwayat tetap benar;
+        untuk itu terbitkan versi baru yang berlaku mulai tanggal tertentu (versi sebelumnya otomatis berakhir sehari sebelumnya).
+        Prioritas: jadwal kelas, lalu tingkat, lalu seluruh sekolah.
       </p>
 
       <div className="w-48">
@@ -131,10 +155,13 @@ export default function SchedulesPage() {
                 <th scope="col" className="px-4 py-3 font-semibold">Absen pulang</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Berlaku</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                {canManage ? <th scope="col" className="px-4 py-3 font-semibold">Aksi</th> : null}
               </tr>
             </thead>
             <tbody>
-              {versions.map(({ key, sample, days }) => (
+              {versions.map((version) => {
+                const { key, sample, days } = version;
+                return (
                 <tr key={key} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800">
                   <td className="px-4 py-3 font-semibold text-zinc-900 dark:text-zinc-100">{scopeLabel(sample)}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{daysLabel(days)}</td>
@@ -148,21 +175,71 @@ export default function SchedulesPage() {
                     {formatDate(sample.effective_from)} – {sample.effective_until ? formatDate(sample.effective_until) : "sekarang"}
                   </td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{sample.is_active ? "Aktif" : "Nonaktif"}</td>
+                  {canManage ? (
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1">
+                        <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-400" onClick={() => setEditing(version)}>
+                          Ubah
+                        </button>
+                        <button
+                          type="button"
+                          disabled={toggling === key}
+                          className="font-medium text-brand-700 hover:underline disabled:opacity-50 dark:text-brand-400"
+                          onClick={() => void toggleActive(version)}
+                        >
+                          {sample.is_active ? "Nonaktifkan" : "Aktifkan"}
+                        </button>
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
       ) : null}
 
-      <Dialog open={creating} title="Terbitkan versi jadwal" onClose={() => setCreating(false)}>
+      <Dialog open={editing !== null} title="Ubah jam jadwal" onClose={() => setEditing(null)}>
+        {editing ? (
+          <EditForm
+            key={editing.key}
+            code={code}
+            version={editing}
+            onCancel={() => setEditing(null)}
+            onDone={() => {
+              setEditing(null);
+              void load();
+            }}
+            onPublishNew={() => {
+              setTemplate(editing);
+              setEditing(null);
+              setCreating(true);
+            }}
+          />
+        ) : null}
+      </Dialog>
+
+      <Dialog
+        open={creating}
+        title="Terbitkan versi jadwal"
+        onClose={() => {
+          setCreating(false);
+          setTemplate(null);
+        }}
+      >
         {creating ? (
           <ScheduleForm
             code={code}
             canListClasses={can("school.academic.view")}
-            onCancel={() => setCreating(false)}
+            template={template}
+            onCancel={() => {
+              setCreating(false);
+              setTemplate(null);
+            }}
             onDone={() => {
               setCreating(false);
+              setTemplate(null);
               void load();
             }}
           />
@@ -175,15 +252,18 @@ export default function SchedulesPage() {
 function ScheduleForm({
   code,
   canListClasses,
+  template,
   onCancel,
   onDone,
 }: {
   code: string;
   canListClasses: boolean;
+  template: Version | null;
   onCancel: () => void;
   onDone: () => void;
 }) {
-  const [scope, setScope] = useState<Scope>("school");
+  const base = template?.sample;
+  const [scope, setScope] = useState<Scope>(base?.scope_type ?? "school");
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<FormFailure | null>(null);
@@ -251,7 +331,7 @@ function ScheduleForm({
           ))}
       </SelectField>
       {scope === "grade_level" ? (
-        <SelectField label="Tingkat" name="grade_level" defaultValue="7" error={failure?.fields.grade_level}>
+        <SelectField label="Tingkat" name="grade_level" defaultValue={String(base?.grade_level ?? 7)} error={failure?.fields.grade_level}>
           {Array.from({ length: 13 }, (_, i) => i + 1).map((g) => (
             <option key={g} value={g}>
               {g}
@@ -260,7 +340,7 @@ function ScheduleForm({
         </SelectField>
       ) : null}
       {scope === "class" ? (
-        <SelectField label="Kelas" name="class_id" defaultValue="" error={failure?.fields.class_id} required>
+        <SelectField label="Kelas" name="class_id" defaultValue={base?.class?.id ?? ""} error={failure?.fields.class_id} required>
           <option value="" disabled>
             Pilih kelas
           </option>
@@ -277,7 +357,7 @@ function ScheduleForm({
         <div className="mt-1 flex flex-wrap gap-3">
           {DAYS.map((day) => (
             <label key={day.value} className="flex items-center gap-1.5 text-sm text-zinc-800 dark:text-zinc-200">
-              <input type="checkbox" name="days" value={day.value} defaultChecked={day.value <= 5} />
+              <input type="checkbox" name="days" value={day.value} defaultChecked={template ? template.days.includes(day.value) : day.value <= 5} />
               {day.label}
             </label>
           ))}
@@ -286,16 +366,16 @@ function ScheduleForm({
       </fieldset>
 
       <div className="grid grid-cols-2 gap-3">
-        <TextField label="Mulai absen masuk" name="check_in_start" type="time" defaultValue="06:00" error={failure?.fields.check_in_start} required />
-        <TextField label="Batas tepat waktu" name="check_in_deadline" type="time" defaultValue="07:00" error={failure?.fields.check_in_deadline} required />
-        <TextField label="Mulai absen pulang" name="check_out_start" type="time" defaultValue="13:00" error={failure?.fields.check_out_start} required />
-        <TextField label="Jam pulang" name="scheduled_check_out" type="time" defaultValue="14:00" error={failure?.fields.scheduled_check_out} required />
+        <TextField label="Mulai absen masuk" name="check_in_start" type="time" defaultValue={base?.check_in_start ?? "06:00"} error={failure?.fields.check_in_start} required />
+        <TextField label="Batas tepat waktu" name="check_in_deadline" type="time" defaultValue={base?.check_in_deadline ?? "07:00"} error={failure?.fields.check_in_deadline} required />
+        <TextField label="Mulai absen pulang" name="check_out_start" type="time" defaultValue={base?.check_out_start ?? "13:00"} error={failure?.fields.check_out_start} required />
+        <TextField label="Jam pulang" name="scheduled_check_out" type="time" defaultValue={base?.scheduled_check_out ?? "14:00"} error={failure?.fields.scheduled_check_out} required />
       </div>
       <TextField
         label="Toleransi keterlambatan (menit)"
         name="late_grace_minutes"
         type="number"
-        defaultValue="10"
+        defaultValue={base?.late_grace_minutes ?? 10}
         error={failure?.fields.late_grace_minutes}
         required
       />
@@ -307,6 +387,87 @@ function ScheduleForm({
         </SecondaryButton>
         <PrimaryButton type="submit" pending={pending}>
           Terbitkan
+        </PrimaryButton>
+      </div>
+    </form>
+  );
+}
+
+/** Koreksi jam satu versi (semua harinya sekaligus). Bila sudah dipakai absensi, tawarkan versi baru. */
+function EditForm({
+  code,
+  version,
+  onCancel,
+  onDone,
+  onPublishNew,
+}: {
+  code: string;
+  version: Version;
+  onCancel: () => void;
+  onDone: () => void;
+  onPublishNew: () => void;
+}) {
+  const { sample } = version;
+  const [pending, setPending] = useState(false);
+  const [failure, setFailure] = useState<FormFailure | null>(null);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const text = (name: string) => String(form.get(name) ?? "").trim();
+    const body: Schemas["ScheduleUpdate"] = {
+      check_in_start: text("check_in_start"),
+      check_in_deadline: text("check_in_deadline"),
+      late_grace_minutes: Number(text("late_grace_minutes")),
+      check_out_start: text("check_out_start"),
+      scheduled_check_out: text("scheduled_check_out"),
+    };
+    setPending(true);
+    setFailure(null);
+
+    const outcome = await attempt(async () => {
+      await api.ensureCsrfCookie();
+      for (const id of version.ids) {
+        const result = await api.PATCH("/schools/{school}/schedules/{schedule}", {
+          params: { path: { school: code, schedule: id } },
+          body,
+        });
+        if (result.error !== undefined) return result;
+      }
+      return { error: undefined };
+    });
+    setPending(false);
+
+    if (!outcome.ok) setFailure(outcome.failure);
+    else onDone();
+  }
+
+  const locked = failure?.message.includes("sudah dipakai") ?? false;
+
+  return (
+    <form onSubmit={submit} noValidate className="space-y-4">
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        {scopeLabel(sample)} · {daysLabel(version.days)} · berlaku {formatDate(sample.effective_from)}
+      </p>
+      {failure ? <FormAlert>{failure.message}</FormAlert> : null}
+      <div className="grid grid-cols-2 gap-3">
+        <TextField label="Mulai absen masuk" name="check_in_start" type="time" defaultValue={sample.check_in_start} error={failure?.fields.check_in_start} required />
+        <TextField label="Batas tepat waktu" name="check_in_deadline" type="time" defaultValue={sample.check_in_deadline} error={failure?.fields.check_in_deadline} required />
+        <TextField label="Mulai absen pulang" name="check_out_start" type="time" defaultValue={sample.check_out_start} error={failure?.fields.check_out_start} required />
+        <TextField label="Jam pulang" name="scheduled_check_out" type="time" defaultValue={sample.scheduled_check_out} error={failure?.fields.scheduled_check_out} required />
+      </div>
+      <TextField label="Toleransi keterlambatan (menit)" name="late_grace_minutes" type="number" defaultValue={sample.late_grace_minutes} error={failure?.fields.late_grace_minutes} required />
+      <div className="flex flex-wrap justify-end gap-2">
+        <SecondaryButton type="button" onClick={onCancel}>
+          Batal
+        </SecondaryButton>
+        {locked ? (
+          <SecondaryButton type="button" onClick={onPublishNew}>
+            Terbitkan versi baru
+          </SecondaryButton>
+        ) : null}
+        <PrimaryButton type="submit" pending={pending}>
+          Simpan
         </PrimaryButton>
       </div>
     </form>

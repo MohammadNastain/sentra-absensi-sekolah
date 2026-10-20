@@ -490,6 +490,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/members/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Buat akun anggota langsung (email + password), tanpa undangan surel
+         * @description Izin: school.members.manage. Peran homeroom_teacher juga membuat data guru yang tertaut. Email yang sudah terdaftar ditolak (409).
+         */
+        post: operations["createMemberAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/members/{membership}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Tetapkan password baru anggota (tanpa surel)
+         * @description Izin: school.members.manage.
+         */
+        put: operations["setMemberPassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/members/{membership}": {
         parameters: {
             query?: never;
@@ -2350,6 +2390,14 @@ export interface components {
             /** Format: date-time */
             ended_at: string | null;
         };
+        MemberAccountCreate: {
+            name: string;
+            /** Format: email */
+            email: string;
+            password: string;
+            employee_number?: string | null;
+            roles: components["schemas"]["Role"][];
+        };
         MemberEnvelope: {
             data: components["schemas"]["Member"];
         };
@@ -2723,10 +2771,16 @@ export interface components {
             /** Format: date */
             effective_from: string;
         };
+        /** @description Jam dikoreksi sebagai satu paket (kelima field jam bersama) dan hanya bila jadwal belum dipakai sesi absensi (409 bila sudah). */
         ScheduleUpdate: {
             /** Format: date */
             effective_until?: string | null;
             is_active?: boolean;
+            check_in_start?: string;
+            check_in_deadline?: string;
+            late_grace_minutes?: number;
+            check_out_start?: string;
+            scheduled_check_out?: string;
         };
         CalendarDay: {
             /** Format: date */
@@ -4425,6 +4479,74 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    createMemberAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberAccountCreate"];
+            };
+        };
+        responses: {
+            /** @description Akun dan keanggotaan dibuat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    setMemberPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                membership: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Password diperbarui. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getMember: {

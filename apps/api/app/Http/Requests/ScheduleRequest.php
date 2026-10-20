@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * POST /schedules (menerbitkan versi baru untuk satu scope dan beberapa hari) dan PATCH /schedules/{id}
- * (hanya menutup versi atau menonaktifkannya; jam tidak bisa diubah).
+ * (menutup, menonaktifkan, atau mengoreksi jam selama versi itu belum dipakai sesi absensi).
  */
 class ScheduleRequest extends SchoolRequest
 {
@@ -25,8 +25,12 @@ class ScheduleRequest extends SchoolRequest
                 'is_active' => ['sometimes', 'required', 'boolean'],
                 'scope_type' => ['prohibited'], 'grade_level' => ['prohibited'], 'class_id' => ['prohibited'],
                 'days' => ['prohibited'], 'day_of_week' => ['prohibited'], 'effective_from' => ['prohibited'],
-                'check_in_start' => ['prohibited'], 'check_in_deadline' => ['prohibited'], 'late_grace_minutes' => ['prohibited'],
-                'check_out_start' => ['prohibited'], 'scheduled_check_out' => ['prohibited'],
+                // Jam dikoreksi sebagai satu paket: bila salah satu dikirim, kelimanya wajib.
+                'check_in_start' => ['required_with:check_in_deadline,late_grace_minutes,check_out_start,scheduled_check_out', 'date_format:H:i'],
+                'check_in_deadline' => ['required_with:check_in_start,late_grace_minutes,check_out_start,scheduled_check_out', 'date_format:H:i'],
+                'late_grace_minutes' => ['required_with:check_in_start,check_in_deadline,check_out_start,scheduled_check_out', 'integer', 'between:0,120'],
+                'check_out_start' => ['required_with:check_in_start,check_in_deadline,late_grace_minutes,scheduled_check_out', 'date_format:H:i'],
+                'scheduled_check_out' => ['required_with:check_in_start,check_in_deadline,late_grace_minutes,check_out_start', 'date_format:H:i'],
             ];
         }
 
@@ -71,7 +75,7 @@ class ScheduleRequest extends SchoolRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            if ($this->isUpdate() || $validator->errors()->hasAny(['check_in_start', 'check_in_deadline', 'check_out_start', 'scheduled_check_out'])) {
+            if (($this->isUpdate() && ! $this->has('check_in_start')) || $validator->errors()->hasAny(['check_in_start', 'check_in_deadline', 'check_out_start', 'scheduled_check_out'])) {
                 return;
             }
 

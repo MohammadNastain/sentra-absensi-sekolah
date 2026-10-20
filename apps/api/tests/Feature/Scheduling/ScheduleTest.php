@@ -100,8 +100,28 @@ it('PATCH hanya menutup versi atau menonaktifkannya; jam dan scope tidak bisa di
     schedApi("schedules/{$id}", 'patchJson', ['effective_until' => '2026-12-18'])->assertOk()->assertJsonPath('data.effective_until', '2026-12-18');
     schedApi("schedules/{$id}", 'patchJson', ['effective_until' => '2026-07-01'])->assertStatus(409)->assertJsonPath('code', 'SCHEDULE_CONFLICT');
     schedApi("schedules/{$id}", 'patchJson', ['is_active' => false])->assertOk()->assertJsonPath('data.is_active', false);
-    schedApi("schedules/{$id}", 'patchJson', ['check_in_deadline' => '08:00'])->assertJsonValidationErrors(['check_in_deadline']);
     schedApi("schedules/{$id}", 'patchJson', ['scope_type' => 'class'])->assertJsonValidationErrors(['scope_type']);
+});
+
+it('PATCH mengoreksi jam selama jadwal belum dipakai sesi absensi', function () {
+    $id = schedApi('schedules', 'postJson', schedBody(['days' => [1]]))->json('data.0.id');
+    $hours = ['check_in_start' => '06:30', 'check_in_deadline' => '07:30', 'late_grace_minutes' => 5, 'check_out_start' => '13:30', 'scheduled_check_out' => '14:30'];
+
+    schedApi("schedules/{$id}", 'patchJson', $hours)->assertOk()
+        ->assertJsonPath('data.check_in_deadline', '07:30')->assertJsonPath('data.late_grace_minutes', 5);
+    // Jam dikirim sebagai paket lengkap dan urutannya harus masuk akal.
+    schedApi("schedules/{$id}", 'patchJson', ['check_in_deadline' => '08:00'])->assertJsonValidationErrors(['check_in_start']);
+    schedApi("schedules/{$id}", 'patchJson', [...$hours, 'check_in_deadline' => '06:00'])->assertJsonValidationErrors(['check_in_deadline']);
+});
+
+it('PATCH menolak ubah jam jadwal yang sudah dipakai sesi absensi', function () {
+    $id = schedApi('schedules', 'postJson', schedBody(['days' => [1]]))->json('data.0.id');
+    $this->inSchool($this->school, fn () => DB::table('attendance_sessions')->insert(['school_id' => $this->school->id, 'session_date' => '2026-07-20', 'schedule_id' => $id, 'timezone' => 'Asia/Jakarta']));
+
+    schedApi("schedules/{$id}", 'patchJson', ['check_in_start' => '06:30', 'check_in_deadline' => '07:30', 'late_grace_minutes' => 10, 'check_out_start' => '13:00', 'scheduled_check_out' => '14:00'])
+        ->assertStatus(409)->assertJsonPath('code', 'SCHEDULE_CONFLICT');
+    // Menonaktifkan tetap boleh.
+    schedApi("schedules/{$id}", 'patchJson', ['is_active' => false])->assertOk();
 });
 
 it('validasi: urutan jam, scope dan kelengkapannya, hari, format', function () {

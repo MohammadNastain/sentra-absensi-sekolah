@@ -3,6 +3,7 @@
 import type { Schemas } from "@sentra/api-client";
 import { useCallback, useEffect, useState } from "react";
 import { CardSheet, type CardData } from "@/components/QrCard";
+import { downloadCard } from "@/lib/qr-download";
 import { FormAlert, PrimaryButton, SecondaryButton, TextAreaField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
@@ -79,12 +80,15 @@ export function CredentialsPanel({
     return (
       <div className="space-y-4">
         <FormAlert tone="success">
-          Kartu baru diterbitkan. Kode QR hanya tampil sekarang; cetak atau simpan sebelum menutup dialog ini.
+          Kartu baru diterbitkan. Kode QR hanya tampil sekarang; unduh atau cetak sebelum menutup dialog ini.
         </FormAlert>
         <div className="mx-auto max-w-xs">
           <CardSheet schoolName={profile.name} cards={[card]} />
         </div>
         <div className="flex justify-end gap-2">
+          <SecondaryButton type="button" onClick={() => void downloadCard(card, profile.name)}>
+            Unduh PNG
+          </SecondaryButton>
           <SecondaryButton type="button" onClick={() => window.print()}>
             Cetak
           </SecondaryButton>
