@@ -48,7 +48,7 @@ test("Tahap 1: Super Admin → sekolah → admin → anggota; isolasi antar seko
   });
 
   await test.step("Super Admin membuat sekolah", async () => {
-    await superAdmin.getByRole("link", { name: "Sekolah baru" }).click();
+    await superAdmin.getByRole("main").getByRole("link", { name: "Sekolah baru" }).click();
     await superAdmin.getByLabel("Kode sekolah").fill(schoolCode);
     await superAdmin.getByLabel("Nama sekolah").fill(schoolName);
     await superAdmin.getByLabel("SMP", { exact: true }).check();

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { usePlatformNav } from "@/lib/platform-nav";
 import { SchoolForm, type SchoolFormPayload } from "@/components/SchoolForm";
 import { FormAlert, PrimaryButton, StatusBadge, TextAreaField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -25,6 +26,7 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
   const { code } = use(props.params);
   const router = useRouter();
   const me = useMe();
+  const nav = usePlatformNav();
   const [school, setSchool] = useState<School | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -46,8 +48,8 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
   }, [load]);
 
   return (
-    <AppShell context="Platform" userLabel={me?.email}>
-      <Link href="/platform" className="text-sm text-emerald-700 hover:underline dark:text-emerald-400">
+    <AppShell context="Platform" nav={nav} userLabel={me?.email} userName={me?.name}>
+      <Link href="/platform" className="text-sm text-brand-700 hover:underline dark:text-brand-400">
         ← Semua sekolah
       </Link>
 

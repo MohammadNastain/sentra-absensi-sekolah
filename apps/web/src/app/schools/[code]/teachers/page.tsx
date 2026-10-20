@@ -146,7 +146,7 @@ export default function TeachersPage() {
                       <div className="flex gap-3">
                         <button
                           type="button"
-                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                           onClick={() => setAction({ kind: "edit", teacher })}
                         >
                           Ubah
@@ -154,7 +154,7 @@ export default function TeachersPage() {
                         <button
                           type="button"
                           disabled={busyId === teacher.id}
-                          className="font-medium text-emerald-700 hover:underline disabled:opacity-60 dark:text-emerald-400"
+                          className="font-medium text-brand-700 hover:underline disabled:opacity-60 dark:text-brand-400"
                           onClick={() => void toggleStatus(teacher)}
                         >
                           {teacher.status === "active" ? "Nonaktifkan" : "Aktifkan"}

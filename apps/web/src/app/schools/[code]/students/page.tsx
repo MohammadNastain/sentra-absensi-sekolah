@@ -110,7 +110,7 @@ export default function StudentsPage() {
           <div className="flex items-center gap-3">
             <Link
               href={`/schools/${code}/students/import`}
-              className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+              className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-400"
             >
               Impor dari file
             </Link>
@@ -206,7 +206,7 @@ export default function StudentsPage() {
                       {canManage ? (
                         <button
                           type="button"
-                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                           onClick={() => setAction({ kind: "edit", student })}
                         >
                           Ubah
@@ -214,7 +214,7 @@ export default function StudentsPage() {
                       ) : null}
                       <button
                         type="button"
-                        className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                        className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                         onClick={() => setAction({ kind: "class", student })}
                       >
                         {canManage ? "Kelas" : "Riwayat kelas"}
@@ -222,7 +222,7 @@ export default function StudentsPage() {
                       {canCards && student.status === "active" ? (
                         <button
                           type="button"
-                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                           onClick={() => setAction({ kind: "cards", student })}
                         >
                           Kartu QR

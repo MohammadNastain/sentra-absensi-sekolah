@@ -159,7 +159,7 @@ export default function InvitationsPage() {
                           type="button"
                           disabled={busyId === invitation.id}
                           onClick={() => rowAction(invitation, "resend")}
-                          className="font-medium text-emerald-700 hover:underline disabled:opacity-60 dark:text-emerald-400"
+                          className="font-medium text-brand-700 hover:underline disabled:opacity-60 dark:text-brand-400"
                         >
                           Kirim ulang
                         </button>

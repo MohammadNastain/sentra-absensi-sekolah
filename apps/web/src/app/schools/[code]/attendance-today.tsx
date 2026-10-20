@@ -108,7 +108,7 @@ export function AttendanceToday() {
               return (
                 <li
                   key={`${row.recorded_at_local}-${row.student_name}-${index}`}
-                  className="group flex animate-rise items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2.5 transition-colors hover:bg-emerald-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
+                  className="group flex animate-rise items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2.5 transition-colors hover:bg-brand-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
                   style={{ animationDelay: `${index * 45}ms` }}
                 >
                   <span className={`h-9 w-1 shrink-0 rounded-full ${tone.bar}`} />

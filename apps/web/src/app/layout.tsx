@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { connection } from "next/server";
+import { THEME_INIT_SCRIPT } from "@/components/ThemeToggle";
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -21,9 +23,13 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // CSP berbasis nonce (src/proxy.ts) mewajibkan render dinamis: nonce baru di setiap request.
   await connection();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <html lang="id" className={`${jakarta.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="id" suppressHydrationWarning className={`${jakarta.variable} ${geistMono.variable} h-full antialiased`}>
+      <head>
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

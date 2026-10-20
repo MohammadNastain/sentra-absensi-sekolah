@@ -106,7 +106,7 @@ export default function AuditPage() {
               </p>
               {log.before || log.after ? (
                 <details className="mt-2 text-sm">
-                  <summary className="cursor-pointer text-emerald-700 dark:text-emerald-400">Rincian perubahan</summary>
+                  <summary className="cursor-pointer text-brand-700 dark:text-brand-400">Rincian perubahan</summary>
                   <div className="mt-2 grid gap-3 sm:grid-cols-2">
                     <Snapshot title="Sebelum" value={log.before} />
                     <Snapshot title="Sesudah" value={log.after} />

@@ -1,41 +1,44 @@
 @import "tailwindcss";
 
+/* Mode gelap dikendalikan kelas `.dark` pada <html> (tombol tema + preferensi sistem), bukan media query. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
- * Sistem desain Sentra: teal-petrol sebagai warna merek, netral slate yang sedikit kehijauan, kartu putih membulat
- * dengan bayangan lembut. Palet `emerald` dan `zinc` bawaan Tailwind dipetakan ulang di sini supaya seluruh halaman
+ * Sistem desain Sentra: navy dan biru azure sebagai warna merek (aksen emas tipis), netral slate kebiruan, kartu putih membulat
+ * dengan bayangan lembut. Palet `brand` dan `zinc` bawaan Tailwind dipetakan ulang di sini supaya seluruh halaman
  * yang sudah memakai kelas itu ikut berganti tampilan tanpa diubah satu per satu.
  */
 @theme {
-  --color-emerald-50: #effaf8;
-  --color-emerald-100: #d5f1ed;
-  --color-emerald-200: #aee3dc;
-  --color-emerald-300: #7acdc5;
-  --color-emerald-400: #44b1a9;
-  --color-emerald-500: #269792;
-  --color-emerald-600: #1b7b7b;
-  --color-emerald-700: #176466;
-  --color-emerald-800: #155154;
-  --color-emerald-900: #134347;
-  --color-emerald-950: #082a2e;
+  --color-brand-50: #eff5ff;
+  --color-brand-100: #dbe8fe;
+  --color-brand-200: #bcd3fb;
+  --color-brand-300: #8db3f6;
+  --color-brand-400: #5b8eec;
+  --color-brand-500: #3a70dd;
+  --color-brand-600: #2858c0;
+  --color-brand-700: #22479c;
+  --color-brand-800: #203c80;
+  --color-brand-900: #1d3366;
+  --color-brand-950: #121f3f;
 
-  --color-zinc-50: #f4f8f9;
-  --color-zinc-100: #e9f0f2;
-  --color-zinc-200: #d6e1e5;
-  --color-zinc-300: #b8c8ce;
-  --color-zinc-400: #8aa0a8;
-  --color-zinc-500: #637a83;
-  --color-zinc-600: #4a6069;
-  --color-zinc-700: #384b53;
-  --color-zinc-800: #25353c;
-  --color-zinc-900: #172329;
-  --color-zinc-950: #0c1519;
+  --color-zinc-50: #f5f8fc;
+  --color-zinc-100: #eaf0f7;
+  --color-zinc-200: #d8e1ec;
+  --color-zinc-300: #bac8d9;
+  --color-zinc-400: #8da0b8;
+  --color-zinc-500: #66788f;
+  --color-zinc-600: #4d5e74;
+  --color-zinc-700: #3a495c;
+  --color-zinc-800: #26323f;
+  --color-zinc-900: #17202c;
+  --color-zinc-950: #0b121b;
 
-  --color-brand-sidebar-from: #0e4a53;
-  --color-brand-sidebar-to: #082f37;
+  --color-brand-sidebar-from: #17356a;
+  --color-brand-sidebar-to: #0b1e3d;
   --color-gold-400: #e2b65c;
 
-  --shadow-card: 0 1px 2px rgb(12 21 25 / 0.04), 0 10px 28px -14px rgb(18 74 83 / 0.22);
-  --shadow-lift: 0 2px 4px rgb(12 21 25 / 0.05), 0 18px 36px -14px rgb(18 74 83 / 0.3);
+  --shadow-card: 0 1px 2px rgb(12 21 25 / 0.04), 0 10px 28px -14px rgb(23 53 106 / 0.2);
+  --shadow-lift: 0 2px 4px rgb(12 21 25 / 0.05), 0 18px 36px -14px rgb(23 53 106 / 0.28);
 
   --animate-rise: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade: fade 0.4s ease-out both;
@@ -107,15 +110,23 @@
 }
 
 :root {
-  --background: #eaf1f2;
-  --foreground: #172329;
+  --background: #edf2f9;
+  --foreground: #17202c;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a1317;
-    --foreground: #e6eef0;
-  }
+.dark {
+  --background: #0a111b;
+  --foreground: #e6edf6;
+  color-scheme: dark;
+}
+
+/* Peralihan tema yang halus (hanya saat pengguna menekan tombol, lihat ThemeToggle). */
+html.theme-fade,
+html.theme-fade *,
+html.theme-fade *::before,
+html.theme-fade *::after {
+  transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, fill 0.35s ease, stroke 0.35s ease !important;
 }
 
 html {
@@ -131,7 +142,7 @@ body {
 
 /* Fokus yang jelas dan seragam untuk keyboard. */
 :focus-visible {
-  outline: 2px solid var(--color-emerald-500);
+  outline: 2px solid var(--color-brand-500);
   outline-offset: 2px;
 }
 
@@ -142,11 +153,9 @@ body {
   background-size: 200% 100%;
   animation: var(--animate-shimmer);
 }
-@media (prefers-color-scheme: dark) {
-  .skeleton {
-    background: linear-gradient(90deg, var(--color-zinc-800) 25%, var(--color-zinc-700) 50%, var(--color-zinc-800) 75%);
-    background-size: 200% 100%;
-  }
+.dark .skeleton {
+  background: linear-gradient(90deg, var(--color-zinc-800) 25%, var(--color-zinc-700) 50%, var(--color-zinc-800) 75%);
+  background-size: 200% 100%;
 }
 
 /* Masuk bertahap: --i mengatur urutan (kelipatan 70 ms). */
@@ -196,5 +205,5 @@ tbody tr {
   transition: background-color 0.15s ease;
 }
 tbody tr:hover {
-  background-color: color-mix(in srgb, var(--color-emerald-500) 6%, transparent);
+  background-color: color-mix(in srgb, var(--color-brand-500) 6%, transparent);
 }

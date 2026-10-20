@@ -54,7 +54,7 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
           {blocked}
         </p>
         <div className="flex items-center gap-3">
-          <Link href="/" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+          <Link href="/" className="font-medium text-brand-700 hover:underline dark:text-brand-400">
             Kembali
           </Link>
           <LogoutButton />

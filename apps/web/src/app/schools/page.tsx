@@ -55,7 +55,7 @@ export default function SchoolsPage() {
                 {usable ? (
                   <Link
                     href={`/schools/${entry.school.code}`}
-                    className="block rounded-2xl border border-zinc-200/70 bg-white shadow-card p-4 hover:border-emerald-600 dark:border-zinc-800 dark:bg-zinc-900"
+                    className="block rounded-2xl border border-zinc-200/70 bg-white shadow-card p-4 hover:border-brand-600 dark:border-zinc-800 dark:bg-zinc-900"
                   >
                     <p className="font-medium text-zinc-900 dark:text-zinc-50">{entry.school.name}</p>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">{entry.roles.map(roleLabel).join(", ")}</p>

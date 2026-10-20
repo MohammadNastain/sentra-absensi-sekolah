@@ -89,7 +89,7 @@ export default function HolidaysPage() {
                       <div className="flex gap-3">
                         <button
                           type="button"
-                          className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                           onClick={() => setAction({ kind: "edit", holiday })}
                         >
                           Ubah

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { usePlatformNav } from "@/lib/platform-nav";
 import { FormAlert, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
@@ -16,6 +17,7 @@ type School = Schemas["School"];
 export default function PlatformPage() {
   const router = useRouter();
   const me = useMe();
+  const nav = usePlatformNav();
   const [schools, setSchools] = useState<School[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,12 +41,12 @@ export default function PlatformPage() {
   }, [router]);
 
   return (
-    <AppShell context="Platform" userLabel={me?.email}>
+    <AppShell context="Platform" nav={nav} userLabel={me?.email} userName={me?.name}>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Sekolah</h1>
         <Link
           href="/platform/new"
-          className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           Sekolah baru
         </Link>
@@ -79,7 +81,7 @@ export default function PlatformPage() {
                   <td className="px-4 py-3">
                     <Link
                       href={`/platform/${school.code}`}
-                      className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+                      className="font-medium text-brand-700 hover:underline dark:text-brand-400"
                     >
                       {school.name}
                     </Link>
