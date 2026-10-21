@@ -240,5 +240,14 @@ Tidak ada pekerjaan kode sebelum gerbang tersebut terpenuhi. Bila disetujui: mig
 
 ---
 
+## Fitur tambahan: jadwal mengajar dan impor guru (dikerjakan setelah Tahap 6)
+
+- [x] Mata pelajaran (`subjects`), mapel per guru (`teacher_subjects`), dan jam mengajar (`teaching_slots`: kelas × mapel × guru × hari × jam) dengan exclusion constraint yang menolak guru atau kelas dobel pada jam beririsan; RLS per sekolah. Email kontak guru (`teachers.email`).
+- [x] Impor guru dan impor jadwal mengajar memakai alur staging yang sama dengan impor siswa (`ImportKind` per jenis; `import_batches.type` = `students`/`teachers`/`teaching_schedule`). Mapel baru dibuat otomatis saat commit.
+- [x] API: `/subjects`, `/teaching-slots`, `/imports/teachers`, `/imports/teaching-schedule`, `/imports/template?type=`. UI: papan jadwal per kelas/guru, halaman mapel, halaman impor (komponen `ImportWizard` dipakai bersama impor siswa).
+- Belum: absensi per jam pelajaran, akun login otomatis dari impor guru, jadwal berversi per semester.
+
+---
+
 ## Pasca-MVP lain (backlog, tidak dijadwalkan)
 Portal orang tua & notifikasi, WhatsApp resmi, multi-terminal, offline dengan rekonsiliasi, integrasi SIAKAD, billing, jadwal kelompok/khusus, akun multi-sekolah, websocket realtime, partisi tabel event.

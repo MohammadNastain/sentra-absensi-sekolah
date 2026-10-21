@@ -5,12 +5,10 @@ namespace App\Domain\Imports;
 use App\Domain\Academic\ConstraintViolations;
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Tenancy\DatabaseContext;
-use App\Jobs\ValidateStudentImport;
-use App\Models\ClassEnrollment;
+use App\Jobs\ValidateImport;
 use App\Models\ImportBatch;
 use App\Models\ImportRow;
 use App\Models\School;
-use App\Models\Student;
 use App\Models\User;
 use App\Support\Http\ApiProblem;
 use Illuminate\Database\QueryException;
@@ -21,10 +19,11 @@ use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Siklus impor siswa: unggah (validasi dijalankan job) → commit baris valid saja dalam satu transaksi (D-15).
- * Commit mencatat satu audit tingkat batch (jumlah, nama file, hash file); siswa hasil impor tidak diaudit satu per satu.
+ * Siklus impor (siswa, guru, jadwal mengajar): unggah (validasi dijalankan job) → commit baris valid saja dalam
+ * satu transaksi (D-15). Commit mencatat satu audit tingkat batch (jumlah, nama file, hash file); data hasil impor
+ * tidak diaudit satu per satu.
  */
-final class ManageStudentImports
+final class ManageImports
 {
     public function __construct(
         private readonly DatabaseContext $database,
@@ -32,7 +31,7 @@ final class ManageStudentImports
         private readonly SpreadsheetReader $reader,
     ) {}
 
-    public function upload(School $school, User $actor, UploadedFile $file): ImportBatch
+    public function upload(School $school, User $actor, UploadedFile $file, ImportKind $kind): ImportBatch
     {
         $extension = strtolower($file->getClientOriginalExtension());
         $this->reader->assertSafe($file->getRealPath(), $extension);
@@ -41,10 +40,10 @@ final class ManageStudentImports
         $path = "imports/{$school->id}/{$id}.{$extension}";
         Storage::disk('local')->putFileAs("imports/{$school->id}", $file, "{$id}.{$extension}");
 
-        $batch = $this->database->runInSchool($school->id, function () use ($school, $actor, $file, $id, $path) {
+        $batch = $this->database->runInSchool($school->id, function () use ($school, $actor, $file, $id, $path, $kind) {
             $batch = new ImportBatch([
                 'school_id' => $school->id,
-                'type' => 'students',
+                'type' => $kind->type(),
                 'status' => ImportBatch::STATUS_UPLOADED,
                 'original_filename' => mb_substr(basename($file->getClientOriginalName()), 0, 200),
                 'storage_path' => $path,
@@ -57,14 +56,14 @@ final class ManageStudentImports
             return $batch;
         });
 
-        ValidateStudentImport::dispatch($school->id, $batch->id);
+        ValidateImport::dispatch($school->id, $batch->id);
 
         return $this->database->runInSchool($school->id, fn () => ImportBatch::query()->findOrFail($batch->id));
     }
 
     /**
-     * Menyimpan semua baris valid sebagai siswa (dan penempatan kelas bila kolom kelas diisi). Nomor yang
-     * ternyata sudah dipakai sejak validasi ditandai skipped; sisanya tetap disimpan.
+     * Menyimpan semua baris valid. Baris yang ternyata tidak lagi valid sejak preview (misalnya nomor sudah
+     * dipakai) ditandai skipped; sisanya tetap disimpan.
      */
     public function commit(School $school, User $actor, string $batchId): ImportBatch
     {
@@ -76,16 +75,14 @@ final class ManageStudentImports
                     throw ApiProblem::invalidStateTransition('Impor ini tidak dapat di-commit (status: '.$batch->status.').');
                 }
 
-                $validator = new StudentImportValidator($school->id);
-                $start = $validator->enrollStartDate();
+                $processor = ImportKinds::get($batch->type)->processor($school->id);
                 $committed = 0;
                 $skipped = 0;
 
                 $rows = ImportRow::query()->where('batch_id', $batch->id)->where('status', ImportRow::STATUS_VALID)->orderBy('row_number')->get();
                 foreach ($rows as $row) {
                     // Validasi ulang terhadap kondisi saat ini (data bisa berubah sejak preview).
-                    $payload = $row->payload;
-                    $recheck = $validator->validate($payload);
+                    $recheck = $processor->validate($row->payload);
                     if ($recheck['normalized'] === null) {
                         $row->update(['status' => ImportRow::STATUS_SKIPPED, 'errors' => $recheck['errors']]);
                         $skipped++;
@@ -93,25 +90,7 @@ final class ManageStudentImports
                         continue;
                     }
 
-                    /** @var array{student_number: string, nisn: string|null, full_name: string, date_of_birth: string|null, class_id: string|null} $data */
-                    $data = $recheck['normalized'];
-                    $student = Student::query()->create([
-                        'school_id' => $school->id,
-                        'student_number' => $data['student_number'],
-                        'nisn' => $data['nisn'],
-                        'full_name' => $data['full_name'],
-                        'date_of_birth' => $data['date_of_birth'],
-                        'status' => Student::STATUS_ACTIVE,
-                    ]);
-                    if ($data['class_id'] !== null && $start !== null) {
-                        ClassEnrollment::query()->create([
-                            'school_id' => $school->id,
-                            'student_id' => $student->id,
-                            'class_id' => $data['class_id'],
-                            'start_date' => $start,
-                            'created_by_user_id' => $actor->id,
-                        ]);
-                    }
+                    $processor->persist($recheck['normalized'], $actor);
                     $row->update(['status' => ImportRow::STATUS_COMMITTED]);
                     $committed++;
                 }

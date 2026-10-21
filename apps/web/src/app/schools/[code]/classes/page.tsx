@@ -4,7 +4,8 @@ import type { Schemas } from "@sentra/api-client";
 import { useCallback, useEffect, useState } from "react";
 import { Dialog } from "@/components/Dialog";
 import { Pager } from "@/components/Pager";
-import { FormAlert, PrimaryButton, SecondaryButton, SelectField, TextField } from "@/components/ui";
+import { IconEdit } from "@/components/icons";
+import { FormAlert, PrimaryButton, RowButton, SecondaryButton, SelectField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { fetchAll } from "@/lib/fetch-all";
@@ -190,30 +191,21 @@ export default function ClassesPage() {
                   </td>
                   {canManage ? (
                     <td className="px-4 py-3">
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-                          onClick={() => setAction({ kind: "edit", schoolClass })}
-                        >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <RowButton icon={<IconEdit width={14} height={14} />}
+                          onClick={() => setAction({ kind: "edit", schoolClass })}>
                           Ubah
-                        </button>
-                        <button
-                          type="button"
+                        </RowButton>
+                        <RowButton
                           disabled={busyId === schoolClass.id}
-                          className="font-medium text-brand-700 hover:underline disabled:opacity-60 dark:text-brand-400"
-                          onClick={() => void toggleArchive(schoolClass)}
-                        >
+                          onClick={() => void toggleArchive(schoolClass)}>
                           {schoolClass.status === "active" ? "Arsipkan" : "Aktifkan"}
-                        </button>
+                        </RowButton>
                         {canCards && schoolClass.status === "active" ? (
-                          <button
-                            type="button"
-                            className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-                            onClick={() => setAction({ kind: "cards", schoolClass })}
-                          >
+                          <RowButton
+                            onClick={() => setAction({ kind: "cards", schoolClass })}>
                             Cetak kartu QR
-                          </button>
+                          </RowButton>
                         ) : null}
                       </div>
                     </td>

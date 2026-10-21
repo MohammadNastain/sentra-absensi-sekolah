@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { AuthShell, FormAlert, SubmitButton, TextField, TextLink } from "@/components/ui";
+import { AuthShell, FormAlert, RowButton, SubmitButton, TextField, TextLink } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, type FormFailure } from "@/lib/errors";
 import { destinationPath, resolveDestination } from "@/lib/session";
@@ -43,16 +43,13 @@ export default function TwoFactorPage() {
       }
       footer={
         <div className="flex justify-between">
-          <button
-            type="button"
+          <RowButton
             onClick={() => {
               setUseRecovery((v) => !v);
               setFailure(null);
-            }}
-            className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-          >
+            }}>
             {useRecovery ? "Pakai kode authenticator" : "Pakai kode pemulihan"}
-          </button>
+          </RowButton>
           <TextLink href="/login">Kembali</TextLink>
         </div>
       }

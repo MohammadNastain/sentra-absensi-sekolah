@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
- * Memvalidasi file impor yang sudah diunggah dan menulis hasilnya ke staging (import_rows). Dipanggil dari
+ * Memvalidasi file impor (jenis apa pun) yang sudah diunggah dan menulis hasilnya ke staging (import_rows). Dipanggil dari
  * job di dalam konteks sekolah. Hasil ditulis dalam satu transaksi: batch tidak pernah setengah tervalidasi.
  */
 final class ValidateImportBatch
@@ -31,7 +31,8 @@ final class ValidateImportBatch
                 pathinfo($batch->original_filename, PATHINFO_EXTENSION),
             );
 
-            $missing = StudentImportValidator::missingHeaders($parsed['headers']);
+            $kind = ImportKinds::get($batch->type);
+            $missing = array_values(array_diff($kind->requiredHeaders(), $parsed['headers']));
             if ($missing !== []) {
                 throw new ImportFileException('Kolom wajib tidak ditemukan: '.implode(', ', $missing).'. Gunakan templat yang disediakan.');
             }
@@ -39,7 +40,7 @@ final class ValidateImportBatch
                 throw new ImportFileException('File tidak berisi baris data.');
             }
 
-            $validator = new StudentImportValidator($schoolId);
+            $validator = $kind->processor($schoolId);
             $records = [];
             $valid = 0;
             foreach ($parsed['rows'] as $number => $row) {
@@ -51,7 +52,7 @@ final class ValidateImportBatch
                     'school_id' => $schoolId,
                     'batch_id' => $batch->id,
                     'row_number' => $number,
-                    'payload' => json_encode(array_intersect_key($row, array_flip(['nomor_induk', 'nisn', 'nama_lengkap', 'tanggal_lahir', 'kelas'])), JSON_THROW_ON_ERROR),
+                    'payload' => json_encode(array_intersect_key($row, array_flip($kind->columns())), JSON_THROW_ON_ERROR),
                     'normalized' => $result['normalized'] === null ? null : json_encode($result['normalized'], JSON_THROW_ON_ERROR),
                     'status' => $isValid ? ImportRow::STATUS_VALID : ImportRow::STATUS_INVALID,
                     'errors' => json_encode($result['errors'], JSON_THROW_ON_ERROR),

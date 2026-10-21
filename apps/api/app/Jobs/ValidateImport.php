@@ -8,10 +8,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
 /**
- * Memvalidasi file impor siswa di latar belakang. Tanpa retry otomatis: kegagalan dicatat pada batch
+ * Memvalidasi file impor di latar belakang. Tanpa retry otomatis: kegagalan dicatat pada batch
  * (status failed) dan admin mengunggah ulang.
  */
-class ValidateStudentImport extends TenantAwareJob implements ShouldQueue
+class ValidateImport extends TenantAwareJob implements ShouldQueue
 {
     use Queueable;
 

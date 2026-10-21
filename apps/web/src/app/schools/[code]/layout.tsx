@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { use, useEffect, useMemo, useState } from "react";
 import { AppShell, type NavItem } from "@/components/AppShell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { PlatformBanner } from "@/components/PlatformBanner";
-import { Skeleton } from "@/components/ui";
+import { IconArrowLeft } from "@/components/icons";
+import { LinkButton, Skeleton } from "@/components/ui";
 import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
 import { platformItems, rememberSchool } from "@/lib/platform-nav";
@@ -59,9 +59,9 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
           {blocked}
         </p>
         <div className="flex items-center gap-3">
-          <Link href="/" className="font-medium text-brand-700 hover:underline dark:text-brand-400">
+          <LinkButton href="/" icon={<IconArrowLeft width={16} height={16} />}>
             Kembali
-          </Link>
+          </LinkButton>
           <LogoutButton />
         </div>
       </main>

@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { usePlatformNav } from "@/lib/platform-nav";
 import { SchoolForm, type SchoolFormPayload } from "@/components/SchoolForm";
+import { BackLink, PageHeader } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, type FormFailure } from "@/lib/errors";
 import { useMe } from "@/lib/use-me";
@@ -36,12 +36,7 @@ export default function NewSchoolPage() {
 
   return (
     <AppShell context="Platform" nav={nav} userLabel={me?.email} userName={me?.name}>
-      <div>
-        <Link href="/platform" className="text-sm text-brand-700 hover:underline dark:text-brand-400">
-          ← Semua sekolah
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Sekolah baru</h1>
-      </div>
+      <PageHeader title="Sekolah baru" description="Daftarkan sekolah baru ke platform." actions={<BackLink href="/platform">Semua sekolah</BackLink>} />
       <div className="max-w-xl rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <SchoolForm
           mode="create"

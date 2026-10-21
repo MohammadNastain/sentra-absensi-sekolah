@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\School;
 
 use App\Domain\Imports\ImportFileException;
-use App\Domain\Imports\ManageStudentImports;
+use App\Domain\Imports\ImportKind;
+use App\Domain\Imports\ImportKinds;
+use App\Domain\Imports\ManageImports;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Models\ImportBatch;
@@ -16,15 +18,21 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-final class StudentImportController extends Controller
+/**
+ * Impor berkas CSV/XLSX: siswa, guru, dan jadwal mengajar memakai alur yang sama (unggah → validasi async →
+ * preview → commit baris valid). Jenis impor menentukan kolom dan aturan validasinya (App\Domain\Imports\ImportKind).
+ */
+final class ImportController extends Controller
 {
-    private const COLUMNS = ['nomor_induk', 'nisn', 'nama_lengkap', 'tanggal_lahir', 'kelas'];
+    public function __construct(private readonly TenantContext $tenant, private readonly ManageImports $imports) {}
 
-    public function __construct(private readonly TenantContext $tenant, private readonly ManageStudentImports $imports) {}
-
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $page = ImportBatch::query()->orderByDesc('created_at')->orderByDesc('id')->paginate(20);
+        $type = $request->query('type');
+        $page = ImportBatch::query()
+            ->when(is_string($type) && $type !== '', fn ($q) => $q->where('type', $type))
+            ->orderByDesc('created_at')->orderByDesc('id')
+            ->paginate(20);
 
         return response()->json([
             'data' => collect($page->items())->map(fn (ImportBatch $b) => self::present($b))->all(),
@@ -32,14 +40,29 @@ final class StudentImportController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function storeStudents(Request $request): JsonResponse
+    {
+        return $this->upload($request, ImportKinds::get(ImportKinds::STUDENTS));
+    }
+
+    public function storeTeachers(Request $request): JsonResponse
+    {
+        return $this->upload($request, ImportKinds::get(ImportKinds::TEACHERS));
+    }
+
+    public function storeTeachingSchedule(Request $request): JsonResponse
+    {
+        return $this->upload($request, ImportKinds::get(ImportKinds::TEACHING_SCHEDULE));
+    }
+
+    private function upload(Request $request, ImportKind $kind): JsonResponse
     {
         $request->validate(['file' => ['required', 'file', 'max:5120', 'extensions:csv,xlsx']]);
         $file = $request->file('file');
         abort_if($file === null || is_array($file), 422);
 
         try {
-            $batch = $this->imports->upload($this->tenant->school(), $this->actor($request), $file);
+            $batch = $this->imports->upload($this->tenant->school(), $this->actor($request), $file, $kind);
         } catch (ImportFileException $e) {
             throw ValidationException::withMessages(['file' => $e->getMessage()]);
         }
@@ -86,23 +109,33 @@ final class StudentImportController extends Controller
     {
         $batch = $this->find($import);
         $rows = ImportRow::query()->where('batch_id', $batch->id)->whereIn('status', [ImportRow::STATUS_INVALID, ImportRow::STATUS_SKIPPED])->orderBy('row_number')->get();  // dimuat sebelum respons dikirim (konteks sekolah masih aktif)
+        $columns = ImportKinds::get($batch->type)->columns();
 
-        return $this->csv('perbaikan-'.pathinfo($batch->original_filename, PATHINFO_FILENAME).'.csv', function ($out) use ($rows): void {
-            fputcsv($out, [...self::COLUMNS, 'kesalahan'], escape: '');
+        return $this->csv('perbaikan-'.pathinfo($batch->original_filename, PATHINFO_FILENAME).'.csv', function ($out) use ($rows, $columns): void {
+            fputcsv($out, [...$columns, 'kesalahan'], escape: '');
             foreach ($rows as $row) {
-                $values = array_map(fn (string $c) => self::safeCell($row->payload[$c] ?? null), self::COLUMNS);
+                $values = array_map(fn (string $c) => self::safeCell($row->payload[$c] ?? null), $columns);
                 $messages = implode('; ', array_map(fn (array $e) => $e['message'], $row->errors));
                 fputcsv($out, [...$values, $messages], escape: '');
             }
         });
     }
 
-    public function template(): StreamedResponse
+    /** Templat CSV; `?type=` students (bawaan), teachers, atau teaching_schedule. */
+    public function template(Request $request): StreamedResponse
     {
-        return $this->csv('templat-impor-siswa.csv', function ($out): void {
-            fputcsv($out, self::COLUMNS, escape: '');
-            fputcsv($out, ['1001', '0012345678', 'Ahmad Rizky', '2012-05-01', '7A'], escape: '');
-            fputcsv($out, ['1002', '', 'Bunga Lestari', '', ''], escape: '');
+        $type = $request->query('type', ImportKinds::STUDENTS);
+        $known = [ImportKinds::STUDENTS, ImportKinds::TEACHERS, ImportKinds::TEACHING_SCHEDULE];
+        if (! is_string($type) || ! in_array($type, $known, true)) {
+            throw ValidationException::withMessages(['type' => 'Jenis impor tidak dikenal.']);
+        }
+        $kind = ImportKinds::get($type);
+
+        return $this->csv($kind->templateFilename(), function ($out) use ($kind): void {
+            fputcsv($out, $kind->columns(), escape: '');
+            foreach ($kind->templateRows() as $row) {
+                fputcsv($out, $row, escape: '');
+            }
         });
     }
 
@@ -148,6 +181,7 @@ final class StudentImportController extends Controller
     {
         return [
             'id' => $batch->id,
+            'type' => $batch->type,
             'status' => $batch->status,
             'original_filename' => $batch->original_filename,
             'total_rows' => $batch->total_rows,

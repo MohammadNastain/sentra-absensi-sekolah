@@ -17,6 +17,7 @@ use App\Http\Controllers\School\CredentialController;
 use App\Http\Controllers\School\DeviceController;
 use App\Http\Controllers\School\ExportController;
 use App\Http\Controllers\School\HolidayController;
+use App\Http\Controllers\School\ImportController;
 use App\Http\Controllers\School\InvitationController;
 use App\Http\Controllers\School\LeaveRequestController;
 use App\Http\Controllers\School\MemberController;
@@ -25,8 +26,9 @@ use App\Http\Controllers\School\ScheduleController;
 use App\Http\Controllers\School\SchoolClassController;
 use App\Http\Controllers\School\SchoolProfileController;
 use App\Http\Controllers\School\StudentController;
-use App\Http\Controllers\School\StudentImportController;
+use App\Http\Controllers\School\SubjectController;
 use App\Http\Controllers\School\TeacherController;
+use App\Http\Controllers\School\TeachingSlotController;
 use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\RejectRememberMe;
@@ -165,6 +167,24 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
     Route::patch('teachers/{teacher}', [TeacherController::class, 'update'])->whereUuid('teacher')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teachers.update');
 
+    Route::get('subjects', [SubjectController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('subjects.index');
+    Route::post('subjects', [SubjectController::class, 'store'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('subjects.store');
+    Route::patch('subjects/{subject}', [SubjectController::class, 'update'])->whereUuid('subject')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('subjects.update');
+    Route::delete('subjects/{subject}', [SubjectController::class, 'destroy'])->whereUuid('subject')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('subjects.destroy');
+
+    Route::get('teaching-slots', [TeachingSlotController::class, 'index'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('teaching-slots.index');
+    Route::post('teaching-slots', [TeachingSlotController::class, 'store'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teaching-slots.store');
+    Route::patch('teaching-slots/{slot}', [TeachingSlotController::class, 'update'])->whereUuid('slot')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teaching-slots.update');
+    Route::delete('teaching-slots/{slot}', [TeachingSlotController::class, 'destroy'])->whereUuid('slot')
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teaching-slots.destroy');
+
     Route::get('classes', [SchoolClassController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('classes.index');
     Route::post('classes', [SchoolClassController::class, 'store'])
@@ -213,19 +233,23 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
     Route::post('devices/{device}/revoke', [DeviceController::class, 'revoke'])->whereUuid('device')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesManage))->name('devices.revoke');
 
-    Route::get('imports', [StudentImportController::class, 'index'])
+    Route::get('imports', [ImportController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.index');
-    Route::post('imports/students', [StudentImportController::class, 'store'])
+    Route::post('imports/students', [ImportController::class, 'storeStudents'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.store');
-    Route::get('imports/template', [StudentImportController::class, 'template'])
+    Route::post('imports/teachers', [ImportController::class, 'storeTeachers'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('imports.store-teachers');
+    Route::post('imports/teaching-schedule', [ImportController::class, 'storeTeachingSchedule'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('imports.store-teaching-schedule');
+    Route::get('imports/template', [ImportController::class, 'template'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.template');
-    Route::get('imports/{import}', [StudentImportController::class, 'show'])->whereUuid('import')
+    Route::get('imports/{import}', [ImportController::class, 'show'])->whereUuid('import')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.show');
-    Route::get('imports/{import}/rows', [StudentImportController::class, 'rows'])->whereUuid('import')
+    Route::get('imports/{import}/rows', [ImportController::class, 'rows'])->whereUuid('import')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.rows');
-    Route::get('imports/{import}/failed-rows', [StudentImportController::class, 'failedRows'])->whereUuid('import')
+    Route::get('imports/{import}/failed-rows', [ImportController::class, 'failedRows'])->whereUuid('import')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.failed-rows');
-    Route::post('imports/{import}/commit', [StudentImportController::class, 'commit'])->whereUuid('import')
+    Route::post('imports/{import}/commit', [ImportController::class, 'commit'])->whereUuid('import')
         ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.commit');
 
     Route::get('holidays', [HolidayController::class, 'index'])

@@ -1,11 +1,11 @@
 "use client";
 
 import type { Schemas } from "@sentra/api-client";
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Dialog } from "@/components/Dialog";
 import { Pager } from "@/components/Pager";
-import { FormAlert, PrimaryButton, SecondaryButton, SelectField, TextField } from "@/components/ui";
+import { IconEdit, IconPlus, IconUpload } from "@/components/icons";
+import { FormAlert, LinkButton, PageHeader, PrimaryButton, RowButton, SecondaryButton, SelectField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { fetchAll } from "@/lib/fetch-all";
@@ -104,20 +104,22 @@ export default function StudentsPage() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">Siswa</h1>
-        {canManage ? (
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/schools/${code}/students/import`}
-              className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-400"
-            >
-              Impor dari file
-            </Link>
-            <PrimaryButton onClick={() => setAction({ kind: "create" })}>Tambah siswa</PrimaryButton>
-          </div>
-        ) : null}
-      </div>
+      <PageHeader
+        title="Siswa"
+        description="Data siswa dan penempatan kelasnya. Impor dari file untuk memasukkan banyak siswa sekaligus."
+        actions={
+          canManage ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <LinkButton href={`/schools/${code}/students/import`} icon={<IconUpload width={18} height={18} />}>
+                Impor dari file
+              </LinkButton>
+              <PrimaryButton icon={<IconPlus width={18} height={18} />} onClick={() => setAction({ kind: "create" })}>
+                Tambah siswa
+              </PrimaryButton>
+            </div>
+          ) : undefined
+        }
+      />
 
       <form
         noValidate
@@ -204,29 +206,20 @@ export default function StudentsPage() {
                   <td className="px-4 py-3">
                     <div className="flex gap-3">
                       {canManage ? (
-                        <button
-                          type="button"
-                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-                          onClick={() => setAction({ kind: "edit", student })}
-                        >
+                        <RowButton icon={<IconEdit width={14} height={14} />}
+                          onClick={() => setAction({ kind: "edit", student })}>
                           Ubah
-                        </button>
+                        </RowButton>
                       ) : null}
-                      <button
-                        type="button"
-                        className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-                        onClick={() => setAction({ kind: "class", student })}
-                      >
+                      <RowButton
+                        onClick={() => setAction({ kind: "class", student })}>
                         {canManage ? "Kelas" : "Riwayat kelas"}
-                      </button>
+                      </RowButton>
                       {canCards && student.status === "active" ? (
-                        <button
-                          type="button"
-                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-                          onClick={() => setAction({ kind: "cards", student })}
-                        >
+                        <RowButton
+                          onClick={() => setAction({ kind: "cards", student })}>
                           Kartu QR
-                        </button>
+                        </RowButton>
                       ) : null}
                     </div>
                   </td>
