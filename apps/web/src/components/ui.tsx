@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/AppShell";
-import { IconCheck, IconClock, IconShield, IconUsers } from "@/components/icons";
+import { IconArrowLeft, IconCheck, IconClock, IconInbox, IconShield, IconUsers } from "@/components/icons";
 import { LogoStage } from "@/components/LogoStage";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -228,33 +228,153 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
+type ButtonSize = "sm" | "md";
+
+const SIZE: Record<ButtonSize, string> = {
+  md: "px-4 py-2.5 text-sm",
+  sm: "px-3 py-1.5 text-[13px]",
+};
+
+const PRIMARY =
+  "bg-gradient-to-b from-brand-600 to-brand-800 text-white shadow-sm shadow-brand-900/20 hover:-translate-y-0.5 hover:shadow-md";
+const SECONDARY =
+  "border border-zinc-200 bg-white text-zinc-700 shadow-sm hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-brand-500 dark:hover:bg-zinc-800";
+const SOFT =
+  "border border-brand-200/70 bg-brand-50 text-brand-800 hover:border-brand-300 hover:bg-brand-100 dark:border-brand-800/60 dark:bg-brand-950/50 dark:text-brand-200 dark:hover:bg-brand-900/60";
+
 export function PrimaryButton({
   pending,
+  icon,
+  size = "md",
   children,
   ...button
-}: { pending?: boolean; children: ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+}: { pending?: boolean; icon?: ReactNode; size?: ButtonSize; children: ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
-      {...button}
-      disabled={pending || button.disabled}
-      className={`${BUTTON_BASE} bg-gradient-to-b from-brand-600 to-brand-800 px-4 py-2.5 text-sm text-white shadow-sm shadow-brand-900/20 hover:-translate-y-0.5 hover:shadow-md`}
-    >
-      {pending ? "Memproses…" : children}
+    <button {...button} disabled={pending || button.disabled} className={`${BUTTON_BASE} ${SIZE[size]} ${PRIMARY}`}>
+      {pending ? (
+        "Memproses…"
+      ) : (
+        <>
+          {icon}
+          {children}
+        </>
+      )}
     </button>
   );
 }
 
 export function SecondaryButton({
+  icon,
+  size = "md",
   children,
   ...button
-}: { children: ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+}: { icon?: ReactNode; size?: ButtonSize; children: ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
-      {...button}
-      className={`${BUTTON_BASE} border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800`}
-    >
+    <button {...button} className={`${BUTTON_BASE} ${SIZE[size]} ${SECONDARY}`}>
+      {icon}
       {children}
     </button>
+  );
+}
+
+/** Tautan yang tampil sebagai tombol (navigasi), dalam tiga gaya: utama, sekunder, dan lembut. */
+export function LinkButton({
+  href,
+  variant = "secondary",
+  size = "md",
+  icon,
+  download,
+  children,
+}: {
+  href: string;
+  variant?: "primary" | "secondary" | "soft";
+  size?: ButtonSize;
+  icon?: ReactNode;
+  /** Tautan unduhan (berkas dari API): memakai <a> biasa agar tidak diproses router. */
+  download?: boolean;
+  children: ReactNode;
+}) {
+  const tone = variant === "primary" ? PRIMARY : variant === "soft" ? SOFT : SECONDARY;
+  const className = `${BUTTON_BASE} ${SIZE[size]} ${tone}`;
+  const content = (
+    <>
+      {icon}
+      {children}
+    </>
+  );
+  return download ? (
+    <a href={href} className={className}>
+      {content}
+    </a>
+  ) : (
+    <Link href={href} className={className}>
+      {content}
+    </Link>
+  );
+}
+
+/** Tombol kembali ke halaman induk: panah dan label, gaya sekunder kecil. */
+export function BackLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <LinkButton href={href} size="sm" icon={<IconArrowLeft width={16} height={16} />}>
+      {children}
+    </LinkButton>
+  );
+}
+
+const ROW_TONE = {
+  default:
+    "border-brand-200/70 bg-brand-50 text-brand-800 hover:border-brand-300 hover:bg-brand-100 dark:border-brand-800/60 dark:bg-brand-950/50 dark:text-brand-200 dark:hover:bg-brand-900/60",
+  danger:
+    "border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-950/70",
+} as const;
+
+const ROW_BASE =
+  "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100";
+
+/** Tombol aksi kecil di dalam baris tabel atau kartu (Ubah, Hapus, Nonaktifkan, dan sejenisnya). */
+export function RowButton({
+  tone = "default",
+  icon,
+  children,
+  ...button
+}: { tone?: keyof typeof ROW_TONE; icon?: ReactNode; children: ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button type="button" {...button} className={`${ROW_BASE} ${ROW_TONE[tone]}`}>
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+/** Tautan aksi kecil di baris tabel, tampilannya sama dengan RowButton. */
+export function RowLink({ href, icon, children }: { href: string; icon?: ReactNode; children: ReactNode }) {
+  return (
+    <Link href={href} className={`${ROW_BASE} ${ROW_TONE.default}`}>
+      {icon}
+      {children}
+    </Link>
+  );
+}
+
+/** Wadah barisan tombol aksi pada sel tabel. */
+export function RowActions({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap items-center gap-1.5">{children}</div>;
+}
+
+/** Keadaan kosong: ikon, judul, keterangan, dan satu aksi opsional. */
+export function EmptyState({ icon, title, description, action }: { icon?: ReactNode; title: string; description?: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-zinc-300 bg-white/60 px-6 py-10 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
+      <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300">
+        {icon ?? <IconInbox width={24} height={24} />}
+      </span>
+      <div>
+        <p className="font-semibold text-zinc-900 dark:text-zinc-100">{title}</p>
+        {description ? <p className="mx-auto mt-1 max-w-md text-sm text-zinc-600 dark:text-zinc-400">{description}</p> : null}
+      </div>
+      {action}
+    </div>
   );
 }
 

@@ -4,7 +4,8 @@ import type { Schemas } from "@sentra/api-client";
 import { useCallback, useEffect, useState } from "react";
 import { Dialog } from "@/components/Dialog";
 import { Pager } from "@/components/Pager";
-import { FormAlert, PrimaryButton, SecondaryButton, TextField } from "@/components/ui";
+import { IconEdit, IconTrash } from "@/components/icons";
+import { FormAlert, PrimaryButton, RowButton, SecondaryButton, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
@@ -86,21 +87,15 @@ export default function HolidaysPage() {
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{rangeLabel(holiday)}</td>
                   {canManage ? (
                     <td className="px-4 py-3">
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-                          onClick={() => setAction({ kind: "edit", holiday })}
-                        >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <RowButton icon={<IconEdit width={14} height={14} />}
+                          onClick={() => setAction({ kind: "edit", holiday })}>
                           Ubah
-                        </button>
-                        <button
-                          type="button"
-                          className="font-medium text-red-700 hover:underline dark:text-red-400"
-                          onClick={() => setAction({ kind: "delete", holiday })}
-                        >
+                        </RowButton>
+                        <RowButton tone="danger" icon={<IconTrash width={14} height={14} />}
+                          onClick={() => setAction({ kind: "delete", holiday })}>
                           Hapus
-                        </button>
+                        </RowButton>
                       </div>
                     </td>
                   ) : null}

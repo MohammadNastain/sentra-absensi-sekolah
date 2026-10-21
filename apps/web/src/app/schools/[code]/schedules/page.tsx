@@ -3,7 +3,8 @@
 import type { Schemas } from "@sentra/api-client";
 import { useCallback, useEffect, useState } from "react";
 import { Dialog } from "@/components/Dialog";
-import { FormAlert, PrimaryButton, SecondaryButton, SelectField, TextField } from "@/components/ui";
+import { IconEdit } from "@/components/icons";
+import { FormAlert, PrimaryButton, RowButton, SecondaryButton, SelectField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { fetchAll } from "@/lib/fetch-all";
@@ -178,17 +179,14 @@ export default function SchedulesPage() {
                   {canManage ? (
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-x-3 gap-y-1">
-                        <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-400" onClick={() => setEditing(version)}>
+                        <RowButton icon={<IconEdit width={14} height={14} />} onClick={() => setEditing(version)}>
                           Ubah
-                        </button>
-                        <button
-                          type="button"
+                        </RowButton>
+                        <RowButton
                           disabled={toggling === key}
-                          className="font-medium text-brand-700 hover:underline disabled:opacity-50 dark:text-brand-400"
-                          onClick={() => void toggleActive(version)}
-                        >
+                          onClick={() => void toggleActive(version)}>
                           {sample.is_active ? "Nonaktifkan" : "Aktifkan"}
-                        </button>
+                        </RowButton>
                       </div>
                     </td>
                   ) : null}

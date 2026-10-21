@@ -3,7 +3,8 @@
 import type { Schemas } from "@sentra/api-client";
 import { useCallback, useEffect, useState } from "react";
 import { Dialog } from "@/components/Dialog";
-import { FormAlert, PrimaryButton, SecondaryButton, TextField } from "@/components/ui";
+import { IconEdit } from "@/components/icons";
+import { FormAlert, PrimaryButton, RowButton, SecondaryButton, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { fetchAll } from "@/lib/fetch-all";
@@ -86,22 +87,16 @@ export default function AcademicYearsPage() {
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{year.is_active ? "Aktif" : "Tidak aktif"}</td>
                   {canManage ? (
                     <td className="px-4 py-3">
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-                          onClick={() => setAction({ kind: "edit", year })}
-                        >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <RowButton icon={<IconEdit width={14} height={14} />}
+                          onClick={() => setAction({ kind: "edit", year })}>
                           Ubah
-                        </button>
+                        </RowButton>
                         {!year.is_active ? (
-                          <button
-                            type="button"
-                            className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-                            onClick={() => setAction({ kind: "activate", year })}
-                          >
+                          <RowButton
+                            onClick={() => setAction({ kind: "activate", year })}>
                             Aktifkan
-                          </button>
+                          </RowButton>
                         ) : null}
                       </div>
                     </td>

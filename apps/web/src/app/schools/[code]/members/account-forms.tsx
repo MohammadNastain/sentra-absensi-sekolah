@@ -2,7 +2,7 @@
 
 import type { Schemas } from "@sentra/api-client";
 import { useState } from "react";
-import { FormAlert, PrimaryButton, SecondaryButton, TextField } from "@/components/ui";
+import { FormAlert, PrimaryButton, RowButton, SecondaryButton, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, type FormFailure } from "@/lib/errors";
 import { ROLE_LABELS } from "@/lib/school-options";
@@ -136,9 +136,9 @@ export function CreateAccountForm({ code, onCancel, onCreated }: { code: string;
           hint="Minimal 10 karakter. Sudah diisi otomatis; boleh diganti."
           required
         />
-        <button type="button" className="mt-1 text-sm font-medium text-brand-700 hover:underline dark:text-brand-400" onClick={() => setPassword(generatePassword())}>
+        <RowButton onClick={() => setPassword(generatePassword())}>
           Buat password acak baru
-        </button>
+        </RowButton>
       </div>
       <fieldset>
         <legend className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Jabatan</legend>
@@ -231,9 +231,9 @@ export function SetPasswordForm({ code, member, onCancel }: { code: string; memb
           hint="Minimal 10 karakter. Serahkan langsung ke pemilik akun."
           required
         />
-        <button type="button" className="mt-1 text-sm font-medium text-brand-700 hover:underline dark:text-brand-400" onClick={() => setPassword(generatePassword())}>
+        <RowButton onClick={() => setPassword(generatePassword())}>
           Buat password acak baru
-        </button>
+        </RowButton>
       </div>
       <div className="flex justify-end gap-2">
         <SecondaryButton type="button" onClick={onCancel}>

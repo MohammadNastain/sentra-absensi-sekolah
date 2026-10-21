@@ -7,7 +7,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { usePlatformNav } from "@/lib/platform-nav";
 import { SchoolForm, type SchoolFormPayload } from "@/components/SchoolForm";
-import { FormAlert, PrimaryButton, StatusBadge, TextAreaField, TextField } from "@/components/ui";
+import { BackLink, FormAlert, PrimaryButton, StatusBadge, TextAreaField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { redirectFor, useMe } from "@/lib/use-me";
@@ -49,9 +49,9 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
 
   return (
     <AppShell context="Platform" nav={nav} userLabel={me?.email} userName={me?.name}>
-      <Link href="/platform" className="text-sm text-brand-700 hover:underline dark:text-brand-400">
-        ← Semua sekolah
-      </Link>
+      <div>
+        <BackLink href="/platform">Semua sekolah</BackLink>
+      </div>
 
       {loadError ? <FormAlert>{loadError}</FormAlert> : null}
       {!school && !loadError ? (

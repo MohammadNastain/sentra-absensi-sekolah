@@ -330,7 +330,16 @@ column students.status text nullable=NO
 column students.status_changed_at timestamp with time zone nullable=YES
 column students.student_number text nullable=NO
 column students.updated_at timestamp with time zone nullable=NO
+column subjects.created_at timestamp with time zone nullable=NO
+column subjects.id uuid nullable=NO
+column subjects.name text nullable=NO
+column subjects.school_id uuid nullable=NO
+column subjects.updated_at timestamp with time zone nullable=NO
+column teacher_subjects.school_id uuid nullable=NO
+column teacher_subjects.subject_id uuid nullable=NO
+column teacher_subjects.teacher_id uuid nullable=NO
 column teachers.created_at timestamp with time zone nullable=NO
+column teachers.email text nullable=YES
 column teachers.employee_number text nullable=YES
 column teachers.full_name text nullable=NO
 column teachers.id uuid nullable=NO
@@ -338,6 +347,17 @@ column teachers.membership_id uuid nullable=YES
 column teachers.school_id uuid nullable=NO
 column teachers.status text nullable=NO
 column teachers.updated_at timestamp with time zone nullable=NO
+column teaching_slots.class_id uuid nullable=NO
+column teaching_slots.created_at timestamp with time zone nullable=NO
+column teaching_slots.created_by_user_id uuid nullable=YES
+column teaching_slots.day_of_week smallint nullable=NO
+column teaching_slots.end_time time without time zone nullable=NO
+column teaching_slots.id uuid nullable=NO
+column teaching_slots.school_id uuid nullable=NO
+column teaching_slots.start_time time without time zone nullable=NO
+column teaching_slots.subject_id uuid nullable=NO
+column teaching_slots.teacher_id uuid nullable=NO
+column teaching_slots.updated_at timestamp with time zone nullable=NO
 column users.created_at timestamp with time zone nullable=NO
 column users.email USER-DEFINED nullable=NO
 column users.email_verified_at timestamp with time zone nullable=YES
@@ -387,7 +407,13 @@ index CREATE INDEX school_memberships_user_id_index ON public.school_memberships
 index CREATE INDEX student_credentials_student_index ON public.student_credentials USING btree (school_id, student_id, issued_at DESC)
 index CREATE INDEX students_full_name_trgm ON public.students USING gin (full_name gin_trgm_ops)
 index CREATE INDEX students_school_name_index ON public.students USING btree (school_id, full_name)
+index CREATE INDEX teacher_subjects_subject_index ON public.teacher_subjects USING btree (school_id, subject_id)
 index CREATE INDEX teachers_school_name_index ON public.teachers USING btree (school_id, full_name)
+index CREATE INDEX teaching_slots_class_index ON public.teaching_slots USING btree (school_id, class_id, day_of_week, start_time)
+index CREATE INDEX teaching_slots_class_no_overlap ON public.teaching_slots USING gist (school_id, class_id, day_of_week, tsrange(('2000-01-01'::date + start_time), ('2000-01-01'::date + end_time)))
+index CREATE INDEX teaching_slots_subject_index ON public.teaching_slots USING btree (school_id, subject_id)
+index CREATE INDEX teaching_slots_teacher_index ON public.teaching_slots USING btree (school_id, teacher_id, day_of_week, start_time)
+index CREATE INDEX teaching_slots_teacher_no_overlap ON public.teaching_slots USING gist (school_id, teacher_id, day_of_week, tsrange(('2000-01-01'::date + start_time), ('2000-01-01'::date + end_time)))
 index CREATE UNIQUE INDEX academic_years_one_active ON public.academic_years USING btree (school_id) WHERE is_active
 index CREATE UNIQUE INDEX academic_years_pkey ON public.academic_years USING btree (id)
 index CREATE UNIQUE INDEX academic_years_school_id_id_unique ON public.academic_years USING btree (school_id, id)
@@ -460,10 +486,16 @@ index CREATE UNIQUE INDEX students_nisn_unique ON public.students USING btree (s
 index CREATE UNIQUE INDEX students_pkey ON public.students USING btree (id)
 index CREATE UNIQUE INDEX students_school_id_id_unique ON public.students USING btree (school_id, id)
 index CREATE UNIQUE INDEX students_school_number_unique ON public.students USING btree (school_id, student_number)
+index CREATE UNIQUE INDEX subjects_pkey ON public.subjects USING btree (id)
+index CREATE UNIQUE INDEX subjects_school_id_id_unique ON public.subjects USING btree (school_id, id)
+index CREATE UNIQUE INDEX subjects_school_name_unique ON public.subjects USING btree (school_id, lower(name))
+index CREATE UNIQUE INDEX teacher_subjects_pkey ON public.teacher_subjects USING btree (teacher_id, subject_id)
 index CREATE UNIQUE INDEX teachers_employee_number_unique ON public.teachers USING btree (school_id, employee_number) WHERE (employee_number IS NOT NULL)
 index CREATE UNIQUE INDEX teachers_membership_id_unique ON public.teachers USING btree (membership_id)
 index CREATE UNIQUE INDEX teachers_pkey ON public.teachers USING btree (id)
 index CREATE UNIQUE INDEX teachers_school_id_id_unique ON public.teachers USING btree (school_id, id)
+index CREATE UNIQUE INDEX teaching_slots_pkey ON public.teaching_slots USING btree (id)
+index CREATE UNIQUE INDEX teaching_slots_school_id_id_unique ON public.teaching_slots USING btree (school_id, id)
 index CREATE UNIQUE INDEX users_email_unique ON public.users USING btree (email)
 index CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)
 constraint academic_years academic_years_created_at_not_null NOT NULL created_at
@@ -745,7 +777,7 @@ constraint import_batches import_batches_status_check CHECK ((status = ANY (ARRA
 constraint import_batches import_batches_status_not_null NOT NULL status
 constraint import_batches import_batches_storage_path_not_null NOT NULL storage_path
 constraint import_batches import_batches_total_rows_not_null NOT NULL total_rows
-constraint import_batches import_batches_type_check CHECK ((type = 'students'::text))
+constraint import_batches import_batches_type_check CHECK ((type = ANY (ARRAY['students'::text, 'teachers'::text, 'teaching_schedule'::text])))
 constraint import_batches import_batches_type_not_null NOT NULL type
 constraint import_batches import_batches_updated_at_not_null NOT NULL updated_at
 constraint import_batches import_batches_uploaded_by_user_id_fkey FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id)
@@ -922,7 +954,24 @@ constraint students students_status_check CHECK ((status = ANY (ARRAY['active'::
 constraint students students_status_not_null NOT NULL status
 constraint students students_student_number_not_null NOT NULL student_number
 constraint students students_updated_at_not_null NOT NULL updated_at
+constraint subjects subjects_created_at_not_null NOT NULL created_at
+constraint subjects subjects_id_not_null NOT NULL id
+constraint subjects subjects_name_not_blank CHECK ((btrim(name) <> ''::text))
+constraint subjects subjects_name_not_null NOT NULL name
+constraint subjects subjects_pkey PRIMARY KEY (id)
+constraint subjects subjects_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint subjects subjects_school_id_id_unique UNIQUE (school_id, id)
+constraint subjects subjects_school_id_not_null NOT NULL school_id
+constraint subjects subjects_updated_at_not_null NOT NULL updated_at
+constraint teacher_subjects teacher_subjects_pkey PRIMARY KEY (teacher_id, subject_id)
+constraint teacher_subjects teacher_subjects_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint teacher_subjects teacher_subjects_school_id_not_null NOT NULL school_id
+constraint teacher_subjects teacher_subjects_subject_fk FOREIGN KEY (school_id, subject_id) REFERENCES subjects(school_id, id) ON DELETE CASCADE
+constraint teacher_subjects teacher_subjects_subject_id_not_null NOT NULL subject_id
+constraint teacher_subjects teacher_subjects_teacher_fk FOREIGN KEY (school_id, teacher_id) REFERENCES teachers(school_id, id) ON DELETE CASCADE
+constraint teacher_subjects teacher_subjects_teacher_id_not_null NOT NULL teacher_id
 constraint teachers teachers_created_at_not_null NOT NULL created_at
+constraint teachers teachers_email_not_blank CHECK (((email IS NULL) OR (btrim(email) <> ''::text)))
 constraint teachers teachers_employee_number_not_blank CHECK (((employee_number IS NULL) OR (btrim(employee_number) <> ''::text)))
 constraint teachers teachers_full_name_not_blank CHECK ((btrim(full_name) <> ''::text))
 constraint teachers teachers_full_name_not_null NOT NULL full_name
@@ -936,6 +985,27 @@ constraint teachers teachers_school_id_not_null NOT NULL school_id
 constraint teachers teachers_status_check CHECK ((status = ANY (ARRAY['active'::text, 'inactive'::text])))
 constraint teachers teachers_status_not_null NOT NULL status
 constraint teachers teachers_updated_at_not_null NOT NULL updated_at
+constraint teaching_slots teaching_slots_class_fk FOREIGN KEY (school_id, class_id) REFERENCES classes(school_id, id)
+constraint teaching_slots teaching_slots_class_id_not_null NOT NULL class_id
+constraint teaching_slots teaching_slots_class_no_overlap EXCLUDE USING gist (school_id WITH =, class_id WITH =, day_of_week WITH =, tsrange(('2000-01-01'::date + start_time), ('2000-01-01'::date + end_time)) WITH &&)
+constraint teaching_slots teaching_slots_created_at_not_null NOT NULL created_at
+constraint teaching_slots teaching_slots_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+constraint teaching_slots teaching_slots_day_check CHECK (((day_of_week >= 1) AND (day_of_week <= 7)))
+constraint teaching_slots teaching_slots_day_of_week_not_null NOT NULL day_of_week
+constraint teaching_slots teaching_slots_end_time_not_null NOT NULL end_time
+constraint teaching_slots teaching_slots_id_not_null NOT NULL id
+constraint teaching_slots teaching_slots_pkey PRIMARY KEY (id)
+constraint teaching_slots teaching_slots_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint teaching_slots teaching_slots_school_id_id_unique UNIQUE (school_id, id)
+constraint teaching_slots teaching_slots_school_id_not_null NOT NULL school_id
+constraint teaching_slots teaching_slots_start_time_not_null NOT NULL start_time
+constraint teaching_slots teaching_slots_subject_fk FOREIGN KEY (school_id, subject_id) REFERENCES subjects(school_id, id)
+constraint teaching_slots teaching_slots_subject_id_not_null NOT NULL subject_id
+constraint teaching_slots teaching_slots_teacher_fk FOREIGN KEY (school_id, teacher_id) REFERENCES teachers(school_id, id)
+constraint teaching_slots teaching_slots_teacher_id_not_null NOT NULL teacher_id
+constraint teaching_slots teaching_slots_teacher_no_overlap EXCLUDE USING gist (school_id WITH =, teacher_id WITH =, day_of_week WITH =, tsrange(('2000-01-01'::date + start_time), ('2000-01-01'::date + end_time)) WITH &&)
+constraint teaching_slots teaching_slots_time_check CHECK ((end_time > start_time))
+constraint teaching_slots teaching_slots_updated_at_not_null NOT NULL updated_at
 constraint users users_created_at_not_null NOT NULL created_at
 constraint users users_email_not_null NOT NULL email
 constraint users users_email_unique UNIQUE (email)
@@ -984,7 +1054,10 @@ policy school_memberships own_memberships_read SELECT (user_id = app_user_id())
 policy school_memberships tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy student_credentials tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy students tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy subjects tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy teacher_subjects tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy teachers tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy teaching_slots tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 rls academic_years enabled=true forced=true
 rls assist_sessions enabled=true forced=true
 rls attendance_adjustments enabled=true forced=true
@@ -1014,5 +1087,8 @@ rls school_memberships enabled=true forced=true
 rls schools enabled=false forced=false
 rls student_credentials enabled=true forced=true
 rls students enabled=true forced=true
+rls subjects enabled=true forced=true
+rls teacher_subjects enabled=true forced=true
 rls teachers enabled=true forced=true
+rls teaching_slots enabled=true forced=true
 rls users enabled=false forced=false

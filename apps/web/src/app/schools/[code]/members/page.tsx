@@ -5,7 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Dialog } from "@/components/Dialog";
 import { Pager } from "@/components/Pager";
 import { RoleCheckboxes } from "@/components/RoleCheckboxes";
-import { FormAlert, PrimaryButton, SecondaryButton, SelectField, TextAreaField } from "@/components/ui";
+import { IconBan, IconEdit, IconMail, IconTrash } from "@/components/icons";
+import { FormAlert, PrimaryButton, RowButton, SecondaryButton, SelectField, TextAreaField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
@@ -207,40 +208,36 @@ function RowActions({
   onAction: (action: PendingAction) => void;
 }) {
   if (member.status === "ended") return <span className="text-zinc-400">-</span>;
-  const link = "font-medium text-brand-700 hover:underline dark:text-brand-400";
   return (
-    <div className="flex flex-wrap gap-x-3 gap-y-1">
+    <div className="flex flex-wrap items-center gap-1.5">
       {!isSelf ? (
-        <button type="button" className={link} onClick={() => onAction({ kind: "roles", member })}>
+        <RowButton icon={<IconEdit width={14} height={14} />} onClick={() => onAction({ kind: "roles", member })}>
           Ubah peran
-        </button>
+        </RowButton>
       ) : null}
       {member.status === "active" && !isSelf ? (
-        <button type="button" className={link} onClick={() => onAction({ kind: "password", member })}>
+        <RowButton icon={<IconEdit width={14} height={14} />} onClick={() => onAction({ kind: "password", member })}>
           Atur password
-        </button>
+        </RowButton>
       ) : null}
       {member.status === "active" && !isSelf ? (
-        <button type="button" className={link} onClick={() => onAction({ kind: "reset", member })}>
+        <RowButton icon={<IconMail width={14} height={14} />} onClick={() => onAction({ kind: "reset", member })}>
           Kirim reset password
-        </button>
+        </RowButton>
       ) : null}
       {member.status === "active" ? (
-        <button type="button" className={link} onClick={() => onAction({ kind: "suspend", member })}>
+        <RowButton icon={<IconBan width={14} height={14} />} onClick={() => onAction({ kind: "suspend", member })}>
           Tangguhkan
-        </button>
+        </RowButton>
       ) : (
-        <button type="button" className={link} onClick={() => onAction({ kind: "reactivate", member })}>
+        <RowButton onClick={() => onAction({ kind: "reactivate", member })}>
           Aktifkan
-        </button>
+        </RowButton>
       )}
-      <button
-        type="button"
-        className="font-medium text-red-700 hover:underline dark:text-red-400"
-        onClick={() => onAction({ kind: "end", member })}
-      >
+      <RowButton tone="danger" icon={<IconTrash width={14} height={14} />}
+        onClick={() => onAction({ kind: "end", member })}>
         Akhiri
-      </button>
+      </RowButton>
     </div>
   );
 }

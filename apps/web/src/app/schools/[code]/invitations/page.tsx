@@ -4,7 +4,8 @@ import type { Schemas } from "@sentra/api-client";
 import { useCallback, useEffect, useState } from "react";
 import { Pager } from "@/components/Pager";
 import { RoleCheckboxes } from "@/components/RoleCheckboxes";
-import { FormAlert, PrimaryButton, SelectField, TextField } from "@/components/ui";
+import { IconTrash } from "@/components/icons";
+import { FormAlert, PrimaryButton, RowButton, SelectField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
@@ -154,23 +155,17 @@ export default function InvitationsPage() {
                   </td>
                   <td className="px-4 py-3">
                     {invitation.status === "pending" ? (
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <RowButton
                           disabled={busyId === invitation.id}
-                          onClick={() => rowAction(invitation, "resend")}
-                          className="font-medium text-brand-700 hover:underline disabled:opacity-60 dark:text-brand-400"
-                        >
+                          onClick={() => rowAction(invitation, "resend")}>
                           Kirim ulang
-                        </button>
-                        <button
-                          type="button"
+                        </RowButton>
+                        <RowButton tone="danger" icon={<IconTrash width={14} height={14} />}
                           disabled={busyId === invitation.id}
-                          onClick={() => rowAction(invitation, "revoke")}
-                          className="font-medium text-red-700 hover:underline disabled:opacity-60 dark:text-red-400"
-                        >
+                          onClick={() => rowAction(invitation, "revoke")}>
                           Cabut
-                        </button>
+                        </RowButton>
                       </div>
                     ) : (
                       <span className="text-zinc-400">-</span>

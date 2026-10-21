@@ -8,6 +8,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TeacherRequest;
 use App\Models\School;
+use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +25,7 @@ final class TeacherController extends Controller
         $search = $request->query('q');
 
         $page = Teacher::query()
-            ->with('membership.user')
+            ->with(['membership.user', 'subjects'])
             ->when($this->scope->isRestricted(), fn ($q) => $q->where('membership_id', $this->tenant->membership()->id))
             ->when(is_string($status) && $status !== '', fn ($q) => $q->where('status', $status))
             ->when(is_string($search) && trim($search) !== '', function ($q) use ($search) {
@@ -44,7 +45,7 @@ final class TeacherController extends Controller
 
     public function show(School $school, string $teacher): JsonResponse
     {
-        $found = Teacher::query()->with('membership.user')->find($teacher) ?? throw new NotFoundHttpException;
+        $found = Teacher::query()->with(['membership.user', 'subjects'])->find($teacher) ?? throw new NotFoundHttpException;
         // Pengguna yang dibatasi hanya melihat data gurunya sendiri.
         if ($this->scope->isRestricted() && $found->membership_id !== $this->tenant->membership()->id) {
             throw new NotFoundHttpException;
@@ -55,18 +56,18 @@ final class TeacherController extends Controller
 
     public function store(TeacherRequest $request): JsonResponse
     {
-        /** @var array{full_name: string, employee_number?: string|null, membership_id?: string|null} $data */
+        /** @var array{full_name: string, employee_number?: string|null, email?: string|null, membership_id?: string|null, subject_ids?: list<string>} $data */
         $data = $request->validated();
         $created = $this->teachers->create($this->tenant->school(), $this->actor($request), $data);
 
-        return response()->json(['data' => self::present($created->load('membership.user'))], 201);
+        return response()->json(['data' => self::present($created->load(['membership.user', 'subjects']))], 201);
     }
 
     public function update(TeacherRequest $request, School $school, string $teacher): JsonResponse
     {
         $updated = $this->teachers->update($this->tenant->school(), $this->actor($request), $teacher, $request->validated());
 
-        return response()->json(['data' => self::present($updated->load('membership.user'))]);
+        return response()->json(['data' => self::present($updated->load(['membership.user', 'subjects']))]);
     }
 
     private function actor(Request $request): User
@@ -88,6 +89,8 @@ final class TeacherController extends Controller
             'id' => $teacher->id,
             'full_name' => $teacher->full_name,
             'employee_number' => $teacher->employee_number,
+            'email' => $teacher->email,
+            'subjects' => $teacher->subjects->sortBy('name')->map(fn (Subject $s) => ['id' => $s->id, 'name' => $s->name])->values()->all(),
             'status' => $teacher->status,
             'account' => $membership === null ? null : [
                 'membership_id' => $membership->id,

@@ -20,6 +20,7 @@ Menu yang tampil mengikuti izin peran Anda. Bila sebuah menu tidak ada, peran An
 2. **Guru** → tambahkan guru (wali kelas perlu akun; kirim **Undangan** dari menu Undangan).
 3. **Kelas** → buat kelas per tahun ajaran dan pilih wali kelas.
 4. **Siswa** → tambah satu per satu atau **impor CSV/XLSX**. Impor memvalidasi dulu; hanya baris yang valid yang disimpan, dan Anda melihat hasil per baris sebelum menyimpan.
+4a. **Guru, mapel, dan jadwal mengajar** (opsional, data rujukan) → **Guru → Impor guru** (kolom `nomor_pegawai`, `nama_lengkap`, `mapel` dipisah titik koma, `email`; guru baru tidak otomatis punya akun login). Lalu **Jadwal mengajar → Impor jadwal** (kolom `hari`, `jam_mulai`, `jam_selesai`, `kelas`, `mapel`, `guru`; guru dicocokkan lewat nomor pegawai atau nama lengkap) atau tambah jam satu per satu. Satu guru atau satu kelas tidak boleh punya dua pelajaran di jam yang beririsan; baris yang bentrok ditolak saat impor. Impor guru dulu sebelum jadwal, dan buat kelasnya lebih dulu. Mapel yang belum ada dibuat otomatis; kelola daftarnya di **Jadwal mengajar → Mata pelajaran**. Jadwal mengajar belum dipakai untuk absensi per jam pelajaran.
 5. **Jadwal** → jam masuk, batas terlambat, jam pulang per hari. **Libur** → hari libur nasional/sekolah. Cek hasilnya di **Kalender**.
 6. **Perangkat** → pasang terminal (lihat §4).
 7. **Kredensial** siswa (QR/kartu RFID) → cetak atau terbitkan dari halaman siswa. Kartu hilang: cabut lalu terbitkan yang baru; yang lama langsung tidak berlaku.

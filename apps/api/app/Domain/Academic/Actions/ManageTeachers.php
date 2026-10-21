@@ -8,6 +8,7 @@ use App\Domain\Tenancy\DatabaseContext;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Teacher;
+use App\Models\TeachingSlot;
 use App\Models\User;
 use App\Support\Http\ApiProblem;
 use Illuminate\Database\QueryException;
@@ -26,7 +27,7 @@ final class ManageTeachers
     ) {}
 
     /**
-     * @param  array{full_name: string, employee_number?: string|null, membership_id?: string|null}  $data
+     * @param  array{full_name: string, employee_number?: string|null, email?: string|null, membership_id?: string|null, subject_ids?: list<string>}  $data
      */
     public function create(School $school, User $actor, array $data): Teacher
     {
@@ -35,10 +36,12 @@ final class ManageTeachers
                 'school_id' => $school->id,
                 'full_name' => $data['full_name'],
                 'employee_number' => $data['employee_number'] ?? null,
+                'email' => $data['email'] ?? null,
                 'membership_id' => $data['membership_id'] ?? null,
                 'status' => Teacher::STATUS_ACTIVE,
             ]);
             $teacher->refresh();
+            $this->syncSubjects($school, $teacher, $data['subject_ids'] ?? []);
 
             $this->audit->record('school.teacher.created', $school->id, 'teacher', $teacher->id, null, $this->snapshot($teacher), null, $actor);
 
@@ -47,7 +50,7 @@ final class ManageTeachers
     }
 
     /**
-     * @param  array<string, mixed>  $changes  subset dari full_name, employee_number, membership_id, status
+     * @param  array<string, mixed>  $changes  subset dari full_name, employee_number, email, subject_ids, membership_id, status
      */
     public function update(School $school, User $actor, string $teacherId, array $changes): Teacher
     {
@@ -58,15 +61,37 @@ final class ManageTeachers
 
             if (($changes['status'] ?? null) === Teacher::STATUS_INACTIVE && $teacher->status === Teacher::STATUS_ACTIVE) {
                 $this->assertNotActiveHomeroom($school, $teacher);
+                $this->assertNoTeachingSlots($teacher);
             }
 
+            $subjectIds = $changes['subject_ids'] ?? null;
+            unset($changes['subject_ids']);
             $teacher->fill($changes)->save();
             $teacher->refresh();
+            if (is_array($subjectIds)) {
+                $this->syncSubjects($school, $teacher, array_values(array_map(strval(...), $subjectIds)));
+            }
 
             $this->audit->record('school.teacher.updated', $school->id, 'teacher', $teacher->id, $before, $this->snapshot($teacher), null, $actor);
 
             return $teacher;
         });
+    }
+
+    /**
+     * @param  list<string>  $subjectIds
+     */
+    private function syncSubjects(School $school, Teacher $teacher, array $subjectIds): void
+    {
+        $teacher->subjects()->syncWithPivotValues($subjectIds, ['school_id' => $school->id]);
+        $teacher->unsetRelation('subjects');
+    }
+
+    private function assertNoTeachingSlots(Teacher $teacher): void
+    {
+        if (TeachingSlot::query()->where('teacher_id', $teacher->id)->exists()) {
+            throw ApiProblem::invalidStateTransition('Guru ini masih punya jadwal mengajar. Hapus atau alihkan jadwalnya terlebih dahulu.');
+        }
     }
 
     private function assertNotActiveHomeroom(School $school, Teacher $teacher): void
@@ -105,6 +130,7 @@ final class ManageTeachers
         return [
             'full_name' => $teacher->full_name,
             'employee_number' => $teacher->employee_number,
+            'subject_ids' => $teacher->subjects()->pluck('subjects.id')->sort()->values()->all(),
             'membership_id' => $teacher->membership_id,
             'status' => $teacher->status,
         ];

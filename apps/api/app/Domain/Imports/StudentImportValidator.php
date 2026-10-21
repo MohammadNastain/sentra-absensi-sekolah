@@ -3,8 +3,10 @@
 namespace App\Domain\Imports;
 
 use App\Models\AcademicYear;
+use App\Models\ClassEnrollment;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -12,7 +14,7 @@ use Illuminate\Support\Facades\Validator;
  * memakai himpunan di memori (bukan satu query per baris). Kolom `kelas` opsional dan dicocokkan dengan nama
  * kelas aktif pada tahun ajaran aktif; siswa ditempatkan mulai tanggal mulai tahun ajaran itu.
  */
-final class StudentImportValidator
+final class StudentImportValidator implements ImportRowProcessor
 {
     public const REQUIRED_HEADERS = ['nomor_induk', 'nama_lengkap'];
 
@@ -45,9 +47,26 @@ final class StudentImportValidator
         }
     }
 
-    public function enrollStartDate(): ?string
+    public function persist(array $normalized, User $actor): void
     {
-        return $this->enrollStartDate;
+        /** @var array{student_number: string, nisn: string|null, full_name: string, date_of_birth: string|null, class_id: string|null} $normalized */
+        $student = Student::query()->create([
+            'school_id' => $this->schoolId,
+            'student_number' => $normalized['student_number'],
+            'nisn' => $normalized['nisn'],
+            'full_name' => $normalized['full_name'],
+            'date_of_birth' => $normalized['date_of_birth'],
+            'status' => Student::STATUS_ACTIVE,
+        ]);
+        if ($normalized['class_id'] !== null && $this->enrollStartDate !== null) {
+            ClassEnrollment::query()->create([
+                'school_id' => $this->schoolId,
+                'student_id' => $student->id,
+                'class_id' => $normalized['class_id'],
+                'start_date' => $this->enrollStartDate,
+                'created_by_user_id' => $actor->id,
+            ]);
+        }
     }
 
     /**

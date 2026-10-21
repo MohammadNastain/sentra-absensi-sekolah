@@ -3,7 +3,8 @@
 import type { Schemas } from "@sentra/api-client";
 import { useCallback, useEffect, useState } from "react";
 import { Dialog } from "@/components/Dialog";
-import { FormAlert, PrimaryButton, SecondaryButton, TextAreaField, TextField } from "@/components/ui";
+import { IconEdit, IconTrash } from "@/components/icons";
+import { FormAlert, PrimaryButton, RowButton, SecondaryButton, TextAreaField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
@@ -122,32 +123,23 @@ export default function DevicesPage() {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-3">
                         {device.status !== "revoked" ? (
-                          <button
-                            type="button"
-                            className="font-medium text-brand-700 hover:underline dark:text-brand-400"
-                            onClick={() => setAction({ kind: "rename", device })}
-                          >
+                          <RowButton icon={<IconEdit width={14} height={14} />}
+                            onClick={() => setAction({ kind: "rename", device })}>
                             Ubah nama
-                          </button>
+                          </RowButton>
                         ) : null}
                         {device.status === "pending_pairing" ? (
-                          <button
-                            type="button"
+                          <RowButton
                             disabled={renewing === device.id}
-                            className="font-medium text-brand-700 hover:underline disabled:opacity-60 dark:text-brand-400"
-                            onClick={() => void renew(device)}
-                          >
+                            onClick={() => void renew(device)}>
                             Kode baru
-                          </button>
+                          </RowButton>
                         ) : null}
                         {device.status !== "revoked" ? (
-                          <button
-                            type="button"
-                            className="font-medium text-red-700 hover:underline dark:text-red-400"
-                            onClick={() => setAction({ kind: "revoke", device })}
-                          >
+                          <RowButton tone="danger" icon={<IconTrash width={14} height={14} />}
+                            onClick={() => setAction({ kind: "revoke", device })}>
                             Cabut
-                          </button>
+                          </RowButton>
                         ) : null}
                       </div>
                     </td>

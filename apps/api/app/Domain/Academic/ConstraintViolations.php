@@ -20,6 +20,7 @@ final class ConstraintViolations
         'students_nisn_unique' => 'NISN sudah dipakai siswa lain.',
         'teachers_employee_number_unique' => 'Nomor pegawai sudah dipakai guru lain.',
         'teachers_membership_id_unique' => 'Akun ini sudah ditautkan ke guru lain.',
+        'subjects_school_name_unique' => 'Nama mapel sudah dipakai.',
     ];
 
     public static function translate(QueryException $e): ?ApiProblem
@@ -33,6 +34,14 @@ final class ConstraintViolations
 
         if ($state === '23P01' && str_contains($message, 'schedules_no_overlap')) {
             return ApiProblem::scheduleConflict('Sudah ada jadwal aktif yang tumpang tindih untuk cakupan dan hari yang sama.');
+        }
+
+        if ($state === '23P01' && str_contains($message, 'teaching_slots_teacher_no_overlap')) {
+            return ApiProblem::scheduleConflict('Guru sudah mengajar pada jam yang beririsan di hari tersebut.');
+        }
+
+        if ($state === '23P01' && str_contains($message, 'teaching_slots_class_no_overlap')) {
+            return ApiProblem::scheduleConflict('Kelas sudah punya pelajaran pada jam yang beririsan di hari tersebut.');
         }
 
         if ($state === '23P01' && str_contains($message, 'class_enrollments_no_overlap')) {

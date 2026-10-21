@@ -48,6 +48,7 @@ export function buildSchoolNav(code: string, pathname: string, can: (permission:
     nav.push({ href: `${base}/academic-years`, label: "Tahun ajaran", icon: IconBook, group: group("Akademik"), active: on("academic-years") });
     nav.push({ href: `${base}/classes`, label: "Kelas", icon: IconBuilding, group: group("Akademik"), active: on("classes") });
     nav.push({ href: `${base}/teachers`, label: "Guru", icon: IconGrad, group: group("Akademik"), active: on("teachers") });
+    nav.push({ href: `${base}/teaching`, label: "Jadwal mengajar", icon: IconClock, group: group("Akademik"), active: on("teaching") });
   }
   if (can("school.students.view")) {
     nav.push({ href: `${base}/students`, label: "Siswa", icon: IconUsers, group: group("Akademik"), active: on("students") });

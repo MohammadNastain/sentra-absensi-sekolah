@@ -88,7 +88,7 @@ export default function PlatformPage() {
                   <td className="px-4 py-3">
                     <Link
                       href={`/platform/${school.code}`}
-                      className="font-medium text-brand-700 hover:underline dark:text-brand-400"
+                      className="font-semibold text-zinc-900 underline-offset-4 transition hover:text-brand-700 hover:underline dark:text-zinc-100 dark:hover:text-brand-300"
                     >
                       {school.name}
                     </Link>

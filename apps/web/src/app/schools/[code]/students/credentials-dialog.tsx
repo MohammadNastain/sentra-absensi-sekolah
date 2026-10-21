@@ -4,7 +4,8 @@ import type { Schemas } from "@sentra/api-client";
 import { useCallback, useEffect, useState } from "react";
 import { CardSheet, type CardData } from "@/components/QrCard";
 import { downloadCard } from "@/lib/qr-download";
-import { FormAlert, PrimaryButton, SecondaryButton, TextAreaField, TextField } from "@/components/ui";
+import { IconBan, IconTrash } from "@/components/icons";
+import { FormAlert, PrimaryButton, RowButton, SecondaryButton, TextAreaField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
 import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
@@ -133,19 +134,19 @@ export function CredentialsPanel({
               </div>
               <div className="flex gap-3">
                 {row.status === "active" ? (
-                  <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-400" onClick={() => setAction({ kind: "block", credential: row })}>
+                  <RowButton tone="danger" icon={<IconBan width={14} height={14} />} onClick={() => setAction({ kind: "block", credential: row })}>
                     Blokir
-                  </button>
+                  </RowButton>
                 ) : null}
                 {row.status === "blocked" ? (
-                  <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-400" onClick={() => setAction({ kind: "unblock", credential: row })}>
+                  <RowButton onClick={() => setAction({ kind: "unblock", credential: row })}>
                     Buka blokir
-                  </button>
+                  </RowButton>
                 ) : null}
                 {row.status !== "revoked" ? (
-                  <button type="button" className="font-medium text-red-700 hover:underline dark:text-red-400" onClick={() => setAction({ kind: "revoke", credential: row })}>
+                  <RowButton tone="danger" icon={<IconTrash width={14} height={14} />} onClick={() => setAction({ kind: "revoke", credential: row })}>
                     Cabut
-                  </button>
+                  </RowButton>
                 ) : null}
               </div>
             </li>

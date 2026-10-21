@@ -39,3 +39,8 @@ playwright-report/
 
 # Cadangan basis data lokal
 backups/
+
+# Data dummy hasil generator (scripts/generate-siswa-dummy.mjs)
+siswa-dummy.csv
+guru-dummy.csv
+jadwal-dummy.csv
