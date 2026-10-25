@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Authorization;
 
+use App\Domain\Entitlement\Feature;
 use App\Domain\Identity\Permission;
 
 /**
@@ -192,5 +193,47 @@ final class RouteMatrix
             'GET api/v1/schools/{school}/classes/{schoolClass}' => Permission::SchoolAcademicView,
             'PATCH api/v1/schools/{school}/classes/{schoolClass}' => Permission::SchoolAcademicManage,
         ];
+    }
+
+    /**
+     * Fitur yang digerbang pada rute sekolah (ADR 0009 §5), dinyatakan sebagai aturan atas URI agar tidak
+     * menyalin 110 baris; null = rute inti yang tidak bisa dimatikan (profil, anggota, undangan, audit). Beberapa fitur
+     * berarti "salah satu"; pengendali memeriksa jenis yang tepat. Tes T08 mencocokkan ini dengan middleware rute.
+     *
+     * @return list<Feature>|null
+     */
+    public static function featuresFor(string $key): ?array
+    {
+        [, $uri] = explode(' ', $key, 2);
+        $path = preg_replace('#^api/v1/schools/\{school\}/?#', '', $uri);
+        $parts = explode('/', (string) $path);
+        $head = $parts[0];
+
+        return match (true) {
+            $head === '', in_array($head, ['members', 'invitations', 'audit-logs'], true) => null,
+            $head === 'academic-years' => [Feature::AcademicYears],
+            $head === 'teachers' => [Feature::Teachers],
+            $head === 'subjects' => [Feature::AcademicSubjects],
+            $head === 'teaching-slots' => [Feature::AcademicTeachingSchedule],
+            $head === 'classes' && ($parts[2] ?? null) === 'credentials' => [Feature::AttendanceScanQr],
+            $head === 'classes' => [Feature::AcademicClasses],
+            $head === 'students' && ($parts[2] ?? null) === 'credentials' => match ($parts[3] ?? null) {
+                'qr' => [Feature::AttendanceScanQr],
+                'rfid' => [Feature::AttendanceScanRfid],
+                default => [Feature::Attendance],
+            },
+            $head === 'students' => [Feature::Students],
+            $head === 'imports' => match ($parts[1] ?? null) {
+                'students' => [Feature::Students],
+                'teachers' => [Feature::Teachers],
+                'teaching-schedule' => [Feature::AcademicTeachingSchedule],
+                default => [Feature::Students, Feature::Teachers, Feature::AcademicTeachingSchedule],
+            },
+            $head === 'attendance' && in_array($parts[1] ?? null, ['corrections', 'correction-requests'], true) => [Feature::AttendanceCorrections],
+            in_array($head, ['reports', 'exports'], true) => [Feature::AttendanceReports],
+            $head === 'leave-requests' => [Feature::AttendanceLeave],
+            in_array($head, ['credentials', 'devices', 'holidays', 'schedules', 'calendar', 'attendance'], true) => [Feature::Attendance],
+            default => throw new \LogicException("Rute sekolah tanpa aturan fitur di RouteMatrix::featuresFor: {$key}"),
+        };
     }
 }

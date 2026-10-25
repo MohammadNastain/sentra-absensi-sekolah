@@ -66,8 +66,8 @@ it('sentra_app tidak bisa mengubah registri fitur dan paket', function (string $
 ]);
 
 it('sekolah hanya melihat langganan dan override miliknya; platform melihat semua', function () {
-    $a = createSchoolRow('sekolah-a');
-    $b = createSchoolRow('sekolah-b');
+    $a = createSchoolRow('sekolah-a', null);
+    $b = createSchoolRow('sekolah-b', null);
     subscribeAsPlatform($a, 'basic');
     subscribeAsPlatform($b, 'premium');
     $this->dbContext()->runAsPlatform(fn () => DB::table('school_feature_overrides')->insert([
@@ -88,7 +88,7 @@ it('sekolah hanya melihat langganan dan override miliknya; platform melihat semu
 });
 
 it('sekolah tidak bisa menulis langganan atau override, termasuk miliknya sendiri', function () {
-    $a = createSchoolRow('sekolah-a');
+    $a = createSchoolRow('sekolah-a', null);
     subscribeAsPlatform($a, 'basic');
 
     $this->inSchool($a, function () use ($a) {
@@ -103,7 +103,7 @@ it('sekolah tidak bisa menulis langganan atau override, termasuk miliknya sendir
 });
 
 it('hanya satu langganan berjalan per sekolah, riwayat ended boleh banyak', function () {
-    $a = createSchoolRow('sekolah-a');
+    $a = createSchoolRow('sekolah-a', null);
     subscribeAsPlatform($a, 'basic', 'ended');
     subscribeAsPlatform($a, 'standard', 'ended');
     subscribeAsPlatform($a, 'premium');
@@ -112,7 +112,7 @@ it('hanya satu langganan berjalan per sekolah, riwayat ended boleh banyak', func
 });
 
 it('override hanya satu per sekolah dan fitur', function () {
-    $a = createSchoolRow('sekolah-a');
+    $a = createSchoolRow('sekolah-a', null);
     $insert = fn (string $effect) => $this->dbContext()->runAsPlatform(fn () => DB::table('school_feature_overrides')->insert([
         'school_id' => $a, 'feature_code' => 'teachers', 'effect' => $effect,
     ]));
@@ -123,7 +123,7 @@ it('override hanya satu per sekolah dan fitur', function () {
 });
 
 it('efek override hanya grant atau revoke', function () {
-    $a = createSchoolRow('sekolah-a');
+    $a = createSchoolRow('sekolah-a', null);
 
     expect(fn () => $this->dbContext()->runAsPlatform(fn () => DB::table('school_feature_overrides')->insert([
         'school_id' => $a, 'feature_code' => 'students', 'effect' => 'maybe',
@@ -131,8 +131,8 @@ it('efek override hanya grant atau revoke', function () {
 });
 
 it('resolver: paket Standard + override; sekolah tanpa langganan tidak punya fitur', function () {
-    $a = createSchoolRow('sekolah-a');
-    $none = createSchoolRow('sekolah-tanpa-paket');
+    $a = createSchoolRow('sekolah-a', null);
+    $none = createSchoolRow('sekolah-tanpa-paket', null);
     subscribeAsPlatform($a, 'basic');
     $this->dbContext()->runAsPlatform(fn () => DB::table('school_feature_overrides')->insert([
         ['school_id' => $a, 'feature_code' => 'attendance.leave', 'effect' => 'grant'],
@@ -147,8 +147,8 @@ it('resolver: paket Standard + override; sekolah tanpa langganan tidak punya fit
 });
 
 it('resolver: sekolah A tidak dipengaruhi paket sekolah B', function () {
-    $a = createSchoolRow('sekolah-a');
-    $b = createSchoolRow('sekolah-b');
+    $a = createSchoolRow('sekolah-a', null);
+    $b = createSchoolRow('sekolah-b', null);
     subscribeAsPlatform($a, 'basic');
     subscribeAsPlatform($b, 'standard');
     $resolver = app(EntitlementResolver::class);

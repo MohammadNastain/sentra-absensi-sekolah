@@ -1,9 +1,11 @@
 <?php
 
+use App\Domain\Entitlement\Feature;
 use App\Domain\Identity\Permission;
 use App\Domain\Identity\Role;
 use App\Http\Middleware\AuthenticateDevice;
 use App\Http\Middleware\EnsurePlatformAdmin;
+use App\Http\Middleware\RequireSchoolFeature;
 use App\Http\Middleware\RequireSchoolPermission;
 use App\Http\Middleware\RequireTerminalHeader;
 use App\Http\Middleware\ResolveSchoolMembership;
@@ -80,6 +82,34 @@ it('T08: middleware setiap rute sesuai deklarasi aksesnya', function () {
     }
 });
 
+it('T08: gerbang fitur setiap rute sesuai RouteMatrix::featuresFor, dipasang sebelum izin peran', function () {
+    foreach (registeredRoutes() as $key => $route) {
+        $access = RouteMatrix::routes()[$key];
+        $middleware = routeMiddleware($route);
+        $gates = array_values(array_filter($middleware, fn (string $m) => str_starts_with($m, RequireSchoolFeature::class.':')));
+
+        $expected = match (true) {
+            $access instanceof Permission => RouteMatrix::featuresFor($key),
+            $access === 'device' => [Feature::Attendance], // seluruh grup terminal yang sudah dipasangkan memakai modul absensi
+            default => null,
+        };
+
+        if ($expected === null) {
+            expect($gates)->toBe([], "{$key} tidak boleh digerbang fitur (rute inti/non-sekolah)");
+
+            continue;
+        }
+
+        $codes = implode(',', array_map(fn (Feature $f) => $f->value, $expected));
+        expect($gates)->toBe([RequireSchoolFeature::class.':'.$codes], "{$key} harus digerbang fitur {$codes}");
+
+        if ($access instanceof Permission) {
+            $permission = RequireSchoolPermission::class.':'.$access->value;
+            expect(array_search($gates[0], $middleware, true))->toBeLessThan(array_search($permission, $middleware, true), "{$key}: gerbang fitur harus sebelum izin");
+        }
+    }
+});
+
 /**
  * @return array<string, array{0: string, 1: Permission}>
  */
@@ -136,6 +166,27 @@ it('T09: setiap peran mendapat akses sesuai izinnya pada setiap rute sekolah', f
         $response->assertForbidden()->assertJsonPath('code', 'PERMISSION_DENIED');
     }
 })->with(fn () => array_values(schoolRoutes()))->with(Role::cases());
+
+it('T09: fitur dicabut → 403 FEATURE_NOT_ENTITLED walau perannya berhak; rute inti tidak terpengaruh', function (string $key, Permission $permission) {
+    [$method, $uri] = explode(' ', $key, 2);
+    $school = School::factory()->create(['code' => 'sekolah-a']);
+    $user = User::factory()->create();
+    $this->addMember($school, $user, [Role::SchoolAdmin]);
+    $features = RouteMatrix::featuresFor($key);
+
+    // Rute inti dicoba saat SEMUA fitur dicabut; rute lain saat fitur miliknya dicabut.
+    foreach ($features ?? Feature::cases() as $feature) {
+        setFeatureOverride($school->id, $feature->value, 'revoke');
+    }
+
+    $response = $this->actingAs($user)->json($method, '/'.concreteUri($uri));
+
+    if ($features === null) {
+        expect($response->json('code'))->not->toBe('FEATURE_NOT_ENTITLED', "{$key} adalah rute inti");
+    } else {
+        $response->assertForbidden()->assertJsonPath('code', 'FEATURE_NOT_ENTITLED');
+    }
+})->with(fn () => array_values(schoolRoutes()));
 
 it('T09: rute yang butuh login → 401 tanpa login', function (string $key) {
     [$method, $uri] = explode(' ', $key, 2);

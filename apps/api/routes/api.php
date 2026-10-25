@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Entitlement\Feature;
 use App\Domain\Identity\Permission;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\MeController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\School\TeachingSlotController;
 use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\RejectRememberMe;
+use App\Http\Middleware\RequireSchoolFeature;
 use App\Http\Middleware\RequireSchoolPermission;
 use App\Http\Middleware\ResolveSchoolMembership;
 use Illuminate\Support\Facades\Route;
@@ -150,200 +152,200 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
 
     // Data akademik (Tahap 2A). Tanpa DELETE: data inti dinonaktifkan/diarsipkan, tidak dihapus.
     Route::get('academic-years', [AcademicYearController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('academic-years.index');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicYears), RequireSchoolPermission::using(Permission::SchoolAcademicView)])->name('academic-years.index');
     Route::post('academic-years', [AcademicYearController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('academic-years.store');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicYears), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('academic-years.store');
     Route::get('academic-years/{academicYear}', [AcademicYearController::class, 'show'])->whereUuid('academicYear')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('academic-years.show');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicYears), RequireSchoolPermission::using(Permission::SchoolAcademicView)])->name('academic-years.show');
     Route::patch('academic-years/{academicYear}', [AcademicYearController::class, 'update'])->whereUuid('academicYear')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('academic-years.update');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicYears), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('academic-years.update');
     Route::post('academic-years/{academicYear}/activate', [AcademicYearController::class, 'activate'])->whereUuid('academicYear')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('academic-years.activate');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicYears), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('academic-years.activate');
 
     Route::get('teachers', [TeacherController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('teachers.index');
+        ->middleware([RequireSchoolFeature::using(Feature::Teachers), RequireSchoolPermission::using(Permission::SchoolAcademicView)])->name('teachers.index');
     Route::post('teachers', [TeacherController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teachers.store');
+        ->middleware([RequireSchoolFeature::using(Feature::Teachers), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('teachers.store');
     Route::get('teachers/{teacher}', [TeacherController::class, 'show'])->whereUuid('teacher')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('teachers.show');
+        ->middleware([RequireSchoolFeature::using(Feature::Teachers), RequireSchoolPermission::using(Permission::SchoolAcademicView)])->name('teachers.show');
     Route::patch('teachers/{teacher}', [TeacherController::class, 'update'])->whereUuid('teacher')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teachers.update');
+        ->middleware([RequireSchoolFeature::using(Feature::Teachers), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('teachers.update');
 
     Route::get('subjects', [SubjectController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('subjects.index');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicSubjects), RequireSchoolPermission::using(Permission::SchoolAcademicView)])->name('subjects.index');
     Route::post('subjects', [SubjectController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('subjects.store');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicSubjects), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('subjects.store');
     Route::patch('subjects/{subject}', [SubjectController::class, 'update'])->whereUuid('subject')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('subjects.update');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicSubjects), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('subjects.update');
     Route::delete('subjects/{subject}', [SubjectController::class, 'destroy'])->whereUuid('subject')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('subjects.destroy');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicSubjects), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('subjects.destroy');
 
     Route::get('teaching-slots', [TeachingSlotController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('teaching-slots.index');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolAcademicView)])->name('teaching-slots.index');
     Route::post('teaching-slots', [TeachingSlotController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teaching-slots.store');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('teaching-slots.store');
     Route::patch('teaching-slots/{slot}', [TeachingSlotController::class, 'update'])->whereUuid('slot')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teaching-slots.update');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('teaching-slots.update');
     Route::delete('teaching-slots/{slot}', [TeachingSlotController::class, 'destroy'])->whereUuid('slot')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('teaching-slots.destroy');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('teaching-slots.destroy');
 
     Route::get('classes', [SchoolClassController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('classes.index');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicClasses), RequireSchoolPermission::using(Permission::SchoolAcademicView)])->name('classes.index');
     Route::post('classes', [SchoolClassController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('classes.store');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicClasses), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('classes.store');
     Route::get('classes/{schoolClass}', [SchoolClassController::class, 'show'])->whereUuid('schoolClass')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicView))->name('classes.show');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicClasses), RequireSchoolPermission::using(Permission::SchoolAcademicView)])->name('classes.show');
     Route::patch('classes/{schoolClass}', [SchoolClassController::class, 'update'])->whereUuid('schoolClass')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('classes.update');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicClasses), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('classes.update');
 
     Route::get('students', [StudentController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsView))->name('students.index');
+        ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsView)])->name('students.index');
     Route::post('students', [StudentController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('students.store');
+        ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('students.store');
     Route::get('students/{student}', [StudentController::class, 'show'])->whereUuid('student')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsView))->name('students.show');
+        ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsView)])->name('students.show');
     Route::patch('students/{student}', [StudentController::class, 'update'])->whereUuid('student')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('students.update');
+        ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('students.update');
     Route::post('students/{student}/enrollments', [StudentController::class, 'enroll'])->whereUuid('student')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('students.enroll');
+        ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('students.enroll');
 
     Route::get('students/{student}/credentials', [CredentialController::class, 'index'])->whereUuid('student')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsView))->name('credentials.index');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolCredentialsView)])->name('credentials.index');
     Route::post('students/{student}/credentials/qr', [CredentialController::class, 'issueForStudent'])->whereUuid('student')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.issue');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceScanQr), RequireSchoolPermission::using(Permission::SchoolCredentialsManage)])->name('credentials.issue');
     Route::post('students/{student}/credentials/rfid', [CredentialController::class, 'registerRfid'])->whereUuid('student')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.register-rfid');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceScanRfid), RequireSchoolPermission::using(Permission::SchoolCredentialsManage)])->name('credentials.register-rfid');
     Route::post('classes/{schoolClass}/credentials/qr', [CredentialController::class, 'issueForClass'])->whereUuid('schoolClass')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.issue-class');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceScanQr), RequireSchoolPermission::using(Permission::SchoolCredentialsManage)])->name('credentials.issue-class');
     Route::post('credentials/{credential}/block', [CredentialController::class, 'block'])->whereUuid('credential')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.block');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolCredentialsManage)])->name('credentials.block');
     Route::post('credentials/{credential}/unblock', [CredentialController::class, 'unblock'])->whereUuid('credential')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.unblock');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolCredentialsManage)])->name('credentials.unblock');
     Route::post('credentials/{credential}/revoke', [CredentialController::class, 'revoke'])->whereUuid('credential')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolCredentialsManage))->name('credentials.revoke');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolCredentialsManage)])->name('credentials.revoke');
 
     Route::get('devices', [DeviceController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesView))->name('devices.index');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolDevicesView)])->name('devices.index');
     Route::post('devices', [DeviceController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesManage))->name('devices.store');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolDevicesManage)])->name('devices.store');
     Route::get('devices/{device}', [DeviceController::class, 'show'])->whereUuid('device')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesView))->name('devices.show');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolDevicesView)])->name('devices.show');
     Route::patch('devices/{device}', [DeviceController::class, 'update'])->whereUuid('device')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesManage))->name('devices.update');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolDevicesManage)])->name('devices.update');
     Route::post('devices/{device}/pairing-code', [DeviceController::class, 'renewPairingCode'])->whereUuid('device')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesManage))->name('devices.pairing-code');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolDevicesManage)])->name('devices.pairing-code');
     Route::post('devices/{device}/revoke', [DeviceController::class, 'revoke'])->whereUuid('device')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolDevicesManage))->name('devices.revoke');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolDevicesManage)])->name('devices.revoke');
 
     Route::get('imports', [ImportController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.index');
+        ->middleware([RequireSchoolFeature::using(Feature::Students, Feature::Teachers, Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('imports.index');
     Route::post('imports/students', [ImportController::class, 'storeStudents'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.store');
+        ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('imports.store');
     Route::post('imports/teachers', [ImportController::class, 'storeTeachers'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('imports.store-teachers');
+        ->middleware([RequireSchoolFeature::using(Feature::Teachers), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('imports.store-teachers');
     Route::post('imports/teaching-schedule', [ImportController::class, 'storeTeachingSchedule'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAcademicManage))->name('imports.store-teaching-schedule');
+        ->middleware([RequireSchoolFeature::using(Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('imports.store-teaching-schedule');
     Route::get('imports/template', [ImportController::class, 'template'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.template');
+        ->middleware([RequireSchoolFeature::using(Feature::Students, Feature::Teachers, Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('imports.template');
     Route::get('imports/{import}', [ImportController::class, 'show'])->whereUuid('import')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.show');
+        ->middleware([RequireSchoolFeature::using(Feature::Students, Feature::Teachers, Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('imports.show');
     Route::get('imports/{import}/rows', [ImportController::class, 'rows'])->whereUuid('import')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.rows');
+        ->middleware([RequireSchoolFeature::using(Feature::Students, Feature::Teachers, Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('imports.rows');
     Route::get('imports/{import}/failed-rows', [ImportController::class, 'failedRows'])->whereUuid('import')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.failed-rows');
+        ->middleware([RequireSchoolFeature::using(Feature::Students, Feature::Teachers, Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('imports.failed-rows');
     Route::post('imports/{import}/commit', [ImportController::class, 'commit'])->whereUuid('import')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolStudentsManage))->name('imports.commit');
+        ->middleware([RequireSchoolFeature::using(Feature::Students, Feature::Teachers, Feature::AcademicTeachingSchedule), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('imports.commit');
 
     Route::get('holidays', [HolidayController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleView))->name('holidays.index');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleView)])->name('holidays.index');
     Route::post('holidays', [HolidayController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleManage))->name('holidays.store');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleManage)])->name('holidays.store');
     Route::get('holidays/{holiday}', [HolidayController::class, 'show'])->whereUuid('holiday')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleView))->name('holidays.show');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleView)])->name('holidays.show');
     Route::patch('holidays/{holiday}', [HolidayController::class, 'update'])->whereUuid('holiday')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleManage))->name('holidays.update');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleManage)])->name('holidays.update');
     Route::delete('holidays/{holiday}', [HolidayController::class, 'destroy'])->whereUuid('holiday')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleManage))->name('holidays.destroy');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleManage)])->name('holidays.destroy');
     Route::get('schedules', [ScheduleController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleView))->name('schedules.index');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleView)])->name('schedules.index');
     Route::post('schedules', [ScheduleController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleManage))->name('schedules.store');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleManage)])->name('schedules.store');
     Route::get('schedules/{schedule}', [ScheduleController::class, 'show'])->whereUuid('schedule')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleView))->name('schedules.show');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleView)])->name('schedules.show');
     Route::patch('schedules/{schedule}', [ScheduleController::class, 'update'])->whereUuid('schedule')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleManage))->name('schedules.update');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleManage)])->name('schedules.update');
     Route::get('attendance/assist/students', [AttendanceController::class, 'assistStudents'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceAssist))->name('attendance.assist.students');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceAssist)])->name('attendance.assist.students');
     Route::post('attendance/assisted', [AttendanceController::class, 'assisted'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceAssist))->name('attendance.assisted');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceAssist)])->name('attendance.assisted');
     Route::get('attendance/review-queue', [AttendanceController::class, 'reviewQueue'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.review-queue');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceReview)])->name('attendance.review-queue');
     Route::post('attendance/review-queue/{event}/resolve', [AttendanceController::class, 'resolveReview'])->whereUuid('event')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.review-queue.resolve');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceReview)])->name('attendance.review-queue.resolve');
     Route::get('attendance/assist-report', [AttendanceController::class, 'assistReport'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.assist-report');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceReview)])->name('attendance.assist-report');
     Route::get('attendance/absence-settings', [AbsenceController::class, 'settings'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('attendance.absence-settings');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceView)])->name('attendance.absence-settings');
     Route::put('attendance/absence-settings', [AbsenceController::class, 'updateSettings'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolProfileUpdate))->name('attendance.absence-settings.update');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolProfileUpdate)])->name('attendance.absence-settings.update');
     Route::get('attendance/absences', [AbsenceController::class, 'pending'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceVerify))->name('attendance.absences');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceVerify)])->name('attendance.absences');
     Route::post('attendance/absences/verify', [AbsenceController::class, 'verify'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceVerify))->name('attendance.absences.verify');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceVerify)])->name('attendance.absences.verify');
     Route::post('attendance/days/{date}/disruption', [AbsenceController::class, 'markDisruption'])->where('date', '\d{4}-\d{2}-\d{2}')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.disruption');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceReview)])->name('attendance.days.disruption');
     Route::post('attendance/days/{date}/release', [AbsenceController::class, 'releaseHold'])->where('date', '\d{4}-\d{2}-\d{2}')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.days.release');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceReview)])->name('attendance.days.release');
     Route::post('attendance/corrections', [CorrectionController::class, 'apply'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrect))->name('attendance.corrections.apply');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceCorrections), RequireSchoolPermission::using(Permission::SchoolAttendanceCorrect)])->name('attendance.corrections.apply');
     Route::get('attendance/corrections/history', [CorrectionController::class, 'history'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('attendance.corrections.history');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceCorrections), RequireSchoolPermission::using(Permission::SchoolAttendanceReview)])->name('attendance.corrections.history');
     Route::get('attendance/correction-requests', [CorrectionController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.index');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceCorrections), RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest)])->name('attendance.correction-requests.index');
     Route::post('attendance/correction-requests', [CorrectionController::class, 'request'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.store');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceCorrections), RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest)])->name('attendance.correction-requests.store');
     Route::post('attendance/correction-requests/{correction}/decision', [CorrectionController::class, 'decide'])->whereUuid('correction')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrect))->name('attendance.correction-requests.decide');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceCorrections), RequireSchoolPermission::using(Permission::SchoolAttendanceCorrect)])->name('attendance.correction-requests.decide');
     Route::post('attendance/correction-requests/{correction}/cancel', [CorrectionController::class, 'cancel'])->whereUuid('correction')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest))->name('attendance.correction-requests.cancel');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceCorrections), RequireSchoolPermission::using(Permission::SchoolAttendanceCorrectionRequest)])->name('attendance.correction-requests.cancel');
     Route::get('reports/summary', [ReportController::class, 'summary'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.summary');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolAttendanceView)])->name('reports.summary');
     Route::get('reports/trend', [ReportController::class, 'trend'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.trend');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolAttendanceView)])->name('reports.trend');
     Route::get('reports/students', [ReportController::class, 'students'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.students');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolAttendanceView)])->name('reports.students');
     Route::get('reports/lateness', [ReportController::class, 'lateness'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.lateness');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolAttendanceView)])->name('reports.lateness');
     Route::get('reports/daily', [ReportController::class, 'daily'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.daily');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolAttendanceView)])->name('reports.daily');
     Route::get('reports/monthly', [ReportController::class, 'monthly'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('reports.monthly');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolAttendanceView)])->name('reports.monthly');
     Route::get('reports/events', [ReportController::class, 'events'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceReview))->name('reports.events');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolAttendanceReview)])->name('reports.events');
     Route::get('exports', [ExportController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolReportsExport))->name('exports.index');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolReportsExport)])->name('exports.index');
     Route::post('exports', [ExportController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolReportsExport))->name('exports.store');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolReportsExport)])->name('exports.store');
     Route::get('exports/{export}', [ExportController::class, 'show'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolReportsExport))->name('exports.show');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolReportsExport)])->name('exports.show');
     Route::get('exports/{export}/download', [ExportController::class, 'download'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolReportsExport))->name('exports.download');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceReports), RequireSchoolPermission::using(Permission::SchoolReportsExport)])->name('exports.download');
     Route::get('leave-requests', [LeaveRequestController::class, 'index'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.index');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceLeave), RequireSchoolPermission::using(Permission::SchoolLeaveManage)])->name('leave-requests.index');
     Route::get('leave-requests/students', [LeaveRequestController::class, 'students'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.students');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceLeave), RequireSchoolPermission::using(Permission::SchoolLeaveManage)])->name('leave-requests.students');
     Route::post('leave-requests', [LeaveRequestController::class, 'store'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.store');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceLeave), RequireSchoolPermission::using(Permission::SchoolLeaveManage)])->name('leave-requests.store');
     Route::post('leave-requests/{leave}/attachment', [LeaveRequestController::class, 'attach'])->whereUuid('leave')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.attach');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceLeave), RequireSchoolPermission::using(Permission::SchoolLeaveManage)])->name('leave-requests.attach');
     Route::get('leave-requests/{leave}/attachment', [LeaveRequestController::class, 'attachment'])->whereUuid('leave')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.attachment');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceLeave), RequireSchoolPermission::using(Permission::SchoolLeaveManage)])->name('leave-requests.attachment');
     Route::post('leave-requests/{leave}/decision', [LeaveRequestController::class, 'decide'])->whereUuid('leave')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveApprove))->name('leave-requests.decide');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceLeave), RequireSchoolPermission::using(Permission::SchoolLeaveApprove)])->name('leave-requests.decide');
     Route::post('leave-requests/{leave}/cancel', [LeaveRequestController::class, 'cancel'])->whereUuid('leave')
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolLeaveManage))->name('leave-requests.cancel');
+        ->middleware([RequireSchoolFeature::using(Feature::AttendanceLeave), RequireSchoolPermission::using(Permission::SchoolLeaveManage)])->name('leave-requests.cancel');
     Route::get('attendance/today', [AttendanceController::class, 'today'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolAttendanceView))->name('attendance.today');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolAttendanceView)])->name('attendance.today');
     Route::get('calendar', [CalendarController::class, 'show'])
-        ->middleware(RequireSchoolPermission::using(Permission::SchoolScheduleView))->name('calendar.show');
+        ->middleware([RequireSchoolFeature::using(Feature::Attendance), RequireSchoolPermission::using(Permission::SchoolScheduleView)])->name('calendar.show');
 });

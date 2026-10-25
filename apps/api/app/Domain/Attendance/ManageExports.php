@@ -97,6 +97,12 @@ final class ManageExports
     }
 
     /** Dipanggil job: membuat file, mencatat hasil atau kegagalan. */
+    /** Fitur ekspor dicabut sebelum job berjalan: tandai gagal tanpa membuat berkas. */
+    public function failForEntitlement(string $schoolId, string $id): void
+    {
+        DB::update("UPDATE export_jobs SET status = 'failed', error_message = ?, finished_at = now(), updated_at = now() WHERE school_id = ? AND id = ? AND status IN ('queued', 'running')", ['Fitur ekspor tidak lagi termasuk paket sekolah.', $schoolId, $id]);
+    }
+
     public function generate(string $schoolId, string $id): void
     {
         $job = DB::selectOne('SELECT * FROM export_jobs WHERE school_id = ? AND id = ?', [$schoolId, $id]);

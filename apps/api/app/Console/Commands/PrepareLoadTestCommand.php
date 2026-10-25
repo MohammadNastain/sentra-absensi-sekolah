@@ -74,6 +74,7 @@ final class PrepareLoadTestCommand extends Command
             'timezone' => 'Asia/Jakarta', 'status' => 'active',
         ]));
         DB::table('schools')->where('id', $school->id)->update(['device_limit' => max(1, min(50, $deviceCount))]);
+        $context->runAsPlatform(fn () => DB::table('school_subscriptions')->insert(['school_id' => $school->id, 'plan_code' => 'legacy', 'status' => 'active']));
 
         $password = bin2hex(random_bytes(12));
         $admin = User::query()->where('email', "{$code}@loadtest.test")->first()

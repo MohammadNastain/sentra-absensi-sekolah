@@ -1,9 +1,11 @@
 <?php
 
+use App\Domain\Entitlement\Feature;
 use App\Http\Controllers\Terminal\AssistController;
 use App\Http\Controllers\Terminal\TerminalController;
 use App\Http\Middleware\AuthenticateDevice;
 use App\Http\Middleware\CountScanOutcomes;
+use App\Http\Middleware\RequireSchoolFeature;
 use Illuminate\Support\Facades\Route;
 
 // --- Terminal (guard `device`, tanpa sesi/CSRF cookie; lihat AuthenticateDevice) ---
@@ -11,7 +13,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('pair', [TerminalController::class, 'pair'])
     ->middleware(['throttle:terminal-pair', 'terminal.header'])->name('terminal.pair');
 
-Route::middleware([AuthenticateDevice::class, 'throttle:terminal'])->group(function () {
+// Terminal memakai modul absensi; metode scan (QR/RFID) diperiksa lagi per scan di TerminalController (ADR 0009 §5).
+Route::middleware([AuthenticateDevice::class, RequireSchoolFeature::using(Feature::Attendance), 'throttle:terminal'])->group(function () {
     Route::get('config', [TerminalController::class, 'config'])->name('terminal.config');
     Route::post('scans', [TerminalController::class, 'scan'])->middleware(CountScanOutcomes::class)->name('terminal.scan');
     Route::get('recent', [TerminalController::class, 'recent'])->name('terminal.recent');

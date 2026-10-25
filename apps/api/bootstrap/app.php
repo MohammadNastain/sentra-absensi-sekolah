@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequireAssistSession;
+use App\Http\Middleware\RequireSchoolFeature;
 use App\Http\Middleware\RequireSchoolPermission;
 use App\Http\Middleware\RequireTerminalHeader;
 use App\Http\Middleware\ResetDatabaseContext;
@@ -37,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', EnsureUserActive::class);
         $middleware->alias([
             RequireSchoolPermission::ALIAS => RequireSchoolPermission::class,
+            RequireSchoolFeature::ALIAS => RequireSchoolFeature::class,
             EnsureEmailTransportReady::ALIAS => EnsureEmailTransportReady::class,
             RequireTerminalHeader::ALIAS => RequireTerminalHeader::class,
             'assist.session' => RequireAssistSession::class,
