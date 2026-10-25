@@ -1186,6 +1186,42 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
 
+  /platform/audit-logs:
+    get:
+      tags: [platform]
+      operationId: listPlatformAuditLogs
+      summary: "Audit platform lintas sekolah (hanya baca, append-only)"
+      description: "Hanya Super Admin. Memuat audit tingkat platform (school_id kosong); audit sekolah ada di /schools/{school}/audit-logs. Filter `school` (kode) menyaring entri milik sekolah itu."
+      parameters:
+        - name: action
+          in: query
+          description: "Awalan action, mis. `platform.entitlement`."
+          schema: { type: string }
+        - name: entity_type
+          in: query
+          schema: { type: string }
+        - name: school
+          in: query
+          description: "Kode sekolah; kode tak dikenal menghasilkan daftar kosong."
+          schema: { type: string }
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: "Halaman audit platform, terbaru lebih dulu."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AuditLog" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
   /schools/{school}/academic-years:
     get:
       tags: [school]

@@ -58,6 +58,7 @@ final class RouteMatrix
 
             // Platform
             'GET api/v1/platform/overview' => 'platform',
+            'GET api/v1/platform/audit-logs' => 'platform',
             'GET api/v1/platform/features' => 'platform',
             'GET api/v1/platform/plans' => 'platform',
             'GET api/v1/platform/schools/{school}/entitlements' => 'platform',

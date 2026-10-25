@@ -31,9 +31,20 @@ final class AuditLogController extends Controller
             ->when($filters['entity_id'] ?? null, fn ($q, $v) => $q->where('a.entity_id', $v))
             ->orderByDesc('a.created_at')
             ->orderByDesc('a.id')
-            ->select(['a.id', 'a.action', 'a.entity_type', 'a.entity_id', 'a.reason', 'a.before_value', 'a.after_value', 'a.request_id', 'a.created_at', 'a.actor_type', 'a.actor_user_id', 'u.name as actor_name'])
+            ->select(self::COLUMNS)
             ->paginate(50);
 
+        return self::respond($page);
+    }
+
+    /** Kolom yang dibaca kedua halaman audit (sekolah dan platform). */
+    public const COLUMNS = ['a.id', 'a.action', 'a.entity_type', 'a.entity_id', 'a.reason', 'a.before_value', 'a.after_value', 'a.request_id', 'a.created_at', 'a.actor_type', 'a.actor_user_id', 'u.name as actor_name'];
+
+    /**
+     * @param  \Illuminate\Pagination\LengthAwarePaginator<int, mixed>  $page
+     */
+    public static function respond($page): JsonResponse
+    {
         $data = [];
         foreach ($page->items() as $item) {
             /** @var array<string, mixed> $row */
