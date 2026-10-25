@@ -15,6 +15,7 @@ const MESSAGES: Record<string, string> = {
   EMAIL_NOT_CONFIGURED: "Layanan email belum dikonfigurasi di lingkungan ini.",
   INVITATION_UNAVAILABLE: "Undangan ini tidak berlaku lagi. Minta admin sekolah mengirim undangan baru.",
   LOGIN_REQUIRED: "Email ini sudah terdaftar. Masuk terlebih dahulu untuk menerima undangan.",
+  PASSWORD_CHANGE_REQUIRED: "Ganti kata sandi awal Anda dahulu sebelum melanjutkan.",
   INVITATION_EMAIL_MISMATCH: "Undangan ini ditujukan untuk email lain. Masuk dengan email yang diundang.",
 };
 

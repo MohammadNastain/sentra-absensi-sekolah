@@ -17,6 +17,8 @@ export function redirectFor(error: unknown): string | null {
       return "/";
     case "PLATFORM_ADMIN_REQUIRED":
       return "/";
+    case "PASSWORD_CHANGE_REQUIRED":
+      return "/account/password";
     default:
       return null;
   }

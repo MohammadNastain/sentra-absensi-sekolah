@@ -4409,10 +4409,11 @@ components:
         initial_password: { type: string }
     Student:
       type: object
-      required: [id, student_number, nisn, full_name, date_of_birth, status, current_class]
+      required: [id, student_number, nisn, full_name, date_of_birth, status, has_account, current_class]
       properties:
         id: { type: string, format: uuid }
         student_number: { type: string, description: "Nomor induk siswa (NIS), unik per sekolah." }
+        has_account: { type: boolean, description: "True bila siswa sudah punya akun login (LMS)." }
         nisn: { type: [string, "null"], description: "10 digit angka." }
         full_name: { type: string }
         date_of_birth: { type: [string, "null"], format: date }

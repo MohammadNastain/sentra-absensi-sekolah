@@ -11,6 +11,7 @@ import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { fetchAll } from "@/lib/fetch-all";
 import { formatDate } from "@/lib/format";
 import { useSchool } from "../school-context";
+import { AccountSheet, type AccountResult } from "./account-sheet";
 import { CredentialsPanel } from "./credentials-dialog";
 
 type Student = Schemas["Student"];
@@ -22,7 +23,8 @@ type PendingAction =
   | { kind: "create" }
   | { kind: "edit"; student: Student }
   | { kind: "class"; student: Student }
-  | { kind: "cards"; student: Student };
+  | { kind: "cards"; student: Student }
+  | { kind: "reset"; student: Student };
 
 const STATUS_LABEL: Record<Schemas["StudentStatus"], string> = {
   active: "Aktif",
@@ -38,7 +40,7 @@ function todayLocal(): string {
 }
 
 export default function StudentsPage() {
-  const { code, can } = useSchool();
+  const { code, can, profile } = useSchool();
   const canManage = can("school.students.manage");
   const canCards = can("school.credentials.manage");
   const [students, setStudents] = useState<Student[] | null>(null);
@@ -50,6 +52,10 @@ export default function StudentsPage() {
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [action, setAction] = useState<PendingAction | null>(null);
+  // Hasil pembuatan akun (memuat sandi awal); hanya ada di memori sampai ditutup.
+  const [sheet, setSheet] = useState<AccountResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [accountError, setAccountError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -79,6 +85,39 @@ export default function StudentsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- memuat data daftar
     void load();
   }, [load]);
+
+  /** Membuat akun untuk siswa terpilih (satu) atau seluruh kelas yang difilter; sandi awal tampil sekali di lembar. */
+  async function createAccounts(body: { student_ids: string[] } | { class_id: string }) {
+    setBusy(true);
+    setAccountError(null);
+    const outcome = await attempt(async () => {
+      await api.ensureCsrfCookie();
+      return api.POST("/schools/{school}/students/accounts", { params: { path: { school: code } }, body });
+    });
+    setBusy(false);
+    if (!outcome.ok) {
+      setAccountError(outcome.failure.message);
+      return;
+    }
+    if (outcome.result.data) setSheet(outcome.result.data.data);
+    void load();
+  }
+
+  async function resetPassword(student: Student) {
+    setBusy(true);
+    setAccountError(null);
+    const outcome = await attempt(async () => {
+      await api.ensureCsrfCookie();
+      return api.POST("/schools/{school}/students/{student}/account/password", { params: { path: { school: code, student: student.id } } });
+    });
+    setBusy(false);
+    setAction(null);
+    if (!outcome.ok) {
+      setAccountError(outcome.failure.message);
+      return;
+    }
+    if (outcome.result.data) setSheet({ created: [outcome.result.data.data], skipped: [] });
+  }
 
   // Kelas aktif dipakai untuk filter dan untuk penempatan. Boleh gagal: daftar siswa tetap tampil.
   // Peran tanpa izin melihat data akademik tidak memuatnya (filter kelas disembunyikan).
@@ -113,6 +152,11 @@ export default function StudentsPage() {
               <LinkButton href={`/schools/${code}/students/import`} icon={<IconUpload width={18} height={18} />}>
                 Impor dari file
               </LinkButton>
+              {classId ? (
+                <SecondaryButton type="button" disabled={busy} onClick={() => void createAccounts({ class_id: classId })}>
+                  Buat akun siswa kelas ini
+                </SecondaryButton>
+              ) : null}
               <PrimaryButton icon={<IconPlus width={18} height={18} />} onClick={() => setAction({ kind: "create" })}>
                 Tambah siswa
               </PrimaryButton>
@@ -175,6 +219,7 @@ export default function StudentsPage() {
       </form>
 
       {error ? <FormAlert>{error}</FormAlert> : null}
+      {accountError ? <FormAlert>{accountError}</FormAlert> : null}
       {students === null && !error ? (
         <p role="status" className="text-zinc-600 dark:text-zinc-400">
           Memuat…
@@ -192,6 +237,7 @@ export default function StudentsPage() {
                 <th scope="col" className="px-4 py-3 font-semibold">NISN</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Kelas</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                <th scope="col" className="px-4 py-3 font-semibold">Akun</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Aksi</th>
               </tr>
             </thead>
@@ -203,6 +249,7 @@ export default function StudentsPage() {
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{student.nisn ?? "-"}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{student.current_class?.name ?? "Belum ada kelas"}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{STATUS_LABEL[student.status]}</td>
+                  <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{student.has_account ? "Ada" : "Belum"}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-3">
                       {canManage ? (
@@ -215,6 +262,12 @@ export default function StudentsPage() {
                         onClick={() => setAction({ kind: "class", student })}>
                         {canManage ? "Kelas" : "Riwayat kelas"}
                       </RowButton>
+                      {canManage && student.has_account ? (
+                        <RowButton onClick={() => setAction({ kind: "reset", student })}>Atur ulang sandi</RowButton>
+                      ) : null}
+                      {canManage && !student.has_account && student.status === "active" ? (
+                        <RowButton onClick={() => void createAccounts({ student_ids: [student.id] })}>Buat akun</RowButton>
+                      ) : null}
                       {canCards && student.status === "active" ? (
                         <RowButton
                           onClick={() => setAction({ kind: "cards", student })}>
@@ -233,11 +286,11 @@ export default function StudentsPage() {
       {meta ? <Pager meta={meta} onPage={setPage} /> : null}
 
       <Dialog
-        open={action !== null && action.kind !== "class" && action.kind !== "cards"}
+        open={action !== null && action.kind !== "class" && action.kind !== "cards" && action.kind !== "reset"}
         title={action?.kind === "edit" ? "Ubah siswa" : "Tambah siswa"}
         onClose={() => setAction(null)}
       >
-        {action && action.kind !== "class" && action.kind !== "cards" ? (
+        {action && action.kind !== "class" && action.kind !== "cards" && action.kind !== "reset" ? (
           <StudentForm
             key={action.kind === "create" ? "create" : action.student.id}
             student={action.kind === "edit" ? action.student : null}
@@ -247,6 +300,36 @@ export default function StudentsPage() {
               setAction(null);
               void load();
             }}
+          />
+        ) : null}
+      </Dialog>
+
+      <Dialog open={action?.kind === "reset"} title="Atur ulang kata sandi?" onClose={() => setAction(null)}>
+        {action?.kind === "reset" ? (
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-700 dark:text-zinc-300">
+              {action.student.full_name} akan mendapat kata sandi awal baru dan wajib menggantinya saat login berikutnya. Kata sandi lama tidak berlaku lagi.
+            </p>
+            <div className="flex justify-end gap-3">
+              <SecondaryButton type="button" onClick={() => setAction(null)} disabled={busy}>
+                Batal
+              </SecondaryButton>
+              <PrimaryButton type="button" pending={busy} onClick={() => void resetPassword(action.student)}>
+                Atur ulang
+              </PrimaryButton>
+            </div>
+          </div>
+        ) : null}
+      </Dialog>
+
+      <Dialog open={sheet !== null} title="Kredensial siswa" onClose={() => setSheet(null)}>
+        {sheet ? (
+          <AccountSheet
+            result={sheet}
+            names={Object.fromEntries((students ?? []).map((st) => [st.id, st.full_name]))}
+            schoolName={profile.name}
+            schoolCode={code}
+            onClose={() => setSheet(null)}
           />
         ) : null}
       </Dialog>

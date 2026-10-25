@@ -129,6 +129,7 @@ final class StudentController extends Controller
             'full_name' => $student->full_name,
             'date_of_birth' => $student->date_of_birth?->toDateString(),
             'status' => $student->status,
+            'has_account' => $student->membership_id !== null,
             'current_class' => $current === null ? null : ['id' => $current->schoolClass->id, 'name' => $current->schoolClass->name],
         ];
 

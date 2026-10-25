@@ -30,7 +30,7 @@ function LoginForm() {
     if (!outcome.ok) {
       // 422 pada login = kredensial salah atau format email salah; API sengaja tidak membedakan sebabnya.
       const rejected = Object.keys(outcome.failure.fields).length > 0;
-      setFailure(rejected ? { message: "Email atau password salah.", fields: {} } : outcome.failure);
+      setFailure(rejected ? { message: "Email/ID siswa atau password salah.", fields: {} } : outcome.failure);
       setPending(false);
       return;
     }
@@ -57,7 +57,17 @@ function LoginForm() {
           <FormAlert tone="success">Akun Anda sudah dibuat. Silakan masuk untuk mulai.</FormAlert>
         ) : null}
         {failure ? <FormAlert>{failure.message}</FormAlert> : null}
-        <TextField label="Email" name="email" type="email" autoComplete="username" required autoFocus />
+        <TextField
+          label="Email atau ID siswa"
+          name="email"
+          type="text"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          hint="Siswa: kode-sekolah/NIS, mis. smpn1/2024001"
+          required
+          autoFocus
+        />
         <TextField label="Password" name="password" type="password" autoComplete="current-password" required />
         <SubmitButton pending={pending}>Masuk</SubmitButton>
       </form>
