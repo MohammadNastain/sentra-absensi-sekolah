@@ -17,6 +17,7 @@ tags:
   - name: me
   - name: platform
   - name: school
+  - name: lms
   - name: terminal
   - name: invitation
 
@@ -1495,6 +1496,198 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
 
+  /schools/{school}/lms/materials:
+    get:
+      tags: [lms]
+      operationId: listLmsMaterials
+      summary: "Daftar materi yang boleh dilihat pengguna"
+      description: |
+        Izin: school.lms.view; fitur: lms.materials. Admin melihat semua; guru kelas-mapelnya (draf hanya miliknya); siswa dan
+        Kepala Sekolah hanya materi terbit (siswa hanya kelasnya). Tanpa hak apa pun hasilnya kosong.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: class_id, in: query, schema: { type: string, format: uuid } }
+        - { name: subject_id, in: query, schema: { type: string, format: uuid } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: "Materi, terbaru dulu (25 per halaman). Tanpa isi (body); ambil lewat getLmsMaterial."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/LmsMaterial" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [lms]
+      operationId: createLmsMaterial
+      summary: "Buat materi (draf)"
+      description: "Izin: school.lms.manage; fitur: lms.materials. Guru hanya untuk pasangan kelas-mapel di jadwal mengajarnya (selain itu 403); admin untuk mana saja. Isi teks polos."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [class_id, subject_id, title]
+              properties:
+                class_id: { type: string, format: uuid }
+                subject_id: { type: string, format: uuid }
+                title: { type: string, maxLength: 200 }
+                body: { type: [string, "null"], maxLength: 20000 }
+      responses:
+        "201":
+          description: "Materi dibuat berstatus draft."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsMaterialDetail" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/lms/materials/{material}:
+    parameters:
+      - $ref: "#/components/parameters/SchoolCode"
+      - $ref: "#/components/parameters/LmsMaterialId"
+    get:
+      tags: [lms]
+      operationId: getLmsMaterial
+      summary: "Rincian materi beserta daftar lampiran"
+      description: "Izin: school.lms.view; fitur: lms.materials. Materi yang tidak boleh dilihat pengguna dijawab 404."
+      responses:
+        "200":
+          description: "Materi."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsMaterialDetail" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [lms]
+      operationId: updateLmsMaterial
+      summary: "Ubah materi, terbitkan, atau tarik kembali menjadi draf"
+      description: "Izin: school.lms.manage (atas kelas-mapel materi); fitur: lms.materials. Penerbitan dan penarikan masuk audit; simpan draf tidak."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, maxLength: 200 }
+                body: { type: [string, "null"], maxLength: 20000 }
+                status: { $ref: "#/components/schemas/LmsMaterialStatus" }
+      responses:
+        "200":
+          description: "Materi setelah diubah."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsMaterialDetail" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    delete:
+      tags: [lms]
+      operationId: deleteLmsMaterial
+      summary: "Hapus materi beserta lampirannya"
+      description: "Izin: school.lms.manage (atas kelas-mapel materi); fitur: lms.materials. Berkas fisik ikut dihapus."
+      responses:
+        "204": { description: "Dihapus." }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/lms/materials/{material}/attachments:
+    post:
+      tags: [lms]
+      operationId: uploadLmsAttachment
+      summary: "Unggah lampiran materi"
+      description: |
+        Izin: school.lms.manage; fitur: lms.attachments. Ekstensi allowlist (pdf, doc/docx, xls/xlsx, ppt/pptx, txt, csv, jpg, png),
+        isi berkas harus cocok dengan ekstensinya, maksimal 10 MB per berkas dan 5 berkas per materi (selain itu 422).
+        Berkas disimpan privat dengan kunci acak; tidak ada URL publik.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsMaterialId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: "Lampiran tersimpan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsAttachment" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/lms/attachments/{attachment}/download:
+    get:
+      tags: [lms]
+      operationId: downloadLmsAttachment
+      summary: "Unduh lampiran"
+      description: |
+        Izin: school.lms.view; fitur: lms.attachments. Diperiksa sebelum berkas dikirim: keanggotaan, fitur, izin, dan hak
+        melihat materi pemiliknya (selain itu 404). Selalu `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`,
+        `Cache-Control: private, no-store`.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsAttachmentId"
+      responses:
+        "200":
+          description: "Isi berkas."
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/lms/attachments/{attachment}:
+    delete:
+      tags: [lms]
+      operationId: deleteLmsAttachment
+      summary: "Hapus lampiran"
+      description: "Izin: school.lms.manage (atas kelas-mapel materi pemilik); fitur: lms.attachments."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsAttachmentId"
+      responses:
+        "204": { description: "Dihapus." }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /schools/{school}/students:
     get:
       tags: [school]
@@ -3690,6 +3883,16 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    LmsMaterialId:
+      name: material
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    LmsAttachmentId:
+      name: attachment
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     TeachingSlotId:
       name: slot
       in: path
@@ -3827,6 +4030,51 @@ components:
       type: object
       properties:
         message: { type: string }
+    LmsMaterialStatus:
+      type: string
+      enum: [draft, published]
+    LmsAttachment:
+      type: object
+      required: [id, name, mime, size]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, description: "Nama asli yang sudah dibersihkan; hanya untuk tampilan dan nama unduhan." }
+        mime: { type: string }
+        size: { type: integer, description: "Byte." }
+    LmsMaterial:
+      type: object
+      required: [id, class, subject, title, status, published_at, created_at, author_name, attachment_count, can_manage]
+      properties:
+        id: { type: string, format: uuid }
+        class:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: [string, "null"] }
+        subject:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: [string, "null"] }
+        title: { type: string }
+        status: { $ref: "#/components/schemas/LmsMaterialStatus" }
+        published_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+        author_name: { type: [string, "null"] }
+        attachment_count: { type: integer }
+        can_manage: { type: boolean, description: "Pengguna ini boleh mengubah/menghapus materi (UX saja; server tetap memeriksa)." }
+    LmsMaterialDetail:
+      allOf:
+        - $ref: "#/components/schemas/LmsMaterial"
+        - type: object
+          required: [body, attachments]
+          properties:
+            body: { type: string, description: "Teks polos; tampilkan sebagai teks, bukan HTML." }
+            attachments:
+              type: array
+              items: { $ref: "#/components/schemas/LmsAttachment" }
     PageMeta:
       type: object
       required: [current_page, last_page, total]

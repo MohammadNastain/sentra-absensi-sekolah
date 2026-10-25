@@ -96,6 +96,8 @@ enum Feature: string
             self::Students, self::Teachers,
             self::Academic, self::AcademicYears, self::AcademicClasses, self::AcademicSubjects,
             self::AcademicTeachingSchedule => true,
+            self::Lms, self::LmsMaterials, self::LmsAttachments, self::LmsAssignments,
+            self::LmsSubmissions, self::LmsGrading => (bool) config('sentra.lms_released', false),
             default => false,
         };
     }

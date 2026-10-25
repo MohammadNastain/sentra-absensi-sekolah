@@ -105,6 +105,16 @@ final class RouteMatrix
             'POST api/v1/schools/{school}/devices/{device}/pairing-code' => Permission::SchoolDevicesManage,
             'POST api/v1/schools/{school}/devices/{device}/revoke' => Permission::SchoolDevicesManage,
 
+            // LMS materi dan lampiran (ADR 0010)
+            'GET api/v1/schools/{school}/lms/materials' => Permission::SchoolLmsView,
+            'POST api/v1/schools/{school}/lms/materials' => Permission::SchoolLmsManage,
+            'GET api/v1/schools/{school}/lms/materials/{material}' => Permission::SchoolLmsView,
+            'PATCH api/v1/schools/{school}/lms/materials/{material}' => Permission::SchoolLmsManage,
+            'DELETE api/v1/schools/{school}/lms/materials/{material}' => Permission::SchoolLmsManage,
+            'POST api/v1/schools/{school}/lms/materials/{material}/attachments' => Permission::SchoolLmsManage,
+            'GET api/v1/schools/{school}/lms/attachments/{attachment}/download' => Permission::SchoolLmsView,
+            'DELETE api/v1/schools/{school}/lms/attachments/{attachment}' => Permission::SchoolLmsManage,
+
             // Akun siswa (ADR 0010)
             'POST api/v1/schools/{school}/students/accounts' => Permission::SchoolStudentsManage,
             'POST api/v1/schools/{school}/students/{student}/account/password' => Permission::SchoolStudentsManage,
@@ -224,6 +234,7 @@ final class RouteMatrix
             $head === '', in_array($head, ['members', 'invitations', 'audit-logs', 'entitlements'], true) => null,
             $head === 'academic-years' => [Feature::AcademicYears],
             $head === 'teachers' => [Feature::Teachers],
+            $head === 'lms' => [($parts[1] ?? null) === 'attachments' || ($parts[3] ?? null) === 'attachments' ? Feature::LmsAttachments : Feature::LmsMaterials],
             $head === 'subjects' => [Feature::AcademicSubjects],
             $head === 'teaching-slots' => [Feature::AcademicTeachingSchedule],
             $head === 'classes' && ($parts[2] ?? null) === 'credentials' => [Feature::AttendanceScanQr],

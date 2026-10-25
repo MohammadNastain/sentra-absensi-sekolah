@@ -24,6 +24,8 @@ use App\Http\Controllers\School\HolidayController;
 use App\Http\Controllers\School\ImportController;
 use App\Http\Controllers\School\InvitationController;
 use App\Http\Controllers\School\LeaveRequestController;
+use App\Http\Controllers\School\LmsAttachmentController;
+use App\Http\Controllers\School\LmsMaterialController;
 use App\Http\Controllers\School\MemberController;
 use App\Http\Controllers\School\ReportController;
 use App\Http\Controllers\School\ScheduleController;
@@ -212,6 +214,24 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware([RequireSchoolFeature::using(Feature::AcademicClasses), RequireSchoolPermission::using(Permission::SchoolAcademicView)])->name('classes.show');
     Route::patch('classes/{schoolClass}', [SchoolClassController::class, 'update'])->whereUuid('schoolClass')
         ->middleware([RequireSchoolFeature::using(Feature::AcademicClasses), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('classes.update');
+
+    // LMS (ADR 0010): materi dan lampiran. Lampiran digerbang fitur sendiri, termasuk saat mengunduh.
+    Route::get('lms/materials', [LmsMaterialController::class, 'index'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsMaterials), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.materials.index');
+    Route::post('lms/materials', [LmsMaterialController::class, 'store'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsMaterials), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.materials.store');
+    Route::get('lms/materials/{material}', [LmsMaterialController::class, 'show'])->whereUuid('material')
+        ->middleware([RequireSchoolFeature::using(Feature::LmsMaterials), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.materials.show');
+    Route::patch('lms/materials/{material}', [LmsMaterialController::class, 'update'])->whereUuid('material')
+        ->middleware([RequireSchoolFeature::using(Feature::LmsMaterials), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.materials.update');
+    Route::delete('lms/materials/{material}', [LmsMaterialController::class, 'destroy'])->whereUuid('material')
+        ->middleware([RequireSchoolFeature::using(Feature::LmsMaterials), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.materials.destroy');
+    Route::post('lms/materials/{material}/attachments', [LmsAttachmentController::class, 'store'])->whereUuid('material')
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAttachments), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.attachments.store');
+    Route::get('lms/attachments/{attachment}/download', [LmsAttachmentController::class, 'download'])->whereUuid('attachment')
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAttachments), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.attachments.download');
+    Route::delete('lms/attachments/{attachment}', [LmsAttachmentController::class, 'destroy'])->whereUuid('attachment')
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAttachments), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.attachments.destroy');
 
     Route::get('students', [StudentController::class, 'index'])
         ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsView)])->name('students.index');

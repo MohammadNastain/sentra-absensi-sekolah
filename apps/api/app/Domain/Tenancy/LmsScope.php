@@ -23,6 +23,9 @@ final class LmsScope
     /** @var list<string>|null */
     private ?array $classIds = null;
 
+    /** Keanggotaan yang dipakai mengisi cache; bila berganti (instance bertahan antar request), cache dibuang. */
+    private ?string $cachedFor = null;
+
     public function __construct(private readonly TenantContext $tenant) {}
 
     /** Admin mengelola semua konten sekolah. */
@@ -50,6 +53,8 @@ final class LmsScope
             return [];
         }
 
+        $this->resetCacheIfMembershipChanged();
+
         return $this->pairs ??= array_values(TeachingSlot::query()
             ->whereIn('teacher_id', Teacher::query()
                 ->where('membership_id', $this->tenant->membership()->id)
@@ -72,6 +77,8 @@ final class LmsScope
         if (! in_array(Role::Student, $this->tenant->roles(), true)) {
             return [];
         }
+
+        $this->resetCacheIfMembershipChanged();
 
         return $this->classIds ??= array_values(ClassEnrollment::query()
             ->whereIn('student_id', Student::query()
@@ -97,6 +104,16 @@ final class LmsScope
         return $this->viewsAll()
             || $this->teaches($classId, $subjectId)
             || in_array($classId, $this->studentClassIds(), true);
+    }
+
+    private function resetCacheIfMembershipChanged(): void
+    {
+        $current = $this->tenant->membership()->id;
+
+        if ($this->cachedFor !== $current) {
+            $this->pairs = $this->classIds = null;
+            $this->cachedFor = $current;
+        }
     }
 
     private function teaches(string $classId, string $subjectId): bool
