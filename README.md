@@ -1,6 +1,6 @@
-# Sentra Absensi Sekolah
+# Sentra Sekolah
 
-SaaS multi-tenant untuk absensi siswa (QR Code, RFID, dan alur bantuan petugas). Kebutuhan produk ada di [`PRD_Sentra_Absensi_Sekolah_v1.md`](PRD_Sentra_Absensi_Sekolah_v1.md).
+SaaS multi-tenant manajemen sekolah, dimulai dari absensi siswa (QR Code, RFID, dan alur bantuan petugas). Kebutuhan produk ada di [`PRD_Sentra_Sekolah_v1.md`](PRD_Sentra_Sekolah_v1.md).
 
 > **Status: Tahap 0 (fondasi repository).** Belum ada fitur aplikasi. Belum ada integrasi hardware yang diuji. Belum ada konfigurasi produksi.
 

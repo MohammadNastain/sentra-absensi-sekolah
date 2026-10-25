@@ -1,4 +1,4 @@
-# TESTING STRATEGY — Sentra Absensi Sekolah
+# TESTING STRATEGY — Sentra Sekolah
 
 **Status:** Draf tahap 1
 **Prinsip:** test tidak boleh di-skip atau dinonaktifkan agar build hijau. Test yang tidak stabil (flaky) diperbaiki atau dikarantina dengan issue dan tenggat, dan tidak diam-diam dihapus. Test backend memakai **PostgreSQL sungguhan**, bukan SQLite, karena integritas data bergantung pada fitur PostgreSQL.

@@ -202,7 +202,7 @@ function TopBar({ context, userLabel, userName, onMenu }: { context: string; use
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">{context}</p>
-        <p className="hidden text-xs text-zinc-500 sm:block">Sentra Absensi Sekolah</p>
+        <p className="hidden text-xs text-zinc-500 sm:block">Sentra Sekolah</p>
       </div>
 
       <ThemeToggle />

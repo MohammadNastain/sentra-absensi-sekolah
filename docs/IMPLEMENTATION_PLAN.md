@@ -1,4 +1,4 @@
-# IMPLEMENTATION PLAN — Sentra Absensi Sekolah
+# IMPLEMENTATION PLAN — Sentra Sekolah
 
 **Status:** Draf tahap 1 — menunggu persetujuan
 Urutan di bawah adalah **urutan dependensi, bukan janji durasi** [PRD 14]. Estimasi waktu dibuat setelah jumlah developer, perangkat keras, dan standar rilis dipastikan.

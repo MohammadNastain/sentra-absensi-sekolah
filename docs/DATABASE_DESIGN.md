@@ -1,4 +1,4 @@
-# DATABASE DESIGN — Sentra Absensi Sekolah
+# DATABASE DESIGN — Sentra Sekolah
 
 **Status:** Draf tahap 1 — menunggu tinjauan
 **DBMS:** PostgreSQL 17/18. Ekstensi: `citext`, `pg_trgm`, `btree_gist`

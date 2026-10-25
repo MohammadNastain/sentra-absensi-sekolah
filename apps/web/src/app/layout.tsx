@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Sentra Absensi Sekolah", template: "%s · Sentra Absensi Sekolah" },
-  description: "Absensi sekolah multi-tenant.",
+  title: { default: "Sentra Sekolah", template: "%s · Sentra Sekolah" },
+  description: "Platform manajemen sekolah multi-tenant.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

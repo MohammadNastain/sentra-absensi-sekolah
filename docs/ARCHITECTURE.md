@@ -1,7 +1,7 @@
-# ARCHITECTURE — Sentra Absensi Sekolah
+# ARCHITECTURE — Sentra Sekolah
 
 **Status:** Draf tahap 1 — menunggu tinjauan
-**Sumber kebutuhan:** `PRD_Sentra_Absensi_Sekolah_v1.md` (v1.0, 17 Oktober 2026)
+**Sumber kebutuhan:** `PRD_Sentra_Sekolah_v1.md` (v1.0, 17 Oktober 2026)
 **Dokumen terkait:** `DATABASE_DESIGN.md`, `IMPLEMENTATION_PLAN.md`, `TESTING_STRATEGY.md`, `DECISIONS.md`
 
 Penanda yang dipakai di dokumen ini:
@@ -15,8 +15,8 @@ Penanda yang dipakai di dokumen ini:
 
 | Item | Temuan | Dampak |
 |---|---|---|
-| Isi repository | Hanya `PRD_Sentra_Absensi_Sekolah_v1.md`. Tidak ada kode, konfigurasi, atau dependensi. | Tidak ada yang berisiko tertimpa. Struktur dapat dirancang dari nol. |
-| Nama file PRD | Di instruksi disebut `PRD_Sentra_Absensi_Sekolah.md`; yang ada `..._v1.md`. | Hanya catatan. Isi PRD dianggap final v1.0. |
+| Isi repository | Hanya `PRD_Sentra_Sekolah_v1.md`. Tidak ada kode, konfigurasi, atau dependensi. | Tidak ada yang berisiko tertimpa. Struktur dapat dirancang dari nol. |
+| Nama file PRD | Di instruksi disebut `PRD_Sentra_Sekolah.md`; yang ada `..._v1.md`. | Hanya catatan. Isi PRD dianggap final v1.0. |
 | Git | Folder **belum** menjadi repository git. | Perlu `git init` sebelum tahap implementasi (belum dilakukan). |
 | Node.js / npm | v24.22.0 / 11.19.1 | Cukup untuk Next.js. pnpm belum terpasang (bisa via `corepack`). |
 | PHP | Hanya PHP **8.2.12** bawaan XAMPP (build Okt 2023). Ekstensi `pdo_pgsql`, `intl`, `zip`, `gd`, `sodium` **tidak aktif**. | Tidak cocok untuk Laravel versi terbaru maupun PostgreSQL. Jangan memakai/mengubah XAMPP; siapkan runtime terpisah. |
@@ -88,8 +88,8 @@ Prinsip yang mengikat seluruh desain [PRD 6.3]:
 ## 4. Struktur Folder (usulan)
 
 ```text
-Sentra_absensi_sekolah/
-├── PRD_Sentra_Absensi_Sekolah_v1.md
+Sentra_Sekolah/
+├── PRD_Sentra_Sekolah_v1.md
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── DATABASE_DESIGN.md
