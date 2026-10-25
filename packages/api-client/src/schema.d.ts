@@ -2560,9 +2560,9 @@ export interface components {
             total: number;
         };
         /** @enum {string} */
-        Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator";
+        Role: "school_admin" | "principal" | "homeroom_teacher" | "duty_officer" | "terminal_operator" | "teacher" | "student";
         /** @enum {string} */
-        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify" | "school.attendance.correct" | "school.attendance.correction_request" | "school.leave.manage" | "school.leave.approve" | "school.reports.export";
+        Permission: "school.profile.view" | "school.profile.update" | "school.members.view" | "school.members.manage" | "school.audit.view" | "school.academic.view" | "school.academic.manage" | "school.students.view" | "school.students.manage" | "school.schedule.view" | "school.schedule.manage" | "school.credentials.view" | "school.credentials.manage" | "school.devices.view" | "school.devices.manage" | "school.attendance.view" | "school.attendance.assist" | "school.attendance.review" | "school.attendance.verify" | "school.attendance.correct" | "school.attendance.correction_request" | "school.leave.manage" | "school.leave.approve" | "school.reports.export" | "school.lms.view" | "school.lms.manage" | "school.lms.submit" | "school.lms.grade";
         /** @enum {string} */
         SchoolStatus: "trial" | "active" | "suspended" | "terminated";
         /** @enum {string} */

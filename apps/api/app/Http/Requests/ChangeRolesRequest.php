@@ -15,7 +15,7 @@ class ChangeRolesRequest extends ReasonRequest
         return [
             ...parent::rules(),
             'roles' => ['required', 'array', 'min:1'],
-            'roles.*' => ['string', 'distinct', Rule::in(Role::values())],
+            'roles.*' => ['string', 'distinct', Rule::in(Role::assignableValues())],
         ];
     }
 

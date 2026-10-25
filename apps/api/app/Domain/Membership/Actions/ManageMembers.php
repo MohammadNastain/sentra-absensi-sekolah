@@ -40,6 +40,10 @@ final class ManageMembers
                 throw ApiProblem::cannotChangeOwnRoles();
             }
             $this->assertNotEnded($membership);
+            // Akun siswa dikelola dari data siswa; peran lain tidak boleh ditempelkan padanya (ADR 0010 §1).
+            if (DB::table('membership_roles')->where('membership_id', $membership->id)->where('role_code', Role::Student->value)->exists()) {
+                throw ApiProblem::invalidStateTransition('Peran akun siswa tidak dapat diubah dari manajemen anggota.');
+            }
 
             $newCodes = array_map(fn (Role $role) => $role->value, $roles);
             sort($newCodes);

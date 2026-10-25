@@ -23,7 +23,7 @@ class InviteMemberRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email:rfc', 'max:255'],
             'roles' => ['required', 'array', 'min:1'],
-            'roles.*' => ['string', 'distinct', Rule::in(Role::values())],
+            'roles.*' => ['string', 'distinct', Rule::in(Role::assignableValues())],
         ];
     }
 
