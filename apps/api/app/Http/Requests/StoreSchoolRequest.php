@@ -22,6 +22,9 @@ class StoreSchoolRequest extends FormRequest
             'timezone' => ['required', 'string', Rule::in(School::TIMEZONES)],
             'address' => ['nullable', 'string', 'max:500'],
             'status' => ['sometimes', 'string', Rule::in([School::STATUS_TRIAL, School::STATUS_ACTIVE])],
+            // Paket yang ditawarkan saja (legacy hanya untuk sekolah lama); kosong = legacy agar klien lama tetap jalan.
+            'plan_code' => ['sometimes', 'string', Rule::exists('plans', 'code')->where('is_active', true)],
+            'trial_ends_on' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'after:today'],
         ];
     }
 
@@ -35,6 +38,8 @@ class StoreSchoolRequest extends FormRequest
             'code.unique' => 'Kode sekolah sudah dipakai.',
             'npsn.regex' => 'NPSN harus 8 digit angka.',
             'npsn.unique' => 'NPSN sudah terdaftar.',
+            'plan_code.exists' => 'Paket tidak dikenal atau tidak ditawarkan.',
+            'trial_ends_on.after' => 'Tanggal uji coba berakhir harus setelah hari ini.',
         ];
     }
 }

@@ -3904,7 +3904,7 @@ components:
           items: { type: string }
     PlatformOverview:
       type: object
-      required: [as_of, totals, schools_by_status, schools_by_level, attendance_trend, schools_today]
+      required: [as_of, totals, schools_by_status, schools_by_plan, schools_by_level, attendance_trend, schools_today]
       properties:
         as_of: { type: string, format: date }
         totals:
@@ -3922,6 +3922,16 @@ components:
             required: [status, total]
             properties:
               status: { type: string }
+              total: { type: integer }
+        schools_by_plan:
+          type: array
+          description: "Jumlah sekolah per paket berjalan; paket tidak ditawarkan hanya muncul bila masih dipakai."
+          items:
+            type: object
+            required: [code, name, total]
+            properties:
+              code: { type: string }
+              name: { type: string }
               total: { type: integer }
         schools_by_level:
           type: array
@@ -3993,6 +4003,13 @@ components:
           type: string
           enum: [trial, active]
           description: "Opsional; bila dikosongkan sekolah dibuat dengan status `active`."
+        plan_code:
+          type: string
+          description: "Opsional; kode paket yang ditawarkan (lihat `GET /platform/plans`). Kosong = `legacy`."
+        trial_ends_on:
+          type: [string, "null"]
+          format: date
+          description: "Opsional; hanya dipakai bila status `trial`. Harus setelah hari ini."
     SchoolUpdate:
       type: object
       description: "Semua field opsional. `code` dan `status` ditolak (422)."
