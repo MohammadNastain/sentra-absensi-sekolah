@@ -23,7 +23,7 @@ class InvitationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: "Undangan bergabung dengan {$this->schoolName} di Sentra Absensi");
+        return new Envelope(subject: "Undangan bergabung dengan {$this->schoolName} di Sentra Sekolah");
     }
 
     public function content(): Content

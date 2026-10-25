@@ -1,4 +1,4 @@
-# apps/api — Laravel API Sentra Absensi
+# apps/api — Laravel API Sentra Sekolah
 
 Composer & artisan **hanya** dijalankan di container (ADR 0007 D-41). Jalankan dari root repo:
 

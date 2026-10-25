@@ -75,7 +75,7 @@ export function AuthShell({
         </div>
 
         <p className="relative hidden items-center gap-2 text-xs text-brand-100/60 lg:flex">
-          <IconCheck width={16} height={16} /> Sentra Absensi Sekolah
+          <IconCheck width={16} height={16} /> Sentra Sekolah
         </p>
       </section>
 

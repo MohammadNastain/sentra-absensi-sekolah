@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Sentra Absensi Sekolah API
+  title: Sentra Sekolah API
   version: 0.1.0
   description: |
     Kontrak API Tahap 1 (auth, tenant, undangan, anggota, audit). Ditulis tangan dan dijaga
