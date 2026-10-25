@@ -39,6 +39,15 @@ return [
             'report' => false,
         ],
 
+        // Lampiran LMS (ADR 0010 §5): privat, tanpa URL publik; hanya dibaca lewat endpoint API yang memeriksa izin.
+        'lms' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/lms'),
+            'serve' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

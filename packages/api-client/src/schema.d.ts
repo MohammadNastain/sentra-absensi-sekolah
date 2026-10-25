@@ -1053,6 +1053,127 @@ export interface paths {
         patch: operations["updateClass"];
         trace?: never;
     };
+    "/schools/{school}/lms/materials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar materi yang boleh dilihat pengguna
+         * @description Izin: school.lms.view; fitur: lms.materials. Admin melihat semua; guru kelas-mapelnya (draf hanya miliknya); siswa dan
+         *     Kepala Sekolah hanya materi terbit (siswa hanya kelasnya). Tanpa hak apa pun hasilnya kosong.
+         */
+        get: operations["listLmsMaterials"];
+        put?: never;
+        /**
+         * Buat materi (draf)
+         * @description Izin: school.lms.manage; fitur: lms.materials. Guru hanya untuk pasangan kelas-mapel di jadwal mengajarnya (selain itu 403); admin untuk mana saja. Isi teks polos.
+         */
+        post: operations["createLmsMaterial"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/materials/{material}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                material: components["parameters"]["LmsMaterialId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Rincian materi beserta daftar lampiran
+         * @description Izin: school.lms.view; fitur: lms.materials. Materi yang tidak boleh dilihat pengguna dijawab 404.
+         */
+        get: operations["getLmsMaterial"];
+        put?: never;
+        post?: never;
+        /**
+         * Hapus materi beserta lampirannya
+         * @description Izin: school.lms.manage (atas kelas-mapel materi); fitur: lms.materials. Berkas fisik ikut dihapus.
+         */
+        delete: operations["deleteLmsMaterial"];
+        options?: never;
+        head?: never;
+        /**
+         * Ubah materi, terbitkan, atau tarik kembali menjadi draf
+         * @description Izin: school.lms.manage (atas kelas-mapel materi); fitur: lms.materials. Penerbitan dan penarikan masuk audit; simpan draf tidak.
+         */
+        patch: operations["updateLmsMaterial"];
+        trace?: never;
+    };
+    "/schools/{school}/lms/materials/{material}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unggah lampiran materi
+         * @description Izin: school.lms.manage; fitur: lms.attachments. Ekstensi allowlist (pdf, doc/docx, xls/xlsx, ppt/pptx, txt, csv, jpg, png),
+         *     isi berkas harus cocok dengan ekstensinya, maksimal 10 MB per berkas dan 5 berkas per materi (selain itu 422).
+         *     Berkas disimpan privat dengan kunci acak; tidak ada URL publik.
+         */
+        post: operations["uploadLmsAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/attachments/{attachment}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Unduh lampiran
+         * @description Izin: school.lms.view; fitur: lms.attachments. Diperiksa sebelum berkas dikirim: keanggotaan, fitur, izin, dan hak
+         *     melihat materi pemiliknya (selain itu 404). Selalu `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`,
+         *     `Cache-Control: private, no-store`.
+         */
+        get: operations["downloadLmsAttachment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/attachments/{attachment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Hapus lampiran
+         * @description Izin: school.lms.manage (atas kelas-mapel materi pemilik); fitur: lms.attachments.
+         */
+        delete: operations["deleteLmsAttachment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/students": {
         parameters: {
             query?: never;
@@ -2619,6 +2740,46 @@ export interface components {
         Message: {
             message?: string;
         };
+        /** @enum {string} */
+        LmsMaterialStatus: "draft" | "published";
+        LmsAttachment: {
+            /** Format: uuid */
+            id: string;
+            /** @description Nama asli yang sudah dibersihkan; hanya untuk tampilan dan nama unduhan. */
+            name: string;
+            mime: string;
+            /** @description Byte. */
+            size: number;
+        };
+        LmsMaterial: {
+            /** Format: uuid */
+            id: string;
+            class: {
+                /** Format: uuid */
+                id: string;
+                name: string | null;
+            };
+            subject: {
+                /** Format: uuid */
+                id: string;
+                name: string | null;
+            };
+            title: string;
+            status: components["schemas"]["LmsMaterialStatus"];
+            /** Format: date-time */
+            published_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            author_name: string | null;
+            attachment_count: number;
+            /** @description Pengguna ini boleh mengubah/menghapus materi (UX saja; server tetap memeriksa). */
+            can_manage: boolean;
+        };
+        LmsMaterialDetail: components["schemas"]["LmsMaterial"] & {
+            /** @description Teks polos; tampilkan sebagai teks, bukan HTML. */
+            body: string;
+            attachments: components["schemas"]["LmsAttachment"][];
+        };
         PageMeta: {
             current_page: number;
             last_page: number;
@@ -4177,6 +4338,8 @@ export interface components {
         StudentId: string;
         ImportId: string;
         SubjectId: string;
+        LmsMaterialId: string;
+        LmsAttachmentId: string;
         TeachingSlotId: string;
         HolidayId: string;
         ScheduleId: string;
@@ -6166,6 +6329,259 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listLmsMaterials: {
+        parameters: {
+            query?: {
+                class_id?: string;
+                subject_id?: string;
+                page?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Materi, terbaru dulu (25 per halaman). Tanpa isi (body); ambil lewat getLmsMaterial. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsMaterial"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createLmsMaterial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    class_id: string;
+                    /** Format: uuid */
+                    subject_id: string;
+                    title: string;
+                    body?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Materi dibuat berstatus draft. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsMaterialDetail"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getLmsMaterial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                material: components["parameters"]["LmsMaterialId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Materi. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsMaterialDetail"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteLmsMaterial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                material: components["parameters"]["LmsMaterialId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateLmsMaterial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                material: components["parameters"]["LmsMaterialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title?: string;
+                    body?: string | null;
+                    status?: components["schemas"]["LmsMaterialStatus"];
+                };
+            };
+        };
+        responses: {
+            /** @description Materi setelah diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsMaterialDetail"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    uploadLmsAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                material: components["parameters"]["LmsMaterialId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Lampiran tersimpan. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsAttachment"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    downloadLmsAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                attachment: components["parameters"]["LmsAttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Isi berkas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteLmsAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                attachment: components["parameters"]["LmsAttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     listStudents: {

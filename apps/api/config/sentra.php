@@ -21,6 +21,12 @@ return [
     'health_error_rate' => (float) env('HEALTH_ERROR_RATE', 0.05),
     'health_error_min_requests' => (int) env('HEALTH_ERROR_MIN_REQUESTS', 20),
 
+    /*
+    | Rilis modul LMS (ADR 0010 §6). Selama false, fitur lms.* tidak pernah efektif (belum dirilis di registri).
+    | Hanya dinyalakan di tes dan lingkungan uji; rilis sungguhan mengganti nilai awal ini di PR terakhir tahap LMS.
+    */
+    'lms_released' => (bool) env('LMS_RELEASED', false),
+
     /* Retensi alamat IP pada audit log (hari). D-26: usulan 90 hari, menunggu tinjauan hukum. */
     'audit_ip_retention_days' => (int) env('AUDIT_IP_RETENTION_DAYS', 90),
 ];

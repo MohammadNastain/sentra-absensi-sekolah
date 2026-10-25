@@ -121,6 +121,15 @@ function schoolRoutes(): array
         ->all();
 }
 
+/** Modul LMS belum dirilis di registri; matriks peran menyalakannya agar rute LMS diuji seperti rute lain. */
+function releaseLmsFor(School $school): void
+{
+    config(['sentra.lms_released' => true]);
+    foreach (['lms', 'lms.materials', 'lms.attachments'] as $feature) {
+        setFeatureOverride($school->id, $feature, 'grant');
+    }
+}
+
 const SAMPLE_UUID = '00000000-0000-7000-8000-000000000001';
 
 function concreteUri(string $uri): string
@@ -151,6 +160,7 @@ it('T09: rute sekolah tanpa login → 401', function (string $key) {
 it('T09: setiap peran mendapat akses sesuai izinnya pada setiap rute sekolah', function (string $key, Permission $permission, Role $role) {
     [$method, $uri] = explode(' ', $key, 2);
     $school = School::factory()->create(['code' => 'sekolah-a']);
+    releaseLmsFor($school);
     $user = User::factory()->create();
     $this->addMember($school, $user, [$role]);
 
