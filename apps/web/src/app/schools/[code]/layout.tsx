@@ -6,13 +6,14 @@ import { AppShell, type NavItem } from "@/components/AppShell";
 import { LogoutButton } from "@/components/LogoutButton";
 import { PlatformBanner } from "@/components/PlatformBanner";
 import { IconArrowLeft } from "@/components/icons";
-import { LinkButton, Skeleton } from "@/components/ui";
+import { EmptyState, LinkButton, Skeleton } from "@/components/ui";
 import { api } from "@/lib/api";
 import { toFormFailure } from "@/lib/errors";
+import { requiredFeatures } from "@/lib/features";
 import { platformItems, rememberSchool } from "@/lib/platform-nav";
 import { buildSchoolNav } from "@/lib/school-nav";
 import { redirectFor, useMe } from "@/lib/use-me";
-import { SchoolProvider, type PermissionCode, type SchoolProfile } from "./school-context";
+import { SchoolProvider, type MyEntitlements, type PermissionCode, type SchoolProfile } from "./school-context";
 
 /** Memuat profil sekolah dan izin user; keanggotaan divalidasi API pada setiap request. */
 export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
@@ -22,6 +23,28 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
   const me = useMe();
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
+  // null = belum dimuat atau gagal dimuat: menu tidak disaring (fail-open untuk UX; API tetap menegakkan entitlement).
+  const [entitlements, setEntitlements] = useState<MyEntitlements | null>(null);
+  // Halaman baru dirender setelah daftar fitur selesai dimuat (berhasil atau gagal) agar tidak berkedip memanggil API yang ditolak.
+  const [entitlementsLoaded, setEntitlementsLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .GET("/schools/{school}/entitlements", { params: { path: { school: code } } })
+      .then(({ data }) => {
+        if (!cancelled && data) setEntitlements(data.data);
+      })
+      .catch(() => {
+        // Daftar fitur hanya menyaring tampilan; kegagalan memuatnya tidak menghalangi sekolah dibuka.
+      })
+      .finally(() => {
+        if (!cancelled) setEntitlementsLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [code]);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,8 +71,18 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
   const value = useMemo(() => {
     if (!profile) return null;
     const granted = new Set<string>(profile.my_permissions);
-    return { code, profile, meId: me?.id ?? null, meName: me?.name ?? null, setProfile, can: (permission: PermissionCode) => granted.has(permission) };
-  }, [code, profile, me]);
+    const features = entitlements === null ? null : new Set<string>(entitlements.features);
+    return {
+      code,
+      profile,
+      meId: me?.id ?? null,
+      meName: me?.name ?? null,
+      setProfile,
+      can: (permission: PermissionCode) => granted.has(permission),
+      planName: entitlements?.plan?.name ?? null,
+      hasFeature: (feature: string) => features === null || features.has(feature),
+    };
+  }, [code, profile, me, entitlements]);
 
   if (blocked) {
     return (
@@ -68,7 +101,7 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
     );
   }
 
-  if (!value) {
+  if (!value || !entitlementsLoaded) {
     return (
       <main role="status" aria-label="Memuat" className="mx-auto w-full max-w-[1280px] flex-1 space-y-6 px-4 py-10 sm:px-8">
         <Skeleton className="h-10 w-64" />
@@ -82,7 +115,9 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
     );
   }
 
-  const schoolNav = buildSchoolNav(code, pathname, value.can);
+  const schoolNav = buildSchoolNav(code, pathname, value.can, "", value.hasFeature);
+  const needed = requiredFeatures(pathname, code);
+  const unavailable = needed !== null && !needed.some(value.hasFeature);
   // Super Admin melihat menu Platform dan menu sekolah dalam satu sidebar.
   const nav: NavItem[] = value.profile.acting_as_platform_admin ? [...platformItems(pathname), ...schoolNav.map((item) => ({ ...item, group: `Sekolah · ${item.group}` }))] : schoolNav;
 
@@ -90,7 +125,20 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
     <SchoolProvider value={value}>
       <AppShell context={value.profile.name} nav={nav} userLabel={me?.email} userName={me?.name}>
         {value.profile.acting_as_platform_admin ? <PlatformBanner code={code} /> : null}
-        {props.children}
+        {unavailable ? (
+          <EmptyState
+            title="Fitur ini tidak termasuk paket sekolah Anda"
+            description={
+              <>
+                {value.planName ? `Paket saat ini: ${value.planName}. ` : null}
+                Hubungi admin Sentra untuk mengaktifkan modul ini. Data yang sudah ada tetap tersimpan.
+              </>
+            }
+            action={<LinkButton href={`/schools/${code}`}>Kembali ke ringkasan</LinkButton>}
+          />
+        ) : (
+          props.children
+        )}
       </AppShell>
     </SchoolProvider>
   );
