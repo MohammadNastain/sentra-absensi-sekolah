@@ -56,6 +56,7 @@ final class RouteMatrix
             'POST api/v1/me/invitations/{invitation}/decline' => 'authenticated',
 
             // Platform
+            'GET api/v1/platform/overview' => 'platform',
             'GET api/v1/platform/schools' => 'platform',
             'POST api/v1/platform/schools' => 'platform',
             'GET api/v1/platform/schools/{school}' => 'platform',

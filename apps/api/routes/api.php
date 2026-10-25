@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Invitation\PublicInvitationController;
 use App\Http\Controllers\Me\MyInvitationController;
 use App\Http\Controllers\Me\MySchoolsController;
+use App\Http\Controllers\Platform\PlatformOverviewController;
 use App\Http\Controllers\Platform\PlatformSchoolController;
 use App\Http\Controllers\School\AbsenceController;
 use App\Http\Controllers\School\AcademicYearController;
@@ -98,6 +99,7 @@ Route::middleware('auth:sanctum')->prefix('me')->name('me.')->group(function () 
 
 // --- Platform (Super Admin + 2FA) ---
 Route::middleware(['auth:sanctum', EnsurePlatformAdmin::class])->prefix('platform')->name('platform.')->group(function () {
+    Route::get('overview', [PlatformOverviewController::class, 'show'])->name('overview');
     Route::get('schools', [PlatformSchoolController::class, 'index'])->name('schools.index');
     Route::post('schools', [PlatformSchoolController::class, 'store'])->name('schools.store');
     Route::get('schools/{school}', [PlatformSchoolController::class, 'show'])->name('schools.show');
