@@ -125,7 +125,7 @@ function schoolRoutes(): array
 function releaseLmsFor(School $school): void
 {
     config(['sentra.lms_released' => true]);
-    foreach (['lms', 'lms.materials', 'lms.attachments'] as $feature) {
+    foreach (['lms', 'lms.materials', 'lms.attachments', 'lms.assignments', 'lms.submissions', 'lms.grading'] as $feature) {
         setFeatureOverride($school->id, $feature, 'grant');
     }
 }

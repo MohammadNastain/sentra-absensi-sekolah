@@ -30,5 +30,9 @@ class LmsAttachment extends Model
 
     public const OWNER_MATERIAL = 'material';
 
+    public const OWNER_ASSIGNMENT = 'assignment';
+
+    public const OWNER_SUBMISSION = 'submission';
+
     protected $guarded = ['id'];
 }

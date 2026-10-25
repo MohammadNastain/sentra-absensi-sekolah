@@ -116,6 +116,22 @@ final class RouteMatrix
             'GET api/v1/schools/{school}/lms/attachments/{attachment}/download' => Permission::SchoolLmsView,
             'DELETE api/v1/schools/{school}/lms/attachments/{attachment}' => Permission::SchoolLmsManage,
 
+            // LMS tugas, pengumpulan, penilaian (ADR 0010)
+            'GET api/v1/schools/{school}/lms/assignments' => Permission::SchoolLmsView,
+            'POST api/v1/schools/{school}/lms/assignments' => Permission::SchoolLmsManage,
+            'GET api/v1/schools/{school}/lms/assignments/{assignment}' => Permission::SchoolLmsView,
+            'PATCH api/v1/schools/{school}/lms/assignments/{assignment}' => Permission::SchoolLmsManage,
+            'DELETE api/v1/schools/{school}/lms/assignments/{assignment}' => Permission::SchoolLmsManage,
+            'POST api/v1/schools/{school}/lms/assignments/{assignment}/attachments' => Permission::SchoolLmsManage,
+            'GET api/v1/schools/{school}/lms/assignments/{assignment}/submission' => Permission::SchoolLmsSubmit,
+            'PUT api/v1/schools/{school}/lms/assignments/{assignment}/submission' => Permission::SchoolLmsSubmit,
+            'GET api/v1/schools/{school}/lms/assignments/{assignment}/submissions' => Permission::SchoolLmsGrade,
+            'GET api/v1/schools/{school}/lms/submissions/{submission}' => Permission::SchoolLmsGrade,
+            'POST api/v1/schools/{school}/lms/submissions/{submission}/grade' => Permission::SchoolLmsGrade,
+            'POST api/v1/schools/{school}/lms/submissions/{submission}/return' => Permission::SchoolLmsGrade,
+            'POST api/v1/schools/{school}/lms/submissions/{submission}/attachments' => Permission::SchoolLmsSubmit,
+            'DELETE api/v1/schools/{school}/lms/submissions/{submission}/attachments/{attachment}' => Permission::SchoolLmsSubmit,
+
             // Akun siswa (ADR 0010)
             'POST api/v1/schools/{school}/students/accounts' => Permission::SchoolStudentsManage,
             'POST api/v1/schools/{school}/students/{student}/account/password' => Permission::SchoolStudentsManage,
@@ -235,7 +251,13 @@ final class RouteMatrix
             $head === '', in_array($head, ['members', 'invitations', 'audit-logs', 'entitlements'], true) => null,
             $head === 'academic-years' => [Feature::AcademicYears],
             $head === 'teachers' => [Feature::Teachers],
-            $head === 'lms' => [($parts[1] ?? null) === 'attachments' || ($parts[3] ?? null) === 'attachments' ? Feature::LmsAttachments : Feature::LmsMaterials],
+            $head === 'lms' => [match (true) {
+                ($parts[1] ?? null) === 'attachments', ($parts[3] ?? null) === 'attachments' => Feature::LmsAttachments,
+                ($parts[1] ?? null) === 'materials' => Feature::LmsMaterials,
+                ($parts[1] ?? null) === 'assignments' && ($parts[3] ?? null) === null => Feature::LmsAssignments,
+                ($parts[1] ?? null) === 'assignments', ($parts[1] ?? null) === 'submissions' && ($parts[3] ?? null) === null => Feature::LmsSubmissions,
+                default => Feature::LmsGrading, // submissions/{id}/grade|return
+            }],
             $head === 'subjects' => [Feature::AcademicSubjects],
             $head === 'teaching-slots' => [Feature::AcademicTeachingSchedule],
             $head === 'classes' && ($parts[2] ?? null) === 'credentials' => [Feature::AttendanceScanQr],

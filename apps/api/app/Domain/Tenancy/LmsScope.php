@@ -7,6 +7,7 @@ use App\Models\ClassEnrollment;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TeachingSlot;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Pembatasan LMS per kelas-mapel (ADR 0010 §2). Admin Sekolah mengelola semua dan Kepala Sekolah melihat semua; guru
@@ -90,6 +91,56 @@ final class LmsScope
             ->pluck('class_id')
             ->map(fn ($id) => (string) $id)
             ->all());
+    }
+
+    /**
+     * Membatasi query konten (materi/tugas, berkolom class_id, subject_id, status, author_user_id) ke yang boleh dilihat:
+     * admin semua; guru kelas-mapelnya (status selain terlihat-umum hanya miliknya); siswa dan Kepala Sekolah hanya
+     * status di $visibleStatuses (siswa hanya kelasnya). Tanpa hak apa pun hasilnya kosong, bukan semua.
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @param  list<string>  $visibleStatuses
+     * @return Builder<TModel>
+     */
+    public function restrict(Builder $query, string $viewerId, array $visibleStatuses): Builder
+    {
+        if ($this->managesAll()) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $any) use ($viewerId, $visibleStatuses): void {
+            foreach ($this->teachingPairs() as $pair) {
+                $any->orWhere(fn (Builder $q) => $q
+                    ->where('class_id', $pair['class_id'])->where('subject_id', $pair['subject_id'])
+                    ->where(fn (Builder $s) => $s->whereIn('status', $visibleStatuses)->orWhere('author_user_id', $viewerId)));
+            }
+            if ($this->viewsAll()) {
+                $any->orWhereIn('status', $visibleStatuses);
+            }
+            if (($classIds = $this->studentClassIds()) !== []) {
+                $any->orWhere(fn (Builder $q) => $q->whereIn('class_id', $classIds)->whereIn('status', $visibleStatuses));
+            }
+            $any->orWhereRaw('false');
+        });
+    }
+
+    public function schoolTimezone(): string
+    {
+        return $this->tenant->school()->timezone;
+    }
+
+    /** Id siswa aktif yang terhubung ke akun ini (null bila bukan siswa). */
+    public function studentId(): ?string
+    {
+        if (! in_array(Role::Student, $this->tenant->roles(), true)) {
+            return null;
+        }
+
+        $id = Student::query()->where('membership_id', $this->tenant->membership()->id)->where('status', Student::STATUS_ACTIVE)->value('id');
+
+        return is_string($id) ? $id : null;
     }
 
     /** Boleh membuat/mengubah konten dan menilai pada pasangan ini. */

@@ -6,6 +6,7 @@ use App\Domain\Lms\AttachmentStorage;
 use App\Domain\Lms\ManageAttachments;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
+use App\Models\LmsAttachment;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -24,10 +25,25 @@ final class LmsAttachmentController extends Controller
 
     public function store(Request $request, School $school, string $material): JsonResponse
     {
+        return $this->upload($request, LmsAttachment::OWNER_MATERIAL, $material);
+    }
+
+    public function storeForAssignment(Request $request, School $school, string $assignment): JsonResponse
+    {
+        return $this->upload($request, LmsAttachment::OWNER_ASSIGNMENT, $assignment);
+    }
+
+    public function storeForSubmission(Request $request, School $school, string $submission): JsonResponse
+    {
+        return $this->upload($request, LmsAttachment::OWNER_SUBMISSION, $submission);
+    }
+
+    private function upload(Request $request, string $ownerType, string $ownerId): JsonResponse
+    {
         $request->validate([
             'file' => ['required', 'file', 'max:'.(AttachmentStorage::MAX_BYTES / 1024), 'extensions:'.implode(',', AttachmentStorage::extensions())],
         ]);
-        $attachment = $this->attachments->upload($this->tenant->school(), $this->actor($request), $material, $request->file('file'));
+        $attachment = $this->attachments->upload($this->tenant->school(), $this->actor($request), $ownerType, $ownerId, $request->file('file'));
 
         return response()->json(['data' => [
             'id' => $attachment->id, 'name' => $attachment->original_name, 'mime' => $attachment->mime, 'size' => $attachment->size,
@@ -53,7 +69,15 @@ final class LmsAttachmentController extends Controller
 
     public function destroy(Request $request, School $school, string $attachment): Response
     {
-        $this->attachments->delete($this->tenant->school(), $this->actor($request), $attachment);
+        $this->attachments->delete($this->tenant->school(), $this->actor($request), $attachment, false);
+
+        return response()->noContent();
+    }
+
+    /** Siswa menghapus lampiran pengumpulannya sendiri (selama belum terkunci). */
+    public function destroyFromSubmission(Request $request, School $school, string $submission, string $attachment): Response
+    {
+        $this->attachments->delete($this->tenant->school(), $this->actor($request), $attachment, true);
 
         return response()->noContent();
     }
