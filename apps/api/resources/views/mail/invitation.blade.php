@@ -1,4 +1,4 @@
-Anda diundang untuk bergabung dengan {{ $schoolName }} di Sentra Absensi sebagai {{ implode(', ', $roleNames) }}.
+Anda diundang untuk bergabung dengan {{ $schoolName }} di Sentra Sekolah sebagai {{ implode(', ', $roleNames) }}.
 
 Buka tautan berikut untuk menerima undangan:
 {{ $url }}

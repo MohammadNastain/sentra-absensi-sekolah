@@ -1,4 +1,4 @@
-# Docker Compose — lingkungan PENGEMBANGAN LOKAL Sentra Absensi Sekolah.
+# Docker Compose — lingkungan PENGEMBANGAN LOKAL Sentra Sekolah.
 # Bukan konfigurasi produksi. Secret dibaca dari .env (lihat .env.example).
 #
 #   node scripts/init-env.mjs        # sekali, membuat .env

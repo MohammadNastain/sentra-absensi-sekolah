@@ -1,9 +1,9 @@
-# PRD — SENTRA ABSENSI SEKOLAH
+# PRD — SENTRA SEKOLAH
 
 **Versi:** 1.0  
 **Tanggal:** 17 Oktober 2026  
 **Status:** Final untuk acuan MVP  
-**Produk:** Sentra Absensi Sekolah  
+**Produk:** Sentra Sekolah  
 **Platform:** Web dashboard + terminal absensi di gerbang  
 **Target:** SD, SMP, SMA/SMK, dan sekolah sederajat  
 **Model produk:** SaaS multi-tenant (banyak sekolah dalam satu platform dengan isolasi data)
@@ -12,7 +12,7 @@
 
 ## 1. Ringkasan Produk
 
-Sentra Absensi Sekolah adalah sistem absensi digital untuk mencatat kehadiran siswa menggunakan **QR Code/barcode**, **kartu RFID**, dan **pengenalan wajah sebagai metode alternatif ketika kartu tertinggal**. Seluruh metode terhubung ke backend yang sama sehingga identitas, waktu, aturan keterlambatan, dan laporan dikelola secara konsisten.
+Sentra Sekolah adalah sistem absensi digital untuk mencatat kehadiran siswa menggunakan **QR Code/barcode**, **kartu RFID**, dan **pengenalan wajah sebagai metode alternatif ketika kartu tertinggal**. Seluruh metode terhubung ke backend yang sama sehingga identitas, waktu, aturan keterlambatan, dan laporan dikelola secara konsisten.
 
 Pada MVP, sekolah menggunakan **satu terminal bersama di gerbang**. Admin mengelola data siswa, kelas, jadwal, kredensial kartu, perangkat, status kehadiran, dan laporan melalui dashboard web. Portal orang tua bukan bagian MVP dan direncanakan untuk tahap berikutnya.
 
@@ -767,7 +767,7 @@ Urutan ini adalah urutan dependensi, bukan janji durasi. Estimasi sprint harus d
 
 ## 16. Asumsi dan Keputusan yang Dikunci
 
-1. Produk bernama **Sentra Absensi Sekolah**.
+1. Produk bernama **Sentra Sekolah**.
 2. Target mencakup SD, SMP, SMA/SMK, dan sekolah sederajat.
 3. MVP menggunakan satu terminal bersama di gerbang per sekolah.
 4. QR Code dan RFID adalah metode utama.
@@ -799,4 +799,4 @@ MVP dapat dinyatakan selesai jika:
 - Seluruh acceptance criteria kritis lulus pada lingkungan pilot.
 - Dokumentasi operasional tersedia untuk admin dan petugas.
 
-**Prinsip akhir produk:** Sentra Absensi harus mengutamakan pencatatan yang akurat, proses yang cepat di gerbang, data yang dapat diaudit, serta perlindungan siswa. Teknologi pengenalan wajah adalah opsi tambahan, bukan pengganti tata kelola data dan prosedur sekolah yang baik.
+**Prinsip akhir produk:** Sentra Sekolah harus mengutamakan pencatatan yang akurat, proses yang cepat di gerbang, data yang dapat diaudit, serta perlindungan siswa. Teknologi pengenalan wajah adalah opsi tambahan, bukan pengganti tata kelola data dan prosedur sekolah yang baik.

@@ -1,7 +1,7 @@
 {
-  "name": "sentra-absensi-sekolah",
+  "name": "sentra-sekolah",
   "private": true,
-  "description": "Monorepo Sentra Absensi Sekolah — lihat README.md",
+  "description": "Monorepo Sentra Sekolah — lihat README.md",
   "packageManager": "pnpm@12.8.2",
   "engines": {
     "node": ">=24 <25"
