@@ -5,7 +5,8 @@ import { ROLE_LABELS } from "@/lib/school-options";
 
 type Role = Schemas["Role"];
 
-const ROLES = Object.keys(ROLE_LABELS) as Role[];
+// Akun siswa dibuat dari data siswa, bukan dipilih sebagai peran anggota (ADR 0010).
+const ROLES = (Object.keys(ROLE_LABELS) as Role[]).filter((role) => role !== "student");
 
 /** Pemilih satu atau lebih peran sekolah. */
 export function RoleCheckboxes({

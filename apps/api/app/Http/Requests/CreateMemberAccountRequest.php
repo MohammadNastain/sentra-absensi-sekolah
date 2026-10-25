@@ -30,7 +30,7 @@ class CreateMemberAccountRequest extends FormRequest
             'password' => ['required', 'string', PasswordRules::default()],
             'employee_number' => ['nullable', 'string', 'max:50'],
             'roles' => ['required', 'array', 'min:1'],
-            'roles.*' => ['string', 'distinct', Rule::in([Role::SchoolAdmin->value, Role::Principal->value, Role::HomeroomTeacher->value, Role::DutyOfficer->value])],
+            'roles.*' => ['string', 'distinct', Rule::in([Role::SchoolAdmin->value, Role::Principal->value, Role::HomeroomTeacher->value, Role::DutyOfficer->value, Role::Teacher->value])],
         ];
     }
 

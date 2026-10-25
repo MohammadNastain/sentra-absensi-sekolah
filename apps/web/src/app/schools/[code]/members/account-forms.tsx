@@ -11,7 +11,7 @@ type Member = Schemas["Member"];
 type Role = Schemas["Role"];
 
 /** Peran yang dapat diberikan lewat akun langsung (operator terminal memakai perangkat, bukan akun). */
-const ACCOUNT_ROLES: Role[] = ["homeroom_teacher", "duty_officer", "principal", "school_admin"];
+const ACCOUNT_ROLES: Role[] = ["homeroom_teacher", "teacher", "duty_officer", "principal", "school_admin"];
 
 const ALPHABET = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
 

@@ -350,6 +350,7 @@ column students.created_at timestamp with time zone nullable=NO
 column students.date_of_birth date nullable=YES
 column students.full_name text nullable=NO
 column students.id uuid nullable=NO
+column students.membership_id uuid nullable=YES
 column students.nisn text nullable=YES
 column students.school_id uuid nullable=NO
 column students.status text nullable=NO
@@ -516,6 +517,7 @@ index CREATE UNIQUE INDEX student_credentials_one_active ON public.student_crede
 index CREATE UNIQUE INDEX student_credentials_pkey ON public.student_credentials USING btree (id)
 index CREATE UNIQUE INDEX student_credentials_school_id_id_unique ON public.student_credentials USING btree (school_id, id)
 index CREATE UNIQUE INDEX student_credentials_value_unique ON public.student_credentials USING btree (school_id, credential_type, value_hash) WHERE (status <> 'revoked'::text)
+index CREATE UNIQUE INDEX students_membership_id_unique ON public.students USING btree (membership_id)
 index CREATE UNIQUE INDEX students_nisn_unique ON public.students USING btree (school_id, nisn) WHERE (nisn IS NOT NULL)
 index CREATE UNIQUE INDEX students_pkey ON public.students USING btree (id)
 index CREATE UNIQUE INDEX students_school_id_id_unique ON public.students USING btree (school_id, id)
@@ -868,7 +870,7 @@ constraint membership_invitations membership_invitations_id_not_null NOT NULL id
 constraint membership_invitations membership_invitations_invited_by_user_id_fkey FOREIGN KEY (invited_by_user_id) REFERENCES users(id)
 constraint membership_invitations membership_invitations_invited_by_user_id_not_null NOT NULL invited_by_user_id
 constraint membership_invitations membership_invitations_pkey PRIMARY KEY (id)
-constraint membership_invitations membership_invitations_role_codes_check CHECK (((cardinality(role_codes) >= 1) AND (role_codes <@ ARRAY['school_admin'::text, 'principal'::text, 'homeroom_teacher'::text, 'duty_officer'::text, 'terminal_operator'::text])))
+constraint membership_invitations membership_invitations_role_codes_check CHECK (((cardinality(role_codes) >= 1) AND (role_codes <@ ARRAY['school_admin'::text, 'principal'::text, 'homeroom_teacher'::text, 'duty_officer'::text, 'terminal_operator'::text, 'teacher'::text])))
 constraint membership_invitations membership_invitations_role_codes_not_null NOT NULL role_codes
 constraint membership_invitations membership_invitations_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
 constraint membership_invitations membership_invitations_school_id_id_unique UNIQUE (school_id, id)
@@ -1019,6 +1021,8 @@ constraint students students_created_at_not_null NOT NULL created_at
 constraint students students_full_name_not_blank CHECK ((btrim(full_name) <> ''::text))
 constraint students students_full_name_not_null NOT NULL full_name
 constraint students students_id_not_null NOT NULL id
+constraint students students_membership_fk FOREIGN KEY (school_id, membership_id) REFERENCES school_memberships(school_id, id)
+constraint students students_membership_id_unique UNIQUE (membership_id)
 constraint students students_nisn_format CHECK (((nisn IS NULL) OR (nisn ~ '^[0-9]{10}$'::text)))
 constraint students students_number_not_blank CHECK ((btrim(student_number) <> ''::text))
 constraint students students_pkey PRIMARY KEY (id)

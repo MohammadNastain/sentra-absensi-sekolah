@@ -13,6 +13,8 @@ enum Role: string
     case HomeroomTeacher = 'homeroom_teacher';
     case DutyOfficer = 'duty_officer';
     case TerminalOperator = 'terminal_operator';
+    case Teacher = 'teacher';
+    case Student = 'student';
 
     /**
      * @return list<Permission>
@@ -45,6 +47,9 @@ enum Role: string
                 Permission::SchoolLeaveManage,
                 Permission::SchoolLeaveApprove,
                 Permission::SchoolReportsExport,
+                Permission::SchoolLmsView,
+                Permission::SchoolLmsManage,
+                Permission::SchoolLmsGrade,
             ],
             self::Principal => [
                 Permission::SchoolProfileView,
@@ -55,6 +60,7 @@ enum Role: string
                 Permission::SchoolScheduleView,
                 Permission::SchoolAttendanceView,
                 Permission::SchoolReportsExport,
+                Permission::SchoolLmsView,
             ],
             // Data akademik wali kelas dibatasi ke kelas yang ia ampu oleh ClassScope.
             self::HomeroomTeacher => [
@@ -81,7 +87,38 @@ enum Role: string
             self::TerminalOperator => [
                 Permission::SchoolProfileView,
             ],
+            // Guru mata pelajaran: hanya LMS, dan hanya untuk kelas-mapel dari jadwal mengajarnya (LmsScope).
+            self::Teacher => [
+                Permission::SchoolProfileView,
+                Permission::SchoolLmsView,
+                Permission::SchoolLmsManage,
+                Permission::SchoolLmsGrade,
+            ],
+            // Siswa: melihat konten kelasnya dan mengumpulkan tugas (LmsScope).
+            self::Student => [
+                Permission::SchoolProfileView,
+                Permission::SchoolLmsView,
+                Permission::SchoolLmsSubmit,
+            ],
         };
+    }
+
+    /**
+     * Peran yang boleh diberikan lewat undangan, akun langsung, dan ubah peran. Siswa tidak termasuk: akunnya hanya
+     * dibuat dari data siswa (ADR 0010 §1).
+     *
+     * @return list<string>
+     */
+    public static function assignableValues(): array
+    {
+        $codes = [];
+        foreach (self::cases() as $role) {
+            if ($role !== self::Student) {
+                $codes[] = $role->value;
+            }
+        }
+
+        return $codes;
     }
 
     /**

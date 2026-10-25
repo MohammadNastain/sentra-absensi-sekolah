@@ -65,7 +65,7 @@ final class CreateMemberAccount
                 'user_id' => $user->id, 'status' => SchoolMembership::STATUS_ACTIVE, 'roles' => $codes,
             ], actor: $actor);
 
-            if (in_array(Role::HomeroomTeacher, $roles, true)) {
+            if (in_array(Role::HomeroomTeacher, $roles, true) || in_array(Role::Teacher, $roles, true)) {
                 $this->teachers->create($school, $actor, ['full_name' => $name, 'employee_number' => $employeeNumber, 'membership_id' => $membership->id]);
             }
 
