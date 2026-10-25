@@ -46,6 +46,10 @@ class DemoSeeder extends Seeder
                 ['name' => 'SMP Negeri 1 Demo', 'npsn' => '99999991', 'education_levels' => ['SMP'], 'timezone' => 'Asia/Jakarta', 'status' => 'active'],
             );
 
+            if (! DB::table('school_subscriptions')->where('school_id', $school->id)->where('status', '<>', 'ended')->exists()) {
+                DB::table('school_subscriptions')->insert(['school_id' => $school->id, 'plan_code' => 'legacy', 'status' => 'active']);
+            }
+
             $user = User::query()->firstOrCreate(
                 ['email' => 'admin@demo.test'],
                 ['name' => 'Admin Demo', 'password' => Hash::make(self::PASSWORD), 'email_verified_at' => now()],

@@ -186,6 +186,8 @@ column failed_jobs.id bigint nullable=NO
 column failed_jobs.payload text nullable=NO
 column failed_jobs.queue text nullable=NO
 column failed_jobs.uuid text nullable=NO
+column features.code text nullable=NO
+column features.parent_code text nullable=YES
 column holidays.created_at timestamp with time zone nullable=NO
 column holidays.created_by_user_id uuid nullable=YES
 column holidays.end_date date nullable=NO
@@ -258,6 +260,13 @@ column membership_roles.school_id uuid nullable=NO
 column password_reset_tokens.created_at timestamp with time zone nullable=YES
 column password_reset_tokens.email USER-DEFINED nullable=NO
 column password_reset_tokens.token text nullable=NO
+column plan_features.feature_code text nullable=NO
+column plan_features.plan_code text nullable=NO
+column plans.code text nullable=NO
+column plans.is_active boolean nullable=NO
+column plans.min_monthly_idr integer nullable=NO
+column plans.name text nullable=NO
+column plans.price_per_student_idr integer nullable=NO
 column platform_admins.created_at timestamp with time zone nullable=NO
 column platform_admins.created_by_user_id uuid nullable=YES
 column platform_admins.user_id uuid nullable=NO
@@ -281,6 +290,14 @@ column schedules.school_id uuid nullable=NO
 column schedules.scope_key text nullable=YES
 column schedules.scope_type text nullable=NO
 column schedules.updated_at timestamp with time zone nullable=NO
+column school_feature_overrides.created_at timestamp with time zone nullable=NO
+column school_feature_overrides.created_by_user_id uuid nullable=YES
+column school_feature_overrides.effect text nullable=NO
+column school_feature_overrides.feature_code text nullable=NO
+column school_feature_overrides.id uuid nullable=NO
+column school_feature_overrides.reason text nullable=YES
+column school_feature_overrides.school_id uuid nullable=NO
+column school_feature_overrides.updated_at timestamp with time zone nullable=NO
 column school_memberships.created_at timestamp with time zone nullable=NO
 column school_memberships.ended_at timestamp with time zone nullable=YES
 column school_memberships.id uuid nullable=NO
@@ -290,6 +307,15 @@ column school_memberships.status text nullable=NO
 column school_memberships.status_reason text nullable=YES
 column school_memberships.updated_at timestamp with time zone nullable=NO
 column school_memberships.user_id uuid nullable=NO
+column school_subscriptions.created_at timestamp with time zone nullable=NO
+column school_subscriptions.created_by_user_id uuid nullable=YES
+column school_subscriptions.ends_on date nullable=YES
+column school_subscriptions.id uuid nullable=NO
+column school_subscriptions.plan_code text nullable=NO
+column school_subscriptions.school_id uuid nullable=NO
+column school_subscriptions.starts_on date nullable=NO
+column school_subscriptions.status text nullable=NO
+column school_subscriptions.updated_at timestamp with time zone nullable=NO
 column schools.absence_cutoff_time time without time zone nullable=YES
 column schools.absence_rule_enabled boolean nullable=NO
 column schools.address text nullable=YES
@@ -404,6 +430,7 @@ index CREATE INDEX membership_roles_school_role_index ON public.membership_roles
 index CREATE INDEX schedules_no_overlap ON public.schedules USING gist (school_id, scope_key, day_of_week, daterange(effective_from, effective_until, '[]'::text)) WHERE is_active
 index CREATE INDEX schedules_school_scope_index ON public.schedules USING btree (school_id, scope_key, day_of_week, effective_from)
 index CREATE INDEX school_memberships_user_id_index ON public.school_memberships USING btree (user_id)
+index CREATE INDEX school_subscriptions_plan_index ON public.school_subscriptions USING btree (plan_code)
 index CREATE INDEX student_credentials_student_index ON public.student_credentials USING btree (school_id, student_id, issued_at DESC)
 index CREATE INDEX students_full_name_trgm ON public.students USING gin (full_name gin_trgm_ops)
 index CREATE INDEX students_school_name_index ON public.students USING btree (school_id, full_name)
@@ -454,6 +481,7 @@ index CREATE UNIQUE INDEX export_jobs_pkey ON public.export_jobs USING btree (id
 index CREATE UNIQUE INDEX export_jobs_school_id_id_unique ON public.export_jobs USING btree (school_id, id)
 index CREATE UNIQUE INDEX failed_jobs_pkey ON public.failed_jobs USING btree (id)
 index CREATE UNIQUE INDEX failed_jobs_uuid_key ON public.failed_jobs USING btree (uuid)
+index CREATE UNIQUE INDEX features_pkey ON public.features USING btree (code)
 index CREATE UNIQUE INDEX holidays_pkey ON public.holidays USING btree (id)
 index CREATE UNIQUE INDEX holidays_school_id_id_unique ON public.holidays USING btree (school_id, id)
 index CREATE UNIQUE INDEX import_batches_pkey ON public.import_batches USING btree (id)
@@ -468,13 +496,19 @@ index CREATE UNIQUE INDEX membership_invitations_school_id_id_unique ON public.m
 index CREATE UNIQUE INDEX membership_invitations_token_hash_unique ON public.membership_invitations USING btree (token_hash)
 index CREATE UNIQUE INDEX membership_roles_pkey ON public.membership_roles USING btree (membership_id, role_code)
 index CREATE UNIQUE INDEX password_reset_tokens_pkey ON public.password_reset_tokens USING btree (email)
+index CREATE UNIQUE INDEX plan_features_pkey ON public.plan_features USING btree (plan_code, feature_code)
+index CREATE UNIQUE INDEX plans_pkey ON public.plans USING btree (code)
 index CREATE UNIQUE INDEX platform_admins_pkey ON public.platform_admins USING btree (user_id)
 index CREATE UNIQUE INDEX roles_pkey ON public.roles USING btree (code)
 index CREATE UNIQUE INDEX schedules_pkey ON public.schedules USING btree (id)
 index CREATE UNIQUE INDEX schedules_school_id_id_unique ON public.schedules USING btree (school_id, id)
+index CREATE UNIQUE INDEX school_feature_overrides_pkey ON public.school_feature_overrides USING btree (id)
+index CREATE UNIQUE INDEX school_feature_overrides_unique ON public.school_feature_overrides USING btree (school_id, feature_code)
 index CREATE UNIQUE INDEX school_memberships_pkey ON public.school_memberships USING btree (id)
 index CREATE UNIQUE INDEX school_memberships_school_id_id_unique ON public.school_memberships USING btree (school_id, id)
 index CREATE UNIQUE INDEX school_memberships_school_user_unique ON public.school_memberships USING btree (school_id, user_id)
+index CREATE UNIQUE INDEX school_subscriptions_current_unique ON public.school_subscriptions USING btree (school_id) WHERE (status <> 'ended'::text)
+index CREATE UNIQUE INDEX school_subscriptions_pkey ON public.school_subscriptions USING btree (id)
 index CREATE UNIQUE INDEX schools_code_unique ON public.schools USING btree (code)
 index CREATE UNIQUE INDEX schools_npsn_unique ON public.schools USING btree (npsn)
 index CREATE UNIQUE INDEX schools_pkey ON public.schools USING btree (id)
@@ -748,6 +782,10 @@ constraint failed_jobs failed_jobs_pkey PRIMARY KEY (id)
 constraint failed_jobs failed_jobs_queue_not_null NOT NULL queue
 constraint failed_jobs failed_jobs_uuid_key UNIQUE (uuid)
 constraint failed_jobs failed_jobs_uuid_not_null NOT NULL uuid
+constraint features features_code_format CHECK ((code ~ '^[a-z_]+(\.[a-z_]+)?$'::text))
+constraint features features_code_not_null NOT NULL code
+constraint features features_parent_code_fkey FOREIGN KEY (parent_code) REFERENCES features(code)
+constraint features features_pkey PRIMARY KEY (code)
 constraint holidays holidays_created_at_not_null NOT NULL created_at
 constraint holidays holidays_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
 constraint holidays holidays_dates_check CHECK ((end_date >= start_date))
@@ -850,6 +888,19 @@ constraint membership_roles membership_roles_school_id_not_null NOT NULL school_
 constraint password_reset_tokens password_reset_tokens_email_not_null NOT NULL email
 constraint password_reset_tokens password_reset_tokens_pkey PRIMARY KEY (email)
 constraint password_reset_tokens password_reset_tokens_token_not_null NOT NULL token
+constraint plan_features plan_features_feature_code_fkey FOREIGN KEY (feature_code) REFERENCES features(code)
+constraint plan_features plan_features_feature_code_not_null NOT NULL feature_code
+constraint plan_features plan_features_pkey PRIMARY KEY (plan_code, feature_code)
+constraint plan_features plan_features_plan_code_fkey FOREIGN KEY (plan_code) REFERENCES plans(code)
+constraint plan_features plan_features_plan_code_not_null NOT NULL plan_code
+constraint plans plans_code_format CHECK ((code ~ '^[a-z]+$'::text))
+constraint plans plans_code_not_null NOT NULL code
+constraint plans plans_is_active_not_null NOT NULL is_active
+constraint plans plans_min_monthly_idr_not_null NOT NULL min_monthly_idr
+constraint plans plans_name_not_null NOT NULL name
+constraint plans plans_pkey PRIMARY KEY (code)
+constraint plans plans_price_per_student_idr_not_null NOT NULL price_per_student_idr
+constraint plans plans_prices_check CHECK (((price_per_student_idr >= 0) AND (min_monthly_idr >= 0)))
 constraint platform_admins platform_admins_created_at_not_null NOT NULL created_at
 constraint platform_admins platform_admins_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
 constraint platform_admins platform_admins_pkey PRIMARY KEY (user_id)
@@ -883,6 +934,18 @@ constraint schedules schedules_scope_type_check CHECK ((scope_type = ANY (ARRAY[
 constraint schedules schedules_scope_type_not_null NOT NULL scope_type
 constraint schedules schedules_time_order CHECK (((check_in_start < check_in_deadline) AND (check_in_deadline < check_out_start) AND (check_out_start <= scheduled_check_out)))
 constraint schedules schedules_updated_at_not_null NOT NULL updated_at
+constraint school_feature_overrides school_feature_overrides_created_at_not_null NOT NULL created_at
+constraint school_feature_overrides school_feature_overrides_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+constraint school_feature_overrides school_feature_overrides_effect_check CHECK ((effect = ANY (ARRAY['grant'::text, 'revoke'::text])))
+constraint school_feature_overrides school_feature_overrides_effect_not_null NOT NULL effect
+constraint school_feature_overrides school_feature_overrides_feature_code_fkey FOREIGN KEY (feature_code) REFERENCES features(code)
+constraint school_feature_overrides school_feature_overrides_feature_code_not_null NOT NULL feature_code
+constraint school_feature_overrides school_feature_overrides_id_not_null NOT NULL id
+constraint school_feature_overrides school_feature_overrides_pkey PRIMARY KEY (id)
+constraint school_feature_overrides school_feature_overrides_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint school_feature_overrides school_feature_overrides_school_id_not_null NOT NULL school_id
+constraint school_feature_overrides school_feature_overrides_unique UNIQUE (school_id, feature_code)
+constraint school_feature_overrides school_feature_overrides_updated_at_not_null NOT NULL updated_at
 constraint school_memberships school_memberships_created_at_not_null NOT NULL created_at
 constraint school_memberships school_memberships_ended_at_check CHECK (((status = 'ended'::text) = (ended_at IS NOT NULL)))
 constraint school_memberships school_memberships_id_not_null NOT NULL id
@@ -897,6 +960,19 @@ constraint school_memberships school_memberships_status_not_null NOT NULL status
 constraint school_memberships school_memberships_updated_at_not_null NOT NULL updated_at
 constraint school_memberships school_memberships_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
 constraint school_memberships school_memberships_user_id_not_null NOT NULL user_id
+constraint school_subscriptions school_subscriptions_created_at_not_null NOT NULL created_at
+constraint school_subscriptions school_subscriptions_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+constraint school_subscriptions school_subscriptions_dates_check CHECK (((ends_on IS NULL) OR (ends_on >= starts_on)))
+constraint school_subscriptions school_subscriptions_id_not_null NOT NULL id
+constraint school_subscriptions school_subscriptions_pkey PRIMARY KEY (id)
+constraint school_subscriptions school_subscriptions_plan_code_fkey FOREIGN KEY (plan_code) REFERENCES plans(code)
+constraint school_subscriptions school_subscriptions_plan_code_not_null NOT NULL plan_code
+constraint school_subscriptions school_subscriptions_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint school_subscriptions school_subscriptions_school_id_not_null NOT NULL school_id
+constraint school_subscriptions school_subscriptions_starts_on_not_null NOT NULL starts_on
+constraint school_subscriptions school_subscriptions_status_check CHECK ((status = ANY (ARRAY['trial'::text, 'active'::text, 'ended'::text])))
+constraint school_subscriptions school_subscriptions_status_not_null NOT NULL status
+constraint school_subscriptions school_subscriptions_updated_at_not_null NOT NULL updated_at
 constraint schools schools_absence_cutoff_check CHECK (((NOT absence_rule_enabled) OR (absence_cutoff_time IS NOT NULL)))
 constraint schools schools_absence_rule_enabled_not_null NOT NULL absence_rule_enabled
 constraint schools schools_code_format CHECK ((code ~ '^[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?$'::citext))
@@ -1050,8 +1126,16 @@ policy membership_roles own_membership_roles_read SELECT (EXISTS ( SELECT 1
   WHERE ((m.id = membership_roles.membership_id) AND (m.user_id = app_user_id())))) 
 policy membership_roles tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy schedules tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy school_feature_overrides platform_delete DELETE app_is_platform() 
+policy school_feature_overrides platform_insert INSERT  app_is_platform()
+policy school_feature_overrides platform_update UPDATE app_is_platform() app_is_platform()
+policy school_feature_overrides read_own_or_platform SELECT ((school_id = app_school_id()) OR app_is_platform()) 
 policy school_memberships own_memberships_read SELECT (user_id = app_user_id()) 
 policy school_memberships tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy school_subscriptions platform_delete DELETE app_is_platform() 
+policy school_subscriptions platform_insert INSERT  app_is_platform()
+policy school_subscriptions platform_update UPDATE app_is_platform() app_is_platform()
+policy school_subscriptions read_own_or_platform SELECT ((school_id = app_school_id()) OR app_is_platform()) 
 policy student_credentials tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy students tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy subjects tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
@@ -1073,6 +1157,7 @@ rls device_presence enabled=true forced=true
 rls devices enabled=true forced=true
 rls export_jobs enabled=true forced=true
 rls failed_jobs enabled=false forced=false
+rls features enabled=false forced=false
 rls holidays enabled=true forced=true
 rls import_batches enabled=true forced=true
 rls import_rows enabled=true forced=true
@@ -1080,10 +1165,14 @@ rls leave_requests enabled=true forced=true
 rls membership_invitations enabled=true forced=true
 rls membership_roles enabled=true forced=true
 rls password_reset_tokens enabled=false forced=false
+rls plan_features enabled=false forced=false
+rls plans enabled=false forced=false
 rls platform_admins enabled=false forced=false
 rls roles enabled=false forced=false
 rls schedules enabled=true forced=true
+rls school_feature_overrides enabled=true forced=true
 rls school_memberships enabled=true forced=true
+rls school_subscriptions enabled=true forced=true
 rls schools enabled=false forced=false
 rls student_credentials enabled=true forced=true
 rls students enabled=true forced=true

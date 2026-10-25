@@ -27,6 +27,14 @@ final class ManageSchools
             $school->status = is_string($attributes['status'] ?? null) ? $attributes['status'] : School::STATUS_ACTIVE;
             $school->save();
 
+            // Setiap sekolah selalu punya langganan (ADR 0009 §8). Pemilihan paket saat pembuatan menyusul (E5).
+            DB::table('school_subscriptions')->insert([
+                'school_id' => $school->id,
+                'plan_code' => 'legacy',
+                'status' => 'active',
+                'created_by_user_id' => $actor->id,
+            ]);
+
             $this->audit->record('platform.school.created', null, 'school', $school->id, after: $this->snapshot($school), actor: $actor);
 
             return $school;
