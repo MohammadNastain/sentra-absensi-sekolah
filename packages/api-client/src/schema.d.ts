@@ -3062,6 +3062,8 @@ export interface components {
             id: string;
             /** @description Nomor induk siswa (NIS), unik per sekolah. */
             student_number: string;
+            /** @description True bila siswa sudah punya akun login (LMS). */
+            has_account: boolean;
             /** @description 10 digit angka. */
             nisn: string | null;
             full_name: string;
