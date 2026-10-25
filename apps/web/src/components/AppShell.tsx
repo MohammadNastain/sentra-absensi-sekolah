@@ -105,7 +105,7 @@ function Sidebar({ nav, context, open, onClose }: { nav: NavItem[]; context: str
             <BrandMark />
             <span className="leading-tight">
               <span className="block text-lg font-bold tracking-tight">Sentra</span>
-              <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-brand-200/80">Absensi Sekolah</span>
+              <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-brand-200/80">Manajemen Sekolah</span>
             </span>
           </Link>
           <button type="button" onClick={onClose} aria-label="Tutup menu" className="rounded-lg p-1.5 text-white/70 hover:bg-white/10 lg:hidden">

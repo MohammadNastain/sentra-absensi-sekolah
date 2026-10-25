@@ -9,9 +9,9 @@ const FIELD =
   "mt-1.5 block w-full rounded-2xl border border-zinc-200/70 bg-white shadow-card px-3.5 py-2.5 text-zinc-900 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-red-500/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50";
 
 const HIGHLIGHTS = [
-  { icon: IconClock, text: "Scan QR dan RFID tercatat real-time" },
-  { icon: IconUsers, text: "Satu akun, banyak peran dan sekolah" },
-  { icon: IconShield, text: "Data terisolasi per sekolah dan teraudit" },
+  { icon: IconClock, text: "Absensi QR dan RFID tercatat real-time" },
+  { icon: IconUsers, text: "Siswa, guru, dan akademik dalam satu tempat" },
+  { icon: IconShield, text: "Modul sesuai paket, data terisolasi dan teraudit" },
 ];
 
 /** Kerangka halaman autentikasi: panel merek bergerak di kiri, kartu formulir di kanan (menumpuk di layar kecil). */
@@ -49,7 +49,7 @@ export function AuthShell({
           <BrandMark size={46} />
           <span className="leading-tight">
             <span className="block text-2xl font-bold tracking-tight">Sentra</span>
-            <span className="block text-xs font-medium uppercase tracking-[0.16em] text-brand-200/80">Absensi Sekolah</span>
+            <span className="block text-xs font-medium uppercase tracking-[0.16em] text-brand-200/80">Manajemen Sekolah</span>
           </span>
         </div>
 
@@ -57,10 +57,10 @@ export function AuthShell({
 
         <div className="relative max-w-md text-center lg:text-left">
           <h2 className="animate-rise text-2xl font-bold sm:text-3xl lg:text-4xl leading-[1.15] tracking-tight">
-            Kehadiran siswa, tercatat rapi dan <span className="text-gold-400">dapat dipercaya.</span>
+            Satu platform untuk sekolah yang <span className="text-gold-400">rapi dan terpercaya.</span>
           </h2>
           <p className="mt-3 animate-rise text-sm leading-relaxed sm:text-base lg:mt-4 text-brand-50/75 [animation-delay:100ms]">
-            Dari gerbang sekolah sampai laporan bulanan. Satu sistem untuk petugas piket, wali kelas, dan pimpinan sekolah.
+            Dari absensi di gerbang, data siswa dan guru, sampai jadwal dan laporan. Satu sistem untuk admin, guru, wali kelas, dan pimpinan sekolah.
           </p>
           <ul className="mt-8 hidden space-y-3 lg:block">
             {HIGHLIGHTS.map(({ icon: Icon, text }, i) => (
