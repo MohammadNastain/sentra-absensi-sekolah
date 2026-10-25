@@ -2,6 +2,7 @@
 
 namespace App\Support\Http;
 
+use App\Domain\Entitlement\Feature;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -9,13 +10,29 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  */
 class ApiProblem extends HttpException
 {
+    /**
+     * @param  array<string, mixed>  $extensions  field tambahan pada body problem+json (mis. `feature`)
+     */
     public function __construct(
         int $status,
         public readonly string $problemCode,
         public readonly string $title,
         public readonly ?string $detail = null,
+        public readonly array $extensions = [],
     ) {
         parent::__construct($status, $detail ?? $title);
+    }
+
+    /** Sekolah belum berhak atas fitur ini (paket/override, ADR 0009). Berbeda dari izin peran. */
+    public static function featureNotEntitled(Feature $feature): self
+    {
+        return new self(
+            403,
+            'FEATURE_NOT_ENTITLED',
+            'Fitur ini tidak termasuk paket sekolah Anda.',
+            "Fitur \"{$feature->label()}\" belum aktif untuk sekolah ini. Hubungi admin Sentra untuk mengaktifkannya.",
+            ['feature' => $feature->value],
+        );
     }
 
     public static function membershipSuspended(): self

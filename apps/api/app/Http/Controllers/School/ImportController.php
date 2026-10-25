@@ -29,7 +29,13 @@ final class ImportController extends Controller
     public function index(Request $request): JsonResponse
     {
         $type = $request->query('type');
+        if (is_string($type) && in_array($type, ImportKinds::all(), true)) {
+            $this->tenant->requireAnyFeature(ImportKinds::feature($type));
+        }
+        // Riwayat hanya menampilkan jenis impor yang fiturnya masih dimiliki sekolah.
+        $entitled = array_values(array_filter(ImportKinds::all(), fn (string $t) => $this->tenant->hasFeature(ImportKinds::feature($t))));
         $page = ImportBatch::query()
+            ->whereIn('type', $entitled)
             ->when(is_string($type) && $type !== '', fn ($q) => $q->where('type', $type))
             ->orderByDesc('created_at')->orderByDesc('id')
             ->paginate(20);
@@ -57,6 +63,7 @@ final class ImportController extends Controller
 
     private function upload(Request $request, ImportKind $kind): JsonResponse
     {
+        $this->tenant->requireAnyFeature(ImportKinds::feature($kind->type()));
         $request->validate(['file' => ['required', 'file', 'max:5120', 'extensions:csv,xlsx']]);
         $file = $request->file('file');
         abort_if($file === null || is_array($file), 422);
@@ -72,12 +79,12 @@ final class ImportController extends Controller
 
     public function show(School $school, string $import): JsonResponse
     {
-        return response()->json(['data' => self::present($this->find($import))]);
+        return response()->json(['data' => self::present($this->findEntitled($import))]);
     }
 
     public function rows(Request $request, School $school, string $import): JsonResponse
     {
-        $batch = $this->find($import);
+        $batch = $this->findEntitled($import);
         $status = $request->query('status');
 
         $page = ImportRow::query()
@@ -99,6 +106,7 @@ final class ImportController extends Controller
 
     public function commit(Request $request, School $school, string $import): JsonResponse
     {
+        $this->findEntitled($import);
         $batch = $this->imports->commit($this->tenant->school(), $this->actor($request), $import);
 
         return response()->json(['data' => self::present($batch)]);
@@ -107,7 +115,7 @@ final class ImportController extends Controller
     /** Baris yang gagal (atau dilewati saat commit) beserta kesalahannya, siap diperbaiki lalu diunggah ulang. */
     public function failedRows(School $school, string $import): StreamedResponse
     {
-        $batch = $this->find($import);
+        $batch = $this->findEntitled($import);
         $rows = ImportRow::query()->where('batch_id', $batch->id)->whereIn('status', [ImportRow::STATUS_INVALID, ImportRow::STATUS_SKIPPED])->orderBy('row_number')->get();  // dimuat sebelum respons dikirim (konteks sekolah masih aktif)
         $columns = ImportKinds::get($batch->type)->columns();
 
@@ -129,6 +137,7 @@ final class ImportController extends Controller
         if (! is_string($type) || ! in_array($type, $known, true)) {
             throw ValidationException::withMessages(['type' => 'Jenis impor tidak dikenal.']);
         }
+        $this->tenant->requireAnyFeature(ImportKinds::feature($type));
         $kind = ImportKinds::get($type);
 
         return $this->csv($kind->templateFilename(), function ($out) use ($kind): void {
@@ -142,6 +151,15 @@ final class ImportController extends Controller
     private function find(string $id): ImportBatch
     {
         return ImportBatch::query()->find($id) ?? throw new NotFoundHttpException;
+    }
+
+    /** Batch milik sekolah ini yang jenis impornya masih termasuk fitur sekolah (ADR 0009). */
+    private function findEntitled(string $id): ImportBatch
+    {
+        $batch = $this->find($id);
+        $this->tenant->requireAnyFeature(ImportKinds::feature($batch->type));
+
+        return $batch;
     }
 
     /** @param  callable(resource): void  $write */

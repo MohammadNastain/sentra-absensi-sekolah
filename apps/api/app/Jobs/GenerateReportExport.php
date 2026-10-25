@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Domain\Attendance\ManageExports;
+use App\Domain\Entitlement\Feature;
 use App\Domain\Tenancy\TenantAwareJob;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -23,6 +24,16 @@ class GenerateReportExport extends TenantAwareJob implements ShouldQueue
     {
         parent::__construct($schoolId);
         $this->onQueue('exports');
+    }
+
+    protected function requiredFeature(): ?Feature
+    {
+        return Feature::AttendanceReports;
+    }
+
+    protected function entitlementLost(Feature $feature): void
+    {
+        app(ManageExports::class)->failForEntitlement($this->schoolId, $this->exportId);
     }
 
     protected function run(): void

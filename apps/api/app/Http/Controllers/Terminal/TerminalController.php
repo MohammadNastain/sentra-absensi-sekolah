@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Terminal;
 
 use App\Domain\Attendance\RecordScanAction;
+use App\Domain\Credentials\QrToken;
+use App\Domain\Credentials\RfidUid;
 use App\Domain\Devices\PairDevice;
+use App\Domain\Entitlement\Feature;
 use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\AuthenticateDevice;
@@ -48,7 +51,8 @@ final class TerminalController extends Controller
             'school' => ['name' => $school->name, 'timezone' => $school->timezone],
             'device' => ['id' => $device->id, 'name' => $device->name],
             'server_time' => Carbon::now()->toIso8601String(),
-            'methods' => ['qr', 'rfid'],
+            // Hanya metode yang termasuk paket sekolah; penegakan sebenarnya ada di scan().
+            'methods' => array_values(array_filter(['qr', 'rfid'], fn (string $m) => $this->tenant->hasFeature($m === 'qr' ? Feature::AttendanceScanQr : Feature::AttendanceScanRfid))),
             'show_photo' => false,
         ]]);
     }
@@ -65,6 +69,13 @@ final class TerminalController extends Controller
             'idempotency_key' => ['required', 'uuid'],
             'captured_at' => ['nullable', 'date'],
         ]);
+
+        // Metode yang dipindai harus termasuk paket: QR dan RFID dijual terpisah. Nilai tak dikenal tetap diproses
+        // agar ditolak dan tercatat seperti biasa.
+        $method = QrToken::looksLikeToken($data['value']) ? Feature::AttendanceScanQr : (RfidUid::normalize($data['value']) !== null ? Feature::AttendanceScanRfid : null);
+        if ($method !== null) {
+            $this->tenant->requireAnyFeature($method);
+        }
 
         $payload = $this->scans->record(
             $this->tenant->school(),

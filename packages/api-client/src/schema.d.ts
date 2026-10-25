@@ -2425,6 +2425,8 @@ export interface components {
             detail?: string;
             instance?: string;
             request_id?: string;
+            /** @description Hanya pada `FEATURE_NOT_ENTITLED`: kode fitur yang belum dimiliki sekolah, mis. `attendance.leave`. */
+            feature?: string;
             errors?: {
                 [key: string]: string[];
             };
@@ -3762,6 +3764,8 @@ export interface components {
         /**
          * @description Ditolak. `code`: PERMISSION_DENIED, PLATFORM_ADMIN_REQUIRED, TWO_FACTOR_REQUIRED, MEMBERSHIP_SUSPENDED,
          *     SCHOOL_UNAVAILABLE, CANNOT_CHANGE_OWN_ROLES, INVITATION_EMAIL_MISMATCH.
+         *     `FEATURE_NOT_ENTITLED` (ADR 0009): sekolah belum berhak atas fitur rute ini (paket/override/prasyarat); body memuat
+         *     `feature` (kode fitur). Berbeda dari `PERMISSION_DENIED` yang menyangkut peran pengguna, dan diperiksa lebih dulu.
          */
         Forbidden: {
             headers: {

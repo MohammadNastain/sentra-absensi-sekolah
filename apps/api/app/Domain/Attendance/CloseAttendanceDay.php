@@ -3,6 +3,8 @@
 namespace App\Domain\Attendance;
 
 use App\Domain\Audit\AuditLogger;
+use App\Domain\Entitlement\EntitlementResolver;
+use App\Domain\Entitlement\Feature;
 use App\Domain\Scheduling\ScheduleResolver;
 use App\Domain\Tenancy\DatabaseContext;
 use App\Http\Middleware\CountScanOutcomes;
@@ -36,6 +38,7 @@ final class CloseAttendanceDay
         private readonly DatabaseContext $database,
         private readonly ScheduleResolver $resolver,
         private readonly AuditLogger $audit,
+        private readonly EntitlementResolver $entitlement,
     ) {}
 
     /**
@@ -52,6 +55,11 @@ final class CloseAttendanceDay
         $results = [];
         foreach ($schools as $school) {
             try {
+                // Sekolah tanpa modul absensi tidak ikut ditutup (ADR 0009 §5); datanya tidak disentuh.
+                if (! $this->database->runInSchool($school->id, fn () => $this->entitlement->allows($school->id, Feature::Attendance))) {
+                    continue;
+                }
+
                 $local = $date ?? Carbon::now()->setTimezone($school->timezone)->toDateString();
                 // Pemulihan: hari-hari sebelumnya yang terlewat (server mati) dijalankan lagi; run() idempoten dan
                 // menghormati keputusan manusia (penahanan/pelepasan, alpa terverifikasi).

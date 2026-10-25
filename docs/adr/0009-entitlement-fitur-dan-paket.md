@@ -93,6 +93,13 @@ bertanda versi yang dinaikkan setiap perubahan. Cache hanya optimasi, bukan sumb
   sudah mati saat dijalankan (bukan hanya saat diantre). `ExportController` memeriksa fitur saat membuat **dan**
   saat mengunduh.
 - Unduhan file (LMS nanti) memakai middleware yang sama.
+- **Implementasi E2:** rute impor yang tidak membawa jenis di URI (`imports`, `template`, `{import}/…`) digerbang "salah satu"
+  dari fitur impor, lalu pengendali memeriksa jenis tepatnya (`ImportKinds::feature`); riwayat impor hanya menampilkan jenis
+  yang masih dimiliki. Terminal: grup rute digerbang `attendance`, lalu `scan` memeriksa `attendance.scan_qr`/`scan_rfid` dan
+  `config.methods` hanya menyebut metode yang dimiliki. `attendance:close-day` melewati sekolah tanpa `attendance`.
+  Perintah retensi (`imports:purge`, `exports:purge`, `audit:scrub-ip`) sengaja tidak digerbang: pembersihan data tetap
+  berjalan walau fitur dicabut. Himpunan fitur efektif dihitung sekali per request (memo di `TenantContext`); cache Redis
+  ditunda sampai ada ukuran beban.
 - Super Admin sebagai Admin Sekolah virtual (D-21) **ikut terkena** entitlement pada rute operasional sekolah.
   Pengelolaan entitlement sendiri ada di `/platform/*` sehingga tidak terkunci.
 

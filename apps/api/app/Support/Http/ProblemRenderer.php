@@ -37,6 +37,7 @@ final class ProblemRenderer
             $status = $e->getStatusCode();
             [$code, $title, $detail] = [$e->problemCode, $e->title, $e->detail];
             $headers = $e->getHeaders();
+            $extra = $e->extensions;
         } elseif ($e instanceof ValidationException) {
             $status = 422;
             [$code, $title] = self::TITLES[422];
