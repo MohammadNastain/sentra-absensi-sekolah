@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Invitation\PublicInvitationController;
 use App\Http\Controllers\Me\MyInvitationController;
 use App\Http\Controllers\Me\MySchoolsController;
+use App\Http\Controllers\Platform\PlatformAuditLogController;
 use App\Http\Controllers\Platform\PlatformEntitlementController;
 use App\Http\Controllers\Platform\PlatformOverviewController;
 use App\Http\Controllers\Platform\PlatformSchoolController;
@@ -113,6 +114,8 @@ Route::middleware(['auth:sanctum', EnsurePlatformAdmin::class])->prefix('platfor
     Route::post('schools/{school}/activate', [PlatformSchoolController::class, 'activate'])->name('schools.activate');
     Route::post('schools/{school}/invitations', [PlatformSchoolController::class, 'inviteAdmin'])
         ->middleware(EnsureEmailTransportReady::ALIAS)->name('schools.invitations.store');
+
+    Route::get('audit-logs', [PlatformAuditLogController::class, 'index'])->name('audit-logs.index');
 
     // Paket, fitur, dan override per sekolah (ADR 0009 §6).
     Route::get('features', [PlatformEntitlementController::class, 'features'])->name('features.index');

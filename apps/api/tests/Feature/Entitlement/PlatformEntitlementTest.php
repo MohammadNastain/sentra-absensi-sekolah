@@ -228,3 +228,25 @@ it('sekolah tidak bisa mengubah paket atau override sendiri (hanya Super Admin)'
     $this->actingAs($member)->putJson('/api/v1/platform/schools/sekolah-a/entitlements/teachers', ['effect' => 'grant'])->assertForbidden();
     expect(currentSubscriptions($this->school->id)->pluck('plan_code')->all())->toBe(['legacy']);
 });
+
+it('audit platform lintas sekolah memuat perubahan paket dan dapat disaring per sekolah', function () {
+    $other = School::factory()->create(['code' => 'sekolah-b']);
+    $this->putJson('/api/v1/platform/schools/sekolah-a/subscription', ['plan_code' => 'standard'])->assertOk();
+    $this->putJson('/api/v1/platform/schools/sekolah-b/subscription', ['plan_code' => 'premium'])->assertOk();
+
+    $all = $this->getJson('/api/v1/platform/audit-logs?action=platform.subscription')->assertOk()->json('data');
+    expect($all)->toHaveCount(2);
+
+    $onlyA = $this->getJson('/api/v1/platform/audit-logs?school=sekolah-a')->assertOk()->json('data');
+    expect($onlyA)->toHaveCount(1)->and($onlyA[0]['after']['school_id'])->toBe($this->school->id);
+
+    $this->getJson('/api/v1/platform/audit-logs?school=tidak-ada')->assertOk()->assertJsonPath('meta.total', 0);
+    expect($other->id)->not->toBe($this->school->id);
+});
+
+it('audit platform tidak terbaca oleh admin sekolah', function () {
+    $this->putJson('/api/v1/platform/schools/sekolah-a/subscription', ['plan_code' => 'standard'])->assertOk();
+
+    $this->actingAs($this->schoolAdmin);
+    $this->getJson('/api/v1/platform/audit-logs')->assertForbidden();
+});

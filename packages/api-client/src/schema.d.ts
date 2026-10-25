@@ -869,6 +869,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Audit platform lintas sekolah (hanya baca, append-only)
+         * @description Hanya Super Admin. Memuat audit tingkat platform (school_id kosong); audit sekolah ada di /schools/{school}/audit-logs. Filter `school` (kode) menyaring entri milik sekolah itu.
+         */
+        get: operations["listPlatformAuditLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/academic-years": {
         parameters: {
             query?: never;
@@ -5707,6 +5727,40 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listPlatformAuditLogs: {
+        parameters: {
+            query?: {
+                /** @description Awalan action, mis. `platform.entitlement`. */
+                action?: string;
+                entity_type?: string;
+                /** @description Kode sekolah; kode tak dikenal menghasilkan daftar kosong. */
+                school?: string;
+                /** @description Nomor halaman (50 baris per halaman), mulai dari 1. */
+                page?: components["parameters"]["Page"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Halaman audit platform, terbaru lebih dulu. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AuditLog"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
             422: components["responses"]["ValidationFailed"];
         };
     };

@@ -172,6 +172,10 @@ it('sekolah uji coba mencatat tanggal berakhir pada langganannya', function () {
     expect(subscriptionOf('smpn-1-contoh'))->toMatchObject(['plan_code' => 'basic', 'status' => 'trial', 'ends_on' => $end]);
 });
 
+it('menolak kode sekolah yang dicadangkan rute web', function (string $code) {
+    $this->postJson('/api/v1/platform/schools', newSchoolPayload(['code' => $code]))->assertUnprocessable()->assertJsonValidationErrors('code');
+})->with(['new', 'schools', 'audit']);
+
 it('menolak paket tidak dikenal, paket tidak ditawarkan, dan tanggal uji coba lampau', function (array $override, string $field) {
     $this->postJson('/api/v1/platform/schools', newSchoolPayload($override))->assertUnprocessable()->assertJsonValidationErrors($field);
 })->with([

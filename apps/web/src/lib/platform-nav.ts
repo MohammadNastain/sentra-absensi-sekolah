@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
-import { IconBuilding, IconChart, IconUserPlus } from "@/components/icons";
+import { IconBuilding, IconChart, IconShield, IconUserPlus } from "@/components/icons";
 import type { NavItem } from "@/components/AppShell";
 import { buildSchoolNav } from "@/lib/school-nav";
 
@@ -46,12 +46,14 @@ function subscribe(notify: () => void): () => void {
 export function platformItems(pathname: string, group = "Platform"): NavItem[] {
   const creating = pathname === "/platform/new";
   const onDashboard = pathname === "/platform";
+  const onAudit = pathname === "/platform/audit";
   const onPlatform = pathname.startsWith("/platform/");
 
   return [
     { href: "/platform", label: "Dasbor", icon: IconChart, group, active: onDashboard },
-    { href: "/platform/schools", label: "Daftar sekolah", icon: IconBuilding, group, active: onPlatform && !creating },
+    { href: "/platform/schools", label: "Daftar sekolah", icon: IconBuilding, group, active: onPlatform && !creating && !onAudit },
     { href: "/platform/new", label: "Sekolah baru", icon: IconUserPlus, group, active: creating },
+    { href: "/platform/audit", label: "Audit platform", icon: IconShield, group, active: onAudit },
   ];
 }
 
