@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { usePlatformNav } from "@/lib/platform-nav";
+import { EntitlementsSection } from "./entitlements-section";
 import { SchoolForm, type SchoolFormPayload } from "@/components/SchoolForm";
 import { BackLink, FormAlert, PrimaryButton, StatusBadge, TextAreaField, TextField } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -75,6 +76,7 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
           </div>
 
           <ProfileSection school={school} onSaved={setSchool} />
+          <EntitlementsSection school={school} />
           <StatusSection school={school} onChanged={setSchool} />
           <InviteAdminSection school={school} />
         </>

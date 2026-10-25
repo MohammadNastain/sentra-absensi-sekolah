@@ -14,7 +14,7 @@ import { useSchool } from "./school-context";
 
 /** Ringkasan sekolah dan (bagi pemilik izin) ubah profil. */
 export default function SchoolHomePage() {
-  const { code, profile, meName, setProfile, can } = useSchool();
+  const { code, profile, meName, setProfile, can, hasFeature } = useSchool();
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<FormFailure | null>(null);
   const [saved, setSaved] = useState(false);
@@ -41,7 +41,9 @@ export default function SchoolHomePage() {
   }
 
   const firstName = (meName ?? "").split(" ")[0];
-  const viewAttendance = can("school.attendance.view");
+  // Widget kehadiran hanya bila modul absensi dimiliki; tren memakai data rekap (attendance.reports).
+  const viewAttendance = can("school.attendance.view") && hasFeature("attendance");
+  const viewTrend = viewAttendance && hasFeature("attendance.reports");
 
   return (
     <div className="space-y-6">
@@ -58,15 +60,23 @@ export default function SchoolHomePage() {
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{firstName ? `Halo, ${firstName}!` : "Selamat datang!"}</h1>
           <p className="mt-2 text-base leading-relaxed text-brand-50/80">
-            Ringkasan kehadiran <span className="font-semibold text-white">{profile.name}</span> hari ini, diperbarui otomatis.
+            {hasFeature("attendance") ? (
+              <>
+                Ringkasan kehadiran <span className="font-semibold text-white">{profile.name}</span> hari ini, diperbarui otomatis.
+              </>
+            ) : (
+              <>
+                Selamat datang di <span className="font-semibold text-white">{profile.name}</span>.
+              </>
+            )}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            {can("school.attendance.review") || can("school.attendance.assist") ? (
+            {hasFeature("attendance") && (can("school.attendance.review") || can("school.attendance.assist")) ? (
               <HeroLink href={`/schools/${code}/attendance`} primary>
                 Buka kehadiran
               </HeroLink>
             ) : null}
-            {can("school.reports.export") ? <HeroLink href={`/schools/${code}/reports`}>Lihat laporan</HeroLink> : null}
+            {hasFeature("attendance.reports") && can("school.reports.export") ? <HeroLink href={`/schools/${code}/reports`}>Lihat laporan</HeroLink> : null}
           </div>
         </div>
       </section>
@@ -74,12 +84,12 @@ export default function SchoolHomePage() {
       {viewAttendance ? <AttendanceToday /> : null}
 
       <div className="grid gap-6 xl:grid-cols-3">
-        {viewAttendance ? (
+        {viewTrend ? (
           <div className="xl:col-span-2">
             <AttendanceTrend />
           </div>
         ) : null}
-        <section className={`rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-card dark:border-zinc-800 dark:bg-zinc-900 ${viewAttendance ? "" : "xl:col-span-3"}`}>
+        <section className={`rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-card dark:border-zinc-800 dark:bg-zinc-900 ${viewTrend ? "" : "xl:col-span-3"}`}>
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Profil sekolah</h2>
           <dl className="mt-4 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2 xl:grid-cols-1">
             <Item label="Kode" value={<span className="font-mono">{profile.code}</span>} />
