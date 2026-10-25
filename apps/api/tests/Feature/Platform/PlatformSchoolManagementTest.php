@@ -150,3 +150,40 @@ it('daftar sekolah platform terpaginasi dan terurut nama', function () {
 it('sekolah yang tidak ada → 404', function () {
     $this->getJson('/api/v1/platform/schools/tidak-ada')->assertNotFound();
 });
+
+function subscriptionOf(string $code): ?object
+{
+    return test()->dbContext()->runAsPlatform(fn () => DB::table('school_subscriptions as s')
+        ->join('schools as c', 'c.id', '=', 's.school_id')->where('c.code', $code)->first(['s.plan_code', 's.status', 's.ends_on']));
+}
+
+it('membuat sekolah dengan paket pilihan; tanpa pilihan memakai legacy', function () {
+    $this->postJson('/api/v1/platform/schools', newSchoolPayload(['plan_code' => 'standard']))->assertCreated();
+    $this->postJson('/api/v1/platform/schools', newSchoolPayload(['code' => 'smpn-2-contoh', 'npsn' => '20100002']))->assertCreated();
+
+    expect(subscriptionOf('smpn-1-contoh'))->toMatchObject(['plan_code' => 'standard', 'status' => 'active', 'ends_on' => null])
+        ->and(subscriptionOf('smpn-2-contoh')->plan_code)->toBe('legacy');
+});
+
+it('sekolah uji coba mencatat tanggal berakhir pada langganannya', function () {
+    $end = now()->addDays(30)->toDateString();
+    $this->postJson('/api/v1/platform/schools', newSchoolPayload(['plan_code' => 'basic', 'status' => 'trial', 'trial_ends_on' => $end]))->assertCreated();
+
+    expect(subscriptionOf('smpn-1-contoh'))->toMatchObject(['plan_code' => 'basic', 'status' => 'trial', 'ends_on' => $end]);
+});
+
+it('menolak paket tidak dikenal, paket tidak ditawarkan, dan tanggal uji coba lampau', function (array $override, string $field) {
+    $this->postJson('/api/v1/platform/schools', newSchoolPayload($override))->assertUnprocessable()->assertJsonValidationErrors($field);
+})->with([
+    'tidak dikenal' => [['plan_code' => 'emas'], 'plan_code'],
+    'legacy tidak ditawarkan' => [['plan_code' => 'legacy'], 'plan_code'],
+    'tanggal lampau' => [['status' => 'trial', 'trial_ends_on' => '2020-01-01'], 'trial_ends_on'],
+]);
+
+it('dasbor platform menghitung sekolah per paket', function () {
+    $this->postJson('/api/v1/platform/schools', newSchoolPayload(['plan_code' => 'premium']))->assertCreated();
+
+    $rows = collect($this->getJson('/api/v1/platform/overview')->assertOk()->json('data.schools_by_plan'))->keyBy('code');
+
+    expect($rows['premium']['total'])->toBe(1)->and($rows['basic']['total'])->toBe(0);
+});

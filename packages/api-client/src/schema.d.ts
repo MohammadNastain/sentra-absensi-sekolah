@@ -2683,6 +2683,12 @@ export interface components {
                 status: string;
                 total: number;
             }[];
+            /** @description Jumlah sekolah per paket berjalan; paket tidak ditawarkan hanya muncul bila masih dipakai. */
+            schools_by_plan: {
+                code: string;
+                name: string;
+                total: number;
+            }[];
             schools_by_level: {
                 level: string;
                 total: number;
@@ -2729,6 +2735,13 @@ export interface components {
              * @enum {string}
              */
             status?: "trial" | "active";
+            /** @description Opsional; kode paket yang ditawarkan (lihat `GET /platform/plans`). Kosong = `legacy`. */
+            plan_code?: string;
+            /**
+             * Format: date
+             * @description Opsional; hanya dipakai bila status `trial`. Harus setelah hari ini.
+             */
+            trial_ends_on?: string | null;
         };
         /** @description Semua field opsional. `code` dan `status` ditolak (422). */
         SchoolUpdate: {

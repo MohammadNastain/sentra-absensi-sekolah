@@ -130,10 +130,19 @@ function Dashboard({ overview }: { overview: Overview }) {
         </Reveal>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <Reveal index={6}>
           <Card title="Status sekolah">
             <Bars rows={overview.schools_by_status.map((r) => ({ key: r.status, label: STATUS_LABEL[r.status] ?? r.status, total: r.total, color: STATUS_COLOR[r.status] ?? "bg-brand-500" }))} />
+          </Card>
+        </Reveal>
+        <Reveal index={9}>
+          <Card title="Paket sekolah">
+            {overview.schools_by_plan.length === 0 ? (
+              <Empty>Belum ada sekolah.</Empty>
+            ) : (
+              <Bars rows={overview.schools_by_plan.map((r) => ({ key: r.code, label: r.name, total: r.total, color: "bg-brand-500" }))} />
+            )}
           </Card>
         </Reveal>
         <Reveal index={7}>

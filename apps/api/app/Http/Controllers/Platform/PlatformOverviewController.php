@@ -31,6 +31,13 @@ final class PlatformOverviewController extends Controller
             ->selectRaw('level, count(*) AS total')
             ->groupBy('level')->orderByDesc('total')->pluck('total', 'level');
 
+        // Paket berjalan per sekolah (satu langganan non-ended per sekolah); semua paket ditampilkan termasuk yang kosong.
+        $planCounts = DB::table('school_subscriptions')->where('status', '<>', 'ended')
+            ->selectRaw('plan_code, count(*) AS total')->groupBy('plan_code')->pluck('total', 'plan_code');
+        $plans = DB::table('plans')->orderBy('price_per_student_idr')->get(['code', 'name', 'is_active'])
+            ->filter(fn ($p) => $p->is_active || ($planCounts[$p->code] ?? 0) > 0)
+            ->map(fn ($p) => ['code' => $p->code, 'name' => $p->name, 'total' => (int) ($planCounts[$p->code] ?? 0)])->values()->all();
+
         $students = 0;
         $teachers = 0;
         $daily = [];
@@ -91,6 +98,7 @@ final class PlatformOverviewController extends Controller
             ],
             'schools_by_status' => collect(['trial', 'active', 'suspended', 'terminated'])
                 ->map(fn ($s) => ['status' => $s, 'total' => (int) ($byStatus[$s] ?? 0)])->all(),
+            'schools_by_plan' => $plans,
             'schools_by_level' => $byLevel->map(fn ($total, $level) => ['level' => $level, 'total' => (int) $total])->values()->all(),
             'attendance_trend' => $trend,
             'schools_today' => array_slice($schoolsToday, 0, 8),

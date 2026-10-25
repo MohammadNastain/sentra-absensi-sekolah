@@ -22,16 +22,23 @@ final class ManageSchools
     public function create(User $actor, array $attributes): School
     {
         return DB::transaction(function () use ($actor, $attributes) {
+            $plan = is_string($attributes['plan_code'] ?? null) ? $attributes['plan_code'] : 'legacy';
+            $trialEnds = is_string($attributes['trial_ends_on'] ?? null) ? $attributes['trial_ends_on'] : null;
+            $status = is_string($attributes['status'] ?? null) ? $attributes['status'] : School::STATUS_ACTIVE;
+            unset($attributes['plan_code'], $attributes['trial_ends_on'], $attributes['status']);
+
             $school = new School;
             $school->fill($attributes);
-            $school->status = is_string($attributes['status'] ?? null) ? $attributes['status'] : School::STATUS_ACTIVE;
+            $school->status = $status;
             $school->save();
 
-            // Setiap sekolah selalu punya langganan (ADR 0009 §8). Pemilihan paket saat pembuatan menyusul (E5).
+            // Setiap sekolah selalu punya langganan (ADR 0009 §8); tanggal uji coba hanya berlaku bagi sekolah berstatus trial.
+            $trial = $school->status === School::STATUS_TRIAL;
             DB::table('school_subscriptions')->insert([
                 'school_id' => $school->id,
-                'plan_code' => 'legacy',
-                'status' => 'active',
+                'plan_code' => $plan,
+                'status' => $trial ? 'trial' : 'active',
+                'ends_on' => $trial ? $trialEnds : null,
                 'created_by_user_id' => $actor->id,
             ]);
 

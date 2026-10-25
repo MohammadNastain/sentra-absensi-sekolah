@@ -1,7 +1,7 @@
 "use client";
 
 import type { Schemas } from "@sentra/api-client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { FormAlert, PrimaryButton, SelectField, TextAreaField, TextField } from "@/components/ui";
 import type { FormFailure } from "@/lib/errors";
 import { EDUCATION_LEVELS, TIMEZONES } from "@/lib/school-options";
@@ -34,6 +34,7 @@ export function SchoolForm({
   failure,
   pending,
   submitLabel,
+  extra,
   onSubmit,
 }: {
   mode: "create" | "edit";
@@ -41,7 +42,9 @@ export function SchoolForm({
   failure: FormFailure | null;
   pending: boolean;
   submitLabel: string;
-  onSubmit: (payload: SchoolFormPayload) => void;
+  /** Kolom tambahan sebelum tombol kirim; nilainya dibaca pemanggil dari FormData (argumen kedua onSubmit). */
+  extra?: ReactNode;
+  onSubmit: (payload: SchoolFormPayload, form: FormData) => void;
 }) {
   const [levels, setLevels] = useState<string[]>(initial?.education_levels ?? []);
 
@@ -53,14 +56,17 @@ export function SchoolForm({
         event.preventDefault();
         const form = new FormData(event.currentTarget);
         const text = (key: string) => String(form.get(key) ?? "").trim();
-        onSubmit({
+        onSubmit(
+          {
           code: text("code"),
           name: text("name"),
           npsn: text("npsn") || null,
           education_levels: levels as Schemas["EducationLevel"][],
           timezone: text("timezone") as Schemas["Timezone"],
           address: text("address") || null,
-        });
+          },
+          form,
+        );
       }}
     >
       {failure ? <FormAlert>{failure.message}</FormAlert> : null}
@@ -121,6 +127,8 @@ export function SchoolForm({
         ))}
       </SelectField>
       <TextAreaField label="Alamat" name="address" defaultValue={initial?.address ?? ""} error={failure?.fields.address} />
+
+      {extra}
 
       <PrimaryButton type="submit" pending={pending}>
         {submitLabel}
