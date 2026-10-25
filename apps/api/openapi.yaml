@@ -440,6 +440,159 @@ paths:
         "401": { $ref: "#/components/responses/Unauthenticated" }
         "403": { $ref: "#/components/responses/Forbidden" }
 
+  /platform/features:
+    get:
+      tags: [platform]
+      operationId: listFeatures
+      summary: "Registri fitur yang dapat dijual (ADR 0009)"
+      responses:
+        "200":
+          description: "Semua fitur beserta induk, prasyarat, dan status rilis."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/FeatureDefinition" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /platform/plans:
+    get:
+      tags: [platform]
+      operationId: listPlans
+      summary: "Daftar paket beserta isi fiturnya"
+      responses:
+        "200":
+          description: "Paket (Basic/Standard/Premium dan legacy). Harga hipotesis, belum final."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Plan" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /platform/schools/{school}/entitlements:
+    get:
+      tags: [platform]
+      operationId: getSchoolEntitlements
+      summary: "Matriks akses modul dan fitur sebuah sekolah, lengkap dengan sumbernya"
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Langganan berjalan dan status tiap fitur (paket, override, prasyarat, belum rilis)."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/SchoolEntitlements" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /platform/schools/{school}/subscription:
+    put:
+      tags: [platform]
+      operationId: changeSchoolPlan
+      summary: "Ganti paket sekolah (dengan pratinjau dampak)"
+      description: |
+        Langganan lama menjadi riwayat (`ended`); override tidak pernah dihapus. Bila perubahan mematikan fitur,
+        permintaan ditolak `409 IMPACT_CONFIRMATION_REQUIRED` (body memuat `impact`) sampai diulang dengan
+        `confirm_impact=true`. `dry_run=true` hanya mengembalikan pratinjau tanpa menyimpan.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: "#/components/schemas/EntitlementChange" }
+                - type: object
+                  required: [plan_code]
+                  properties:
+                    plan_code: { type: string, example: standard }
+      responses:
+        "200":
+          description: "Diterapkan, atau pratinjau bila `dry_run`."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EntitlementChangeEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ImpactConfirmationRequired" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+  /platform/schools/{school}/entitlements/{feature}:
+    put:
+      tags: [platform]
+      operationId: setSchoolFeatureOverride
+      summary: "Atur override fitur sebuah sekolah (grant atau revoke)"
+      description: |
+        `grant` ditolak `422 FEATURE_UNRELEASED` untuk fitur yang belum dirilis dan `422 FEATURE_DEPENDENCY_MISSING`
+        bila prasyaratnya tidak efektif. Mencabut fitur yang membuat fitur turunan mati memerlukan `confirm_impact`.
+        Efek yang sama dengan override saat ini → `applied=false`, `unchanged=true`, tanpa audit.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/FeatureCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: "#/components/schemas/EntitlementChange" }
+                - type: object
+                  required: [effect]
+                  properties:
+                    effect: { type: string, enum: [grant, revoke] }
+      responses:
+        "200":
+          description: "Diterapkan, tidak berubah, atau pratinjau bila `dry_run`."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EntitlementChangeEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ImpactConfirmationRequired" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    delete:
+      tags: [platform]
+      operationId: removeSchoolFeatureOverride
+      summary: "Hapus override fitur (kembali mengikuti paket)"
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/FeatureCode"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EntitlementChange" }
+      responses:
+        "200":
+          description: "Dihapus, atau pratinjau bila `dry_run`."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EntitlementChangeEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ImpactConfirmationRequired" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
   /platform/schools:
     get:
       tags: [platform]
@@ -637,6 +790,27 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/entitlements:
+    get:
+      tags: [school]
+      operationId: getMyEntitlements
+      summary: "Fitur yang efektif bagi sekolah ini (untuk menyaring menu)"
+      description: "Hanya untuk UX; penegakan tetap di setiap rute (`FEATURE_NOT_ENTITLED`). Rute inti, tidak digerbang fitur."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Paket berjalan dan kode fitur yang efektif."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/MyEntitlements" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /schools/{school}/members:
     get:
       tags: [school]
@@ -3383,6 +3557,12 @@ components:
       required: true
       description: "Kode sekolah (slug), bukan UUID."
       schema: { type: string }
+    FeatureCode:
+      name: feature
+      in: path
+      required: true
+      description: "Kode fitur, mis. `attendance.leave` (lihat `GET /platform/features`)."
+      schema: { type: string, pattern: "^[a-z_.]+$" }
     MembershipId:
       name: membership
       in: path
@@ -3480,6 +3660,13 @@ components:
       content:
         application/problem+json:
           schema: { $ref: "#/components/schemas/Problem" }
+    ImpactConfirmationRequired:
+      description: |
+        `IMPACT_CONFIRMATION_REQUIRED`: perubahan mematikan fitur lain. Body problem memuat `impact`
+        (`lost`, `gained`, `redundant_overrides`); ulangi dengan `confirm_impact=true` setelah ditinjau.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
     Conflict:
       description: |
         Konflik. `code`: LAST_SCHOOL_ADMIN, INVALID_STATE_TRANSITION, INVITATION_ALREADY_PENDING, ALREADY_MEMBER,
@@ -3534,7 +3721,14 @@ components:
         request_id: { type: string }
         feature:
           type: string
-          description: "Hanya pada `FEATURE_NOT_ENTITLED`: kode fitur yang belum dimiliki sekolah, mis. `attendance.leave`."
+          description: "Pada `FEATURE_NOT_ENTITLED`, `FEATURE_UNRELEASED`, `FEATURE_DEPENDENCY_MISSING`: kode fitur terkait, mis. `attendance.leave`."
+        missing:
+          type: array
+          description: "Hanya pada `FEATURE_DEPENDENCY_MISSING`: prasyarat yang belum efektif."
+          items: { type: string }
+        impact:
+          description: "Hanya pada `IMPACT_CONFIRMATION_REQUIRED`: dampak perubahan."
+          $ref: "#/components/schemas/EntitlementImpact"
         errors:
           type: object
           additionalProperties:
@@ -3588,6 +3782,126 @@ components:
       properties:
         code: { type: string }
         name: { type: string }
+    FeatureDefinition:
+      type: object
+      required: [code, label, parent, requires, released]
+      properties:
+        code: { type: string, example: attendance.leave }
+        label: { type: string }
+        parent: { type: [string, "null"] }
+        requires:
+          type: array
+          description: "Prasyarat selain induk."
+          items: { type: string }
+        released: { type: boolean, description: "Fitur yang belum dirilis tidak pernah efektif." }
+    Plan:
+      type: object
+      required: [code, name, price_per_student_idr, min_monthly_idr, is_active, features]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        price_per_student_idr: { type: integer }
+        min_monthly_idr: { type: integer }
+        is_active: { type: boolean, description: "Ditawarkan untuk dipilih; `legacy` tidak." }
+        features:
+          type: array
+          items: { type: string }
+    FeatureEntitlement:
+      type: object
+      required: [code, label, parent, requires, released, in_plan, override, enabled, source, missing]
+      properties:
+        code: { type: string }
+        label: { type: string }
+        parent: { type: [string, "null"] }
+        requires:
+          type: array
+          items: { type: string }
+        released: { type: boolean }
+        in_plan: { type: boolean, description: "Ada di paket berjalan." }
+        override:
+          type: [string, "null"]
+          enum: [grant, revoke, null]
+        enabled: { type: boolean, description: "Akses efektif." }
+        source:
+          type: string
+          enum: [plan, override_grant, override_revoke, not_in_plan, blocked_by_dependency, unreleased]
+        missing:
+          type: array
+          description: "Prasyarat yang belum efektif (bila `blocked_by_dependency`)."
+          items: { type: string }
+    SchoolSubscription:
+      type: object
+      required: [plan_code, plan_name, status, starts_on, ends_on]
+      properties:
+        plan_code: { type: string }
+        plan_name: { type: string }
+        status: { type: string, enum: [trial, active] }
+        starts_on: { type: string, format: date }
+        ends_on: { type: [string, "null"], format: date }
+    SchoolEntitlements:
+      type: object
+      required: [subscription, features]
+      properties:
+        subscription:
+          oneOf:
+            - { $ref: "#/components/schemas/SchoolSubscription" }
+            - { type: "null" }
+        features:
+          type: array
+          items: { $ref: "#/components/schemas/FeatureEntitlement" }
+    EntitlementChange:
+      type: object
+      properties:
+        reason: { type: [string, "null"], maxLength: 500 }
+        dry_run: { type: boolean, description: "Hanya pratinjau dampak; tidak menyimpan." }
+        confirm_impact: { type: boolean, description: "Wajib true bila perubahan mematikan fitur lain." }
+    EntitlementImpact:
+      type: object
+      required: [lost, gained, redundant_overrides]
+      properties:
+        lost:
+          type: array
+          description: "Fitur yang efektif sebelumnya dan tidak lagi sesudahnya (termasuk turunan yang tertahan)."
+          items: { type: string }
+        gained:
+          type: array
+          items: { type: string }
+        redundant_overrides:
+          type: array
+          description: "Override yang setelah perubahan sama dengan paket; tetap tersimpan."
+          items: { type: string }
+    EntitlementChangeResult:
+      type: object
+      required: [applied, unchanged, requires_confirmation, impact]
+      properties:
+        applied: { type: boolean }
+        unchanged: { type: boolean }
+        requires_confirmation: { type: boolean }
+        impact: { $ref: "#/components/schemas/EntitlementImpact" }
+        entitlements:
+          description: "Matriks sesudah perubahan (hanya bila `applied`)."
+          $ref: "#/components/schemas/SchoolEntitlements"
+    EntitlementChangeEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/EntitlementChangeResult" }
+    MyEntitlements:
+      type: object
+      required: [plan, features]
+      properties:
+        plan:
+          oneOf:
+            - type: object
+              required: [code, name]
+              properties:
+                code: { type: string }
+                name: { type: string }
+            - { type: "null" }
+        features:
+          type: array
+          description: "Kode fitur yang efektif."
+          items: { type: string }
     PlatformOverview:
       type: object
       required: [as_of, totals, schools_by_status, schools_by_level, attendance_trend, schools_today]

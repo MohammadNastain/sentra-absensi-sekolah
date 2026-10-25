@@ -58,6 +58,12 @@ final class RouteMatrix
 
             // Platform
             'GET api/v1/platform/overview' => 'platform',
+            'GET api/v1/platform/features' => 'platform',
+            'GET api/v1/platform/plans' => 'platform',
+            'GET api/v1/platform/schools/{school}/entitlements' => 'platform',
+            'PUT api/v1/platform/schools/{school}/subscription' => 'platform',
+            'PUT api/v1/platform/schools/{school}/entitlements/{feature}' => 'platform',
+            'DELETE api/v1/platform/schools/{school}/entitlements/{feature}' => 'platform',
             'GET api/v1/platform/schools' => 'platform',
             'POST api/v1/platform/schools' => 'platform',
             'GET api/v1/platform/schools/{school}' => 'platform',
@@ -69,6 +75,7 @@ final class RouteMatrix
             // Sekolah
             'GET api/v1/schools/{school}' => Permission::SchoolProfileView,
             'PATCH api/v1/schools/{school}' => Permission::SchoolProfileUpdate,
+            'GET api/v1/schools/{school}/entitlements' => Permission::SchoolProfileView,
             'GET api/v1/schools/{school}/members' => Permission::SchoolMembersView,
             'POST api/v1/schools/{school}/members/accounts' => Permission::SchoolMembersManage,
             'PUT api/v1/schools/{school}/members/{membership}/password' => Permission::SchoolMembersManage,
@@ -210,7 +217,7 @@ final class RouteMatrix
         $head = $parts[0];
 
         return match (true) {
-            $head === '', in_array($head, ['members', 'invitations', 'audit-logs'], true) => null,
+            $head === '', in_array($head, ['members', 'invitations', 'audit-logs', 'entitlements'], true) => null,
             $head === 'academic-years' => [Feature::AcademicYears],
             $head === 'teachers' => [Feature::Teachers],
             $head === 'subjects' => [Feature::AcademicSubjects],

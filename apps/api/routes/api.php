@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Invitation\PublicInvitationController;
 use App\Http\Controllers\Me\MyInvitationController;
 use App\Http\Controllers\Me\MySchoolsController;
+use App\Http\Controllers\Platform\PlatformEntitlementController;
 use App\Http\Controllers\Platform\PlatformOverviewController;
 use App\Http\Controllers\Platform\PlatformSchoolController;
 use App\Http\Controllers\School\AbsenceController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\School\CalendarController;
 use App\Http\Controllers\School\CorrectionController;
 use App\Http\Controllers\School\CredentialController;
 use App\Http\Controllers\School\DeviceController;
+use App\Http\Controllers\School\EntitlementController;
 use App\Http\Controllers\School\ExportController;
 use App\Http\Controllers\School\HolidayController;
 use App\Http\Controllers\School\ImportController;
@@ -110,6 +112,14 @@ Route::middleware(['auth:sanctum', EnsurePlatformAdmin::class])->prefix('platfor
     Route::post('schools/{school}/activate', [PlatformSchoolController::class, 'activate'])->name('schools.activate');
     Route::post('schools/{school}/invitations', [PlatformSchoolController::class, 'inviteAdmin'])
         ->middleware(EnsureEmailTransportReady::ALIAS)->name('schools.invitations.store');
+
+    // Paket, fitur, dan override per sekolah (ADR 0009 §6).
+    Route::get('features', [PlatformEntitlementController::class, 'features'])->name('features.index');
+    Route::get('plans', [PlatformEntitlementController::class, 'plans'])->name('plans.index');
+    Route::get('schools/{school}/entitlements', [PlatformEntitlementController::class, 'show'])->name('schools.entitlements.show');
+    Route::put('schools/{school}/subscription', [PlatformEntitlementController::class, 'changePlan'])->name('schools.subscription.update');
+    Route::put('schools/{school}/entitlements/{feature}', [PlatformEntitlementController::class, 'setOverride'])->where('feature', '[a-z_.]+')->name('schools.entitlements.set');
+    Route::delete('schools/{school}/entitlements/{feature}', [PlatformEntitlementController::class, 'removeOverride'])->where('feature', '[a-z_.]+')->name('schools.entitlements.remove');
 });
 
 // --- Sekolah (keanggotaan divalidasi setiap request, D-34) ---
@@ -118,6 +128,10 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware(RequireSchoolPermission::using(Permission::SchoolProfileView))->name('show');
     Route::patch('/', [SchoolProfileController::class, 'update'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolProfileUpdate))->name('update');
+
+    // Inti: fitur efektif sekolah ini (untuk menyaring menu); tidak digerbang fitur.
+    Route::get('entitlements', [EntitlementController::class, 'show'])
+        ->middleware(RequireSchoolPermission::using(Permission::SchoolProfileView))->name('entitlements.show');
 
     Route::get('members', [MemberController::class, 'index'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolMembersView))->name('members.index');

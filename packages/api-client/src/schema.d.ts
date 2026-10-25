@@ -376,6 +376,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Registri fitur yang dapat dijual (ADR 0009) */
+        get: operations["listFeatures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar paket beserta isi fiturnya */
+        get: operations["listPlans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/schools/{school}/entitlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Matriks akses modul dan fitur sebuah sekolah, lengkap dengan sumbernya */
+        get: operations["getSchoolEntitlements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/schools/{school}/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Ganti paket sekolah (dengan pratinjau dampak)
+         * @description Langganan lama menjadi riwayat (`ended`); override tidak pernah dihapus. Bila perubahan mematikan fitur,
+         *     permintaan ditolak `409 IMPACT_CONFIRMATION_REQUIRED` (body memuat `impact`) sampai diulang dengan
+         *     `confirm_impact=true`. `dry_run=true` hanya mengembalikan pratinjau tanpa menyimpan.
+         */
+        put: operations["changeSchoolPlan"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/schools/{school}/entitlements/{feature}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Atur override fitur sebuah sekolah (grant atau revoke)
+         * @description `grant` ditolak `422 FEATURE_UNRELEASED` untuk fitur yang belum dirilis dan `422 FEATURE_DEPENDENCY_MISSING`
+         *     bila prasyaratnya tidak efektif. Mencabut fitur yang membuat fitur turunan mati memerlukan `confirm_impact`.
+         *     Efek yang sama dengan override saat ini → `applied=false`, `unchanged=true`, tanpa audit.
+         */
+        put: operations["setSchoolFeatureOverride"];
+        post?: never;
+        /** Hapus override fitur (kembali mengikuti paket) */
+        delete: operations["removeSchoolFeatureOverride"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/schools": {
         parameters: {
             query?: never;
@@ -485,6 +581,26 @@ export interface paths {
          * @description Izin: school.profile.update.
          */
         patch: operations["updateSchoolProfile"];
+        trace?: never;
+    };
+    "/schools/{school}/entitlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fitur yang efektif bagi sekolah ini (untuk menyaring menu)
+         * @description Hanya untuk UX; penegakan tetap di setiap rute (`FEATURE_NOT_ENTITLED`). Rute inti, tidak digerbang fitur.
+         */
+        get: operations["getMyEntitlements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/schools/{school}/members": {
@@ -2425,8 +2541,12 @@ export interface components {
             detail?: string;
             instance?: string;
             request_id?: string;
-            /** @description Hanya pada `FEATURE_NOT_ENTITLED`: kode fitur yang belum dimiliki sekolah, mis. `attendance.leave`. */
+            /** @description Pada `FEATURE_NOT_ENTITLED`, `FEATURE_UNRELEASED`, `FEATURE_DEPENDENCY_MISSING`: kode fitur terkait, mis. `attendance.leave`. */
             feature?: string;
+            /** @description Hanya pada `FEATURE_DEPENDENCY_MISSING`: prasyarat yang belum efektif. */
+            missing?: string[];
+            /** @description Hanya pada `IMPACT_CONFIRMATION_REQUIRED`: dampak perubahan. */
+            impact?: components["schemas"]["EntitlementImpact"];
             errors?: {
                 [key: string]: string[];
             };
@@ -2466,6 +2586,89 @@ export interface components {
         SchoolRef: {
             code: string;
             name: string;
+        };
+        FeatureDefinition: {
+            /** @example attendance.leave */
+            code: string;
+            label: string;
+            parent: string | null;
+            /** @description Prasyarat selain induk. */
+            requires: string[];
+            /** @description Fitur yang belum dirilis tidak pernah efektif. */
+            released: boolean;
+        };
+        Plan: {
+            code: string;
+            name: string;
+            price_per_student_idr: number;
+            min_monthly_idr: number;
+            /** @description Ditawarkan untuk dipilih; `legacy` tidak. */
+            is_active: boolean;
+            features: string[];
+        };
+        FeatureEntitlement: {
+            code: string;
+            label: string;
+            parent: string | null;
+            requires: string[];
+            released: boolean;
+            /** @description Ada di paket berjalan. */
+            in_plan: boolean;
+            /** @enum {string|null} */
+            override: "grant" | "revoke" | null;
+            /** @description Akses efektif. */
+            enabled: boolean;
+            /** @enum {string} */
+            source: "plan" | "override_grant" | "override_revoke" | "not_in_plan" | "blocked_by_dependency" | "unreleased";
+            /** @description Prasyarat yang belum efektif (bila `blocked_by_dependency`). */
+            missing: string[];
+        };
+        SchoolSubscription: {
+            plan_code: string;
+            plan_name: string;
+            /** @enum {string} */
+            status: "trial" | "active";
+            /** Format: date */
+            starts_on: string;
+            /** Format: date */
+            ends_on: string | null;
+        };
+        SchoolEntitlements: {
+            subscription: components["schemas"]["SchoolSubscription"] | null;
+            features: components["schemas"]["FeatureEntitlement"][];
+        };
+        EntitlementChange: {
+            reason?: string | null;
+            /** @description Hanya pratinjau dampak; tidak menyimpan. */
+            dry_run?: boolean;
+            /** @description Wajib true bila perubahan mematikan fitur lain. */
+            confirm_impact?: boolean;
+        };
+        EntitlementImpact: {
+            /** @description Fitur yang efektif sebelumnya dan tidak lagi sesudahnya (termasuk turunan yang tertahan). */
+            lost: string[];
+            gained: string[];
+            /** @description Override yang setelah perubahan sama dengan paket; tetap tersimpan. */
+            redundant_overrides: string[];
+        };
+        EntitlementChangeResult: {
+            applied: boolean;
+            unchanged: boolean;
+            requires_confirmation: boolean;
+            impact: components["schemas"]["EntitlementImpact"];
+            /** @description Matriks sesudah perubahan (hanya bila `applied`). */
+            entitlements?: components["schemas"]["SchoolEntitlements"];
+        };
+        EntitlementChangeEnvelope: {
+            data: components["schemas"]["EntitlementChangeResult"];
+        };
+        MyEntitlements: {
+            plan: {
+                code: string;
+                name: string;
+            } | null;
+            /** @description Kode fitur yang efektif. */
+            features: string[];
         };
         PlatformOverview: {
             /** Format: date */
@@ -3785,6 +3988,18 @@ export interface components {
             };
         };
         /**
+         * @description `IMPACT_CONFIRMATION_REQUIRED`: perubahan mematikan fitur lain. Body problem memuat `impact`
+         *     (`lost`, `gained`, `redundant_overrides`); ulangi dengan `confirm_impact=true` setelah ditinjau.
+         */
+        ImpactConfirmationRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /**
          * @description Konflik. `code`: LAST_SCHOOL_ADMIN, INVALID_STATE_TRANSITION, INVITATION_ALREADY_PENDING, ALREADY_MEMBER,
          *     ACADEMIC_YEAR_OVERLAP, DUPLICATE_VALUE, ENROLLMENT_CONFLICT, SCHEDULE_CONFLICT.
          */
@@ -3858,6 +4073,8 @@ export interface components {
         Page: number;
         /** @description Kode sekolah (slug), bukan UUID. */
         SchoolCode: string;
+        /** @description Kode fitur, mis. `attendance.leave` (lihat `GET /platform/features`). */
+        FeatureCode: string;
         MembershipId: string;
         InvitationId: string;
         AcademicYearId: string;
@@ -4476,6 +4693,188 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    listFeatures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Semua fitur beserta induk, prasyarat, dan status rilis. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["FeatureDefinition"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listPlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paket (Basic/Standard/Premium dan legacy). Harga hipotesis, belum final. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Plan"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getSchoolEntitlements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Langganan berjalan dan status tiap fitur (paket, override, prasyarat, belum rilis). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SchoolEntitlements"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    changeSchoolPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntitlementChange"] & {
+                    /** @example standard */
+                    plan_code: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Diterapkan, atau pratinjau bila `dry_run`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntitlementChangeEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ImpactConfirmationRequired"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    setSchoolFeatureOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                /** @description Kode fitur, mis. `attendance.leave` (lihat `GET /platform/features`). */
+                feature: components["parameters"]["FeatureCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntitlementChange"] & {
+                    /** @enum {string} */
+                    effect: "grant" | "revoke";
+                };
+            };
+        };
+        responses: {
+            /** @description Diterapkan, tidak berubah, atau pratinjau bila `dry_run`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntitlementChangeEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ImpactConfirmationRequired"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    removeSchoolFeatureOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                /** @description Kode fitur, mis. `attendance.leave` (lihat `GET /platform/features`). */
+                feature: components["parameters"]["FeatureCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EntitlementChange"];
+            };
+        };
+        responses: {
+            /** @description Dihapus, atau pratinjau bila `dry_run`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntitlementChangeEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ImpactConfirmationRequired"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
     listSchools: {
         parameters: {
             query?: {
@@ -4746,6 +5145,34 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getMyEntitlements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paket berjalan dan kode fitur yang efektif. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["MyEntitlements"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     listMembers: {

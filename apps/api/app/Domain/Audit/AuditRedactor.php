@@ -37,6 +37,9 @@ final class AuditRedactor
         'class_enrollment' => ['student_id', 'class_id', 'start_date', 'end_date'],
         'school_class' => ['name', 'grade_level', 'academic_year_id', 'homeroom_teacher_id', 'status'],
         'platform_access' => ['method', 'path'],
+        // Audit platform memakai school_id NULL; sekolah terdampak ada di nilai (school_id), impact memuat kode fitur.
+        'school_subscription' => ['school_id', 'plan_code', 'status', 'impact'],
+        'school_feature_override' => ['school_id', 'feature_code', 'effect', 'impact'],
         'auth' => ['email'],
     ];
 
