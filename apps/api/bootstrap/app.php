@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforcePasswordChange;
 use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequireAssistSession;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeaders::class);
         $middleware->append(ResetDatabaseContext::class);
         $middleware->appendToGroup('web', EnsureUserActive::class);
+        $middleware->appendToGroup('web', EnforcePasswordChange::class);
         $middleware->alias([
             RequireSchoolPermission::ALIAS => RequireSchoolPermission::class,
             RequireSchoolFeature::ALIAS => RequireSchoolFeature::class,

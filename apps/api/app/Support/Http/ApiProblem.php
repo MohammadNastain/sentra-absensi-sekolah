@@ -60,6 +60,11 @@ class ApiProblem extends HttpException
         );
     }
 
+    public static function passwordChangeRequired(): self
+    {
+        return new self(403, 'PASSWORD_CHANGE_REQUIRED', 'Ganti kata sandi awal Anda dahulu.', 'Akun ini memakai kata sandi awal dari admin. Buat kata sandi baru sebelum melanjutkan.');
+    }
+
     public static function permissionDenied(): self
     {
         return new self(403, 'PERMISSION_DENIED', 'Anda tidak memiliki izin untuk tindakan ini.');

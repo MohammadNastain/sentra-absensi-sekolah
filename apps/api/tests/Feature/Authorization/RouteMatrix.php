@@ -105,6 +105,10 @@ final class RouteMatrix
             'POST api/v1/schools/{school}/devices/{device}/pairing-code' => Permission::SchoolDevicesManage,
             'POST api/v1/schools/{school}/devices/{device}/revoke' => Permission::SchoolDevicesManage,
 
+            // Akun siswa (ADR 0010)
+            'POST api/v1/schools/{school}/students/accounts' => Permission::SchoolStudentsManage,
+            'POST api/v1/schools/{school}/students/{student}/account/password' => Permission::SchoolStudentsManage,
+
             // Kredensial (Tahap 3A)
             'GET api/v1/schools/{school}/students/{student}/credentials' => Permission::SchoolCredentialsView,
             'POST api/v1/schools/{school}/students/{student}/credentials/rfid' => Permission::SchoolCredentialsManage,

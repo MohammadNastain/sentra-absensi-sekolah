@@ -21,6 +21,7 @@ final class MeController extends Controller
                 'email' => $user->email,
                 'name' => $user->name,
                 'two_factor_enabled' => $user->hasConfirmedTwoFactor(),
+                'must_change_password' => $user->must_change_password,
                 'is_platform_admin' => $user->isPlatformAdmin(),
                 'two_factor_passed' => SessionPolicy::twoFactorPassed($request, $user),
             ],

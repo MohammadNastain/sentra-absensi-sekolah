@@ -16,6 +16,6 @@ final class ResetUserPassword implements ResetsUserPasswords
     {
         Validator::make($input, ['password' => PasswordRules::forNewPassword()])->validate();
 
-        $user->forceFill(['password' => $input['password']])->save();
+        $user->forceFill(['password' => $input['password'], 'must_change_password' => false])->save();
     }
 }

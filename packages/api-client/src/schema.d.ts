@@ -16,6 +16,8 @@ export interface paths {
         /**
          * Masuk dengan email dan password
          * @description Bila akun memakai 2FA, respons `two_factor: true` dan sesi menunggu `two-factor-challenge`.
+         *     Siswa memasukkan `<kode-sekolah>/<NIS>` (mis. `smpn1/2024001`) pada kolom `email`; server memetakannya ke akun siswa
+         *     (ADR 0010). Kata sandi awal wajib diganti: lihat `must_change_password` di `/auth/me`.
          */
         post: operations["login"];
         delete?: never;
@@ -1049,6 +1051,49 @@ export interface paths {
          * @description Izin: school.students.manage.
          */
         post: operations["createStudent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/students/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Buat akun login siswa dari NIS (satu, banyak, atau satu kelas)
+         * @description Izin: school.students.manage; fitur: students. Memberi `student_ids` (maks 200) atau `class_id` (siswa aktif kelas itu yang
+         *     belum punya akun). Setiap akun mendapat kata sandi awal acak yang dikembalikan **sekali** di respons ini (tidak disimpan
+         *     terbaca, tidak masuk audit, `Cache-Control: no-store`). Siswa yang tidak memenuhi syarat dilewati dengan alasan:
+         *     `has_account`, `inactive`, `invalid_number` (NIS berisi karakter di luar huruf/angka/titik/garis), `conflict`, `not_found`.
+         */
+        post: operations["createStudentAccounts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/students/{student}/account/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atur ulang kata sandi akun siswa (sandi awal baru)
+         * @description Izin: school.students.manage; fitur: students. Mengembalikan sandi awal baru sekali (`no-store`) dan memaksa siswa menggantinya saat login berikutnya. 409 bila siswa belum punya akun.
+         */
+        post: operations["resetStudentAccountPassword"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2580,6 +2625,8 @@ export interface components {
             email: string;
             name: string;
             two_factor_enabled: boolean;
+            /** @description True bila akun masih memakai kata sandi awal dari admin (siswa); selama true API menolak rute lain dengan PASSWORD_CHANGE_REQUIRED. */
+            must_change_password: boolean;
             is_platform_admin: boolean;
             two_factor_passed: boolean;
         };
@@ -3000,6 +3047,16 @@ export interface components {
         };
         /** @enum {string} */
         StudentStatus: "active" | "inactive" | "graduated" | "transferred";
+        /** @description Kredensial login siswa; `initial_password` hanya ditampilkan sekali. */
+        StudentCredentials: {
+            /** Format: uuid */
+            student_id: string;
+            student_number: string;
+            full_name: string;
+            /** @description Diketik siswa di kolom login: `<kode-sekolah>/<NIS>`. */
+            username: string;
+            initial_password: string;
+        };
         Student: {
             /** Format: uuid */
             id: string;
@@ -3980,6 +4037,8 @@ export interface components {
         /**
          * @description Ditolak. `code`: PERMISSION_DENIED, PLATFORM_ADMIN_REQUIRED, TWO_FACTOR_REQUIRED, MEMBERSHIP_SUSPENDED,
          *     SCHOOL_UNAVAILABLE, CANNOT_CHANGE_OWN_ROLES, INVITATION_EMAIL_MISMATCH.
+         *     `PASSWORD_CHANGE_REQUIRED` (ADR 0010): akun memakai kata sandi awal; hanya `/auth/me`, ganti sandi, dan keluar yang
+         *     dilayani sampai sandi diganti.
          *     `FEATURE_NOT_ENTITLED` (ADR 0009): sekolah belum berhak atas fitur rute ini (paket/override/prasyarat); body memuat
          *     `feature` (kode fitur). Berbeda dari `PERMISSION_DENIED` yang menyangkut peran pengguna, dan diperiksa lebih dulu.
          */
@@ -4122,7 +4181,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /** Format: email */
+                    /** @description Email, atau `<kode-sekolah>/<NIS>` untuk siswa. */
                     email: string;
                     password: string;
                 };
@@ -6120,6 +6179,81 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    createStudentAccounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    student_ids?: string[];
+                    /** Format: uuid */
+                    class_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Akun dibuat; kredensial hanya muncul di sini. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            created: components["schemas"]["StudentCredentials"][];
+                            skipped: {
+                                /** Format: uuid */
+                                student_id: string;
+                                /** @enum {string} */
+                                reason: "has_account" | "inactive" | "invalid_number" | "conflict" | "not_found";
+                            }[];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    resetStudentAccountPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sandi awal baru. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["StudentCredentials"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     getStudent: {

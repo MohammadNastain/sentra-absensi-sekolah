@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Domain\Identity\Actions\ResetUserPassword;
 use App\Domain\Identity\Actions\UpdateUserPassword;
+use App\Domain\Identity\StudentLogin;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -35,7 +36,8 @@ class FortifyServiceProvider extends ServiceProvider
 
         // User nonaktif dan kredensial salah menghasilkan respons yang identik (A02, A03).
         Fortify::authenticateUsing(function (Request $request): ?User {
-            $user = User::query()->where('email', (string) $request->input(Fortify::username()))->first();
+            // Siswa mengetik `kode-sekolah/NIS`; dipetakan ke alamat sintetisnya (ADR 0010 §1).
+            $user = User::query()->where('email', StudentLogin::toEmail((string) $request->input(Fortify::username())))->first();
             $valid = Hash::check((string) $request->input('password'), $user->password ?? (self::$dummyHash ??= Hash::make(Str::random(40))));
 
             return $user !== null && $valid && $user->isActive() ? $user : null;
@@ -49,7 +51,7 @@ class FortifyServiceProvider extends ServiceProvider
 
     private function configureRateLimiting(): void
     {
-        $email = fn (Request $request): string => Str::lower((string) $request->input('email'));
+        $email = fn (Request $request): string => StudentLogin::toEmail((string) $request->input('email'));
 
         // Bawaan 5/menit per akun+IP. E2E CI login puluhan kali sebagai akun demo yang sama, jadi bisa dinaikkan lewat env.
         $perAccount = max(1, (int) config('sentra.login_attempts_per_minute'));

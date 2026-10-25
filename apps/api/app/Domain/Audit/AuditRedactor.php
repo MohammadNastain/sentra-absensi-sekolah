@@ -24,6 +24,7 @@ final class AuditRedactor
         'teaching_slot' => ['class_id', 'subject_id', 'teacher_id', 'day_of_week', 'start_time', 'end_time'],
         'student' => ['student_number', 'nisn', 'full_name', 'date_of_birth', 'status'],
         'import_batch' => ['type', 'original_filename', 'file_sha256', 'total_rows', 'valid_rows', 'invalid_rows', 'committed_rows', 'status'],
+        'student_account' => ['username', 'membership_id'],
         'student_credential' => ['student_id', 'credential_type', 'status', 'status_reason', 'replaces_credential_id'],
         'attendance_event' => ['student_id', 'event_type', 'result', 'reason_code', 'assist_reason_code', 'device_id', 'method', 'attendance_status'],
         'attendance_correction' => ['student_id', 'attendance_date', 'adjustment_type', 'attendance_status', 'early_leave_status'],

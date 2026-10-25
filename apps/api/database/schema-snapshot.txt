@@ -390,6 +390,7 @@ column users.email USER-DEFINED nullable=NO
 column users.email_verified_at timestamp with time zone nullable=YES
 column users.id uuid nullable=NO
 column users.last_login_at timestamp with time zone nullable=YES
+column users.must_change_password boolean nullable=NO
 column users.name text nullable=NO
 column users.password text nullable=NO
 column users.remember_token text nullable=YES
@@ -1090,6 +1091,7 @@ constraint users users_created_at_not_null NOT NULL created_at
 constraint users users_email_not_null NOT NULL email
 constraint users users_email_unique UNIQUE (email)
 constraint users users_id_not_null NOT NULL id
+constraint users users_must_change_password_not_null NOT NULL must_change_password
 constraint users users_name_not_blank CHECK ((btrim(name) <> ''::text))
 constraint users users_name_not_null NOT NULL name
 constraint users users_password_not_null NOT NULL password
