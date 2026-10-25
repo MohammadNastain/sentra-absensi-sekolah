@@ -4,6 +4,7 @@ namespace App\Domain\Membership\Actions;
 
 use App\Domain\Audit\AuditLogger;
 use App\Domain\Identity\Role;
+use App\Domain\Identity\StudentLogin;
 use App\Domain\Tenancy\DatabaseContext;
 use App\Models\School;
 use App\Models\SchoolMembership;
@@ -101,6 +102,9 @@ final class ManageMembers
             $user = User::query()->find($membership->user_id) ?? throw new NotFoundHttpException;
             if (! $user->isActive()) {
                 throw ApiProblem::invalidStateTransition('Akun pengguna tidak aktif.');
+            }
+            if (StudentLogin::isSynthetic($user->email)) {
+                throw ApiProblem::invalidStateTransition('Akun siswa tidak memiliki email; atur ulang sandinya dari halaman siswa.');
             }
 
             $status = Password::sendResetLink(['email' => $user->email], function ($recipient, string $token) {

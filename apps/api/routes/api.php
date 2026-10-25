@@ -29,6 +29,7 @@ use App\Http\Controllers\School\ReportController;
 use App\Http\Controllers\School\ScheduleController;
 use App\Http\Controllers\School\SchoolClassController;
 use App\Http\Controllers\School\SchoolProfileController;
+use App\Http\Controllers\School\StudentAccountController;
 use App\Http\Controllers\School\StudentController;
 use App\Http\Controllers\School\SubjectController;
 use App\Http\Controllers\School\TeacherController;
@@ -216,6 +217,10 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsView)])->name('students.index');
     Route::post('students', [StudentController::class, 'store'])
         ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('students.store');
+    Route::post('students/accounts', [StudentAccountController::class, 'store'])
+        ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('students.accounts.store');
+    Route::post('students/{student}/account/password', [StudentAccountController::class, 'resetPassword'])->whereUuid('student')
+        ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('students.account.password');
     Route::get('students/{student}', [StudentController::class, 'show'])->whereUuid('student')
         ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsView)])->name('students.show');
     Route::patch('students/{student}', [StudentController::class, 'update'])->whereUuid('student')

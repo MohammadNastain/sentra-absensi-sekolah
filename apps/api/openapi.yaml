@@ -26,7 +26,10 @@ paths:
       tags: [auth]
       operationId: login
       summary: "Masuk dengan email dan password"
-      description: "Bila akun memakai 2FA, respons `two_factor: true` dan sesi menunggu `two-factor-challenge`."
+      description: |
+        Bila akun memakai 2FA, respons `two_factor: true` dan sesi menunggu `two-factor-challenge`.
+        Siswa memasukkan `<kode-sekolah>/<NIS>` (mis. `smpn1/2024001`) pada kolom `email`; server memetakannya ke akun siswa
+        (ADR 0010). Kata sandi awal wajib diganti: lihat `must_change_password` di `/auth/me`.
       security: []
       requestBody:
         required: true
@@ -36,7 +39,9 @@ paths:
               type: object
               required: [email, password]
               properties:
-                email: { type: string, format: email }
+                email:
+                  type: string
+                  description: "Email, atau `<kode-sekolah>/<NIS>` untuk siswa."
                 password: { type: string }
       responses:
         "200":
@@ -1549,6 +1554,88 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/students/accounts:
+    post:
+      tags: [school]
+      operationId: createStudentAccounts
+      summary: "Buat akun login siswa dari NIS (satu, banyak, atau satu kelas)"
+      description: |
+        Izin: school.students.manage; fitur: students. Memberi `student_ids` (maks 200) atau `class_id` (siswa aktif kelas itu yang
+        belum punya akun). Setiap akun mendapat kata sandi awal acak yang dikembalikan **sekali** di respons ini (tidak disimpan
+        terbaca, tidak masuk audit, `Cache-Control: no-store`). Siswa yang tidak memenuhi syarat dilewati dengan alasan:
+        `has_account`, `inactive`, `invalid_number` (NIS berisi karakter di luar huruf/angka/titik/garis), `conflict`, `not_found`.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                student_ids:
+                  type: array
+                  minItems: 1
+                  maxItems: 200
+                  uniqueItems: true
+                  items: { type: string, format: uuid }
+                class_id: { type: string, format: uuid }
+      responses:
+        "201":
+          description: "Akun dibuat; kredensial hanya muncul di sini."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [created, skipped]
+                    properties:
+                      created:
+                        type: array
+                        items: { $ref: "#/components/schemas/StudentCredentials" }
+                      skipped:
+                        type: array
+                        items:
+                          type: object
+                          required: [student_id, reason]
+                          properties:
+                            student_id: { type: string, format: uuid }
+                            reason: { type: string, enum: [has_account, inactive, invalid_number, conflict, not_found] }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+
+  /schools/{school}/students/{student}/account/password:
+    post:
+      tags: [school]
+      operationId: resetStudentAccountPassword
+      summary: "Atur ulang kata sandi akun siswa (sandi awal baru)"
+      description: "Izin: school.students.manage; fitur: students. Mengembalikan sandi awal baru sekali (`no-store`) dan memaksa siswa menggantinya saat login berikutnya. 409 bila siswa belum punya akun."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - name: student
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: "Sandi awal baru."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/StudentCredentials" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
   /schools/{school}/students/{student}:
     get:
       tags: [school]
@@ -3650,6 +3737,8 @@ components:
       description: |
         Ditolak. `code`: PERMISSION_DENIED, PLATFORM_ADMIN_REQUIRED, TWO_FACTOR_REQUIRED, MEMBERSHIP_SUSPENDED,
         SCHOOL_UNAVAILABLE, CANNOT_CHANGE_OWN_ROLES, INVITATION_EMAIL_MISMATCH.
+        `PASSWORD_CHANGE_REQUIRED` (ADR 0010): akun memakai kata sandi awal; hanya `/auth/me`, ganti sandi, dan keluar yang
+        dilayani sampai sandi diganti.
         `FEATURE_NOT_ENTITLED` (ADR 0009): sekolah belum berhak atas fitur rute ini (paket/override/prasyarat); body memuat
         `feature` (kode fitur). Berbeda dari `PERMISSION_DENIED` yang menyangkut peran pengguna, dan diperiksa lebih dulu.
       content:
@@ -3768,12 +3857,15 @@ components:
       enum: [Asia/Jakarta, Asia/Makassar, Asia/Jayapura]
     Me:
       type: object
-      required: [id, email, name, two_factor_enabled, is_platform_admin, two_factor_passed]
+      required: [id, email, name, two_factor_enabled, must_change_password, is_platform_admin, two_factor_passed]
       properties:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
         name: { type: string }
         two_factor_enabled: { type: boolean }
+        must_change_password:
+          type: boolean
+          description: "True bila akun masih memakai kata sandi awal dari admin (siswa); selama true API menolak rute lain dengan PASSWORD_CHANGE_REQUIRED."
         is_platform_admin: { type: boolean }
         two_factor_passed: { type: boolean }
     SchoolRef:
@@ -4305,6 +4397,16 @@ components:
     StudentStatus:
       type: string
       enum: [active, inactive, graduated, transferred]
+    StudentCredentials:
+      type: object
+      description: "Kredensial login siswa; `initial_password` hanya ditampilkan sekali."
+      required: [student_id, student_number, full_name, username, initial_password]
+      properties:
+        student_id: { type: string, format: uuid }
+        student_number: { type: string }
+        full_name: { type: string }
+        username: { type: string, description: "Diketik siswa di kolom login: `<kode-sekolah>/<NIS>`." }
+        initial_password: { type: string }
     Student:
       type: object
       required: [id, student_number, nisn, full_name, date_of_birth, status, current_class]

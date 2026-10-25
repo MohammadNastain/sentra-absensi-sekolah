@@ -21,6 +21,6 @@ final class UpdateUserPassword implements UpdatesUserPasswords
             'current_password.current_password' => 'Password saat ini tidak sesuai.',
         ])->validate();
 
-        $user->forceFill(['password' => $input['password']])->save();
+        $user->forceFill(['password' => $input['password'], 'must_change_password' => false])->save();
     }
 }

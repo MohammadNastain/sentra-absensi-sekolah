@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\School;
 
+use App\Domain\Identity\Role;
 use App\Domain\Membership\Actions\CreateMemberAccount;
 use App\Domain\Membership\Actions\ManageMembers;
 use App\Domain\Tenancy\TenantContext;
@@ -16,6 +17,7 @@ use App\Models\SchoolMembership;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class MemberController extends Controller
@@ -29,6 +31,8 @@ final class MemberController extends Controller
         $page = SchoolMembership::query()
             ->with(['user', 'roles'])
             ->when(is_string($status) && $status !== '', fn ($q) => $q->where('status', $status))
+            // Akun siswa dikelola dari halaman siswa; ratusan baris siswa tidak boleh memenuhi daftar anggota.
+            ->whereNotIn('id', DB::table('membership_roles')->where('role_code', Role::Student->value)->select('membership_id'))
             ->orderBy('joined_at')
             ->orderBy('id')
             ->paginate(50);

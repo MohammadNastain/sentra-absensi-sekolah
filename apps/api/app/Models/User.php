@@ -21,6 +21,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property string $name
  * @property string $status
+ * @property bool $must_change_password
  * @property Carbon|null $two_factor_confirmed_at
  * @property Carbon|null $last_login_at
  */
@@ -35,6 +36,9 @@ class User extends Authenticatable
 
     public const STATUS_DISABLED = 'disabled';
 
+    /** Default basis data juga berlaku pada instance baru (mode atribut ketat). */
+    protected $attributes = ['must_change_password' => false];
+
     /**
      * @return array<string, string>
      */
@@ -44,6 +48,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'must_change_password' => 'boolean',
             'password' => 'hashed',
         ];
     }
