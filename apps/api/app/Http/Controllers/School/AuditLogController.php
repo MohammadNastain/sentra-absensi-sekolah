@@ -6,6 +6,7 @@ use App\Domain\Tenancy\TenantContext;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -41,7 +42,7 @@ final class AuditLogController extends Controller
     public const COLUMNS = ['a.id', 'a.action', 'a.entity_type', 'a.entity_id', 'a.reason', 'a.before_value', 'a.after_value', 'a.request_id', 'a.created_at', 'a.actor_type', 'a.actor_user_id', 'u.name as actor_name'];
 
     /**
-     * @param  \Illuminate\Pagination\LengthAwarePaginator<int, mixed>  $page
+     * @param  LengthAwarePaginator<int, mixed>  $page
      */
     public static function respond($page): JsonResponse
     {
