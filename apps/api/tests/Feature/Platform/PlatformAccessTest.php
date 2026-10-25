@@ -46,6 +46,11 @@ it('A08: alur penuh login → tantangan 2FA → akses platform', function () {
     $this->getJson('/api/v1/platform/schools')
         ->assertOk()
         ->assertJsonPath('data.0.name', 'SMP Contoh');
+    $this->getJson('/api/v1/platform/overview')
+        ->assertOk()
+        ->assertJsonPath('data.totals.schools', 1)
+        ->assertJsonCount(14, 'data.attendance_trend')
+        ->assertJsonPath('data.schools_today.0.name', 'SMP Contoh');
 });
 
 it('A08: kode 2FA salah tidak memberi akses', function () {

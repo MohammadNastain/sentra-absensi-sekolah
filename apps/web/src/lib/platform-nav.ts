@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
-import { IconBuilding, IconUserPlus } from "@/components/icons";
+import { IconBuilding, IconChart, IconUserPlus } from "@/components/icons";
 import type { NavItem } from "@/components/AppShell";
 import { buildSchoolNav } from "@/lib/school-nav";
 
@@ -42,13 +42,15 @@ function subscribe(notify: () => void): () => void {
   };
 }
 
-/** Item grup Platform: daftar sekolah (termasuk halaman detail) dan pembuatan sekolah baru. */
+/** Item grup Platform: dasbor, daftar sekolah (termasuk halaman detail), dan pembuatan sekolah baru. */
 export function platformItems(pathname: string, group = "Platform"): NavItem[] {
   const creating = pathname === "/platform/new";
-  const onPlatform = pathname === "/platform" || pathname.startsWith("/platform/");
+  const onDashboard = pathname === "/platform";
+  const onPlatform = pathname.startsWith("/platform/");
 
   return [
-    { href: "/platform", label: "Daftar sekolah", icon: IconBuilding, group, active: onPlatform && !creating },
+    { href: "/platform", label: "Dasbor", icon: IconChart, group, active: onDashboard },
+    { href: "/platform/schools", label: "Daftar sekolah", icon: IconBuilding, group, active: onPlatform && !creating },
     { href: "/platform/new", label: "Sekolah baru", icon: IconUserPlus, group, active: creating },
   ];
 }

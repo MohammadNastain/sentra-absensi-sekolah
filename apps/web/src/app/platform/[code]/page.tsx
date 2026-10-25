@@ -50,7 +50,7 @@ export default function PlatformSchoolPage(props: PageProps<"/platform/[code]">)
   return (
     <AppShell context="Platform" nav={nav} userLabel={me?.email} userName={me?.name}>
       <div>
-        <BackLink href="/platform">Semua sekolah</BackLink>
+        <BackLink href="/platform/schools">Semua sekolah</BackLink>
       </div>
 
       {loadError ? <FormAlert>{loadError}</FormAlert> : null}

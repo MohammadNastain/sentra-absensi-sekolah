@@ -422,6 +422,24 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "410": { $ref: "#/components/responses/InvitationUnavailable" }
 
+  /platform/overview:
+    get:
+      tags: [platform]
+      operationId: getPlatformOverview
+      summary: "Ringkasan lintas sekolah untuk dashboard Super Admin"
+      responses:
+        "200":
+          description: "Angka total, sebaran sekolah, dan tren kehadiran 14 hari."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/PlatformOverview" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
   /platform/schools:
     get:
       tags: [platform]
@@ -3565,6 +3583,57 @@ components:
       properties:
         code: { type: string }
         name: { type: string }
+    PlatformOverview:
+      type: object
+      required: [as_of, totals, schools_by_status, schools_by_level, attendance_trend, schools_today]
+      properties:
+        as_of: { type: string, format: date }
+        totals:
+          type: object
+          required: [schools, students, teachers, users]
+          properties:
+            schools: { type: integer }
+            students: { type: integer }
+            teachers: { type: integer }
+            users: { type: integer }
+        schools_by_status:
+          type: array
+          items:
+            type: object
+            required: [status, total]
+            properties:
+              status: { type: string }
+              total: { type: integer }
+        schools_by_level:
+          type: array
+          items:
+            type: object
+            required: [level, total]
+            properties:
+              level: { type: string }
+              total: { type: integer }
+        attendance_trend:
+          type: array
+          items:
+            type: object
+            required: [date, present, recorded, attendance_percentage]
+            properties:
+              date: { type: string, format: date }
+              present: { type: integer }
+              recorded: { type: integer }
+              attendance_percentage: { type: [number, "null"] }
+        schools_today:
+          type: array
+          items:
+            type: object
+            required: [code, name, present, recorded, attendance_percentage]
+            properties:
+              code: { type: string }
+              name: { type: string }
+              present: { type: integer }
+              recorded: { type: integer }
+              attendance_percentage: { type: [number, "null"] }
+
     School:
       type: object
       required: [id, code, npsn, name, education_levels, timezone, address, status]

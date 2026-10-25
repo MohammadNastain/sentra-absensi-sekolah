@@ -31,12 +31,12 @@ export default function NewSchoolPage() {
       return;
     }
     const school = outcome.result.data?.data;
-    router.replace(school ? `/platform/${school.code}` : "/platform");
+    router.replace(school ? `/platform/${school.code}` : "/platform/schools");
   }
 
   return (
     <AppShell context="Platform" nav={nav} userLabel={me?.email} userName={me?.name}>
-      <PageHeader title="Sekolah baru" description="Daftarkan sekolah baru ke platform." actions={<BackLink href="/platform">Semua sekolah</BackLink>} />
+      <PageHeader title="Sekolah baru" description="Daftarkan sekolah baru ke platform." actions={<BackLink href="/platform/schools">Semua sekolah</BackLink>} />
       <div className="max-w-xl rounded-2xl border border-zinc-200/70 bg-white shadow-card p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <SchoolForm
           mode="create"

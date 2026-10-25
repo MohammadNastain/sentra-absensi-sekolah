@@ -359,6 +359,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ringkasan lintas sekolah untuk dashboard Super Admin */
+        get: operations["getPlatformOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/schools": {
         parameters: {
             query?: never;
@@ -2448,6 +2465,38 @@ export interface components {
             code: string;
             name: string;
         };
+        PlatformOverview: {
+            /** Format: date */
+            as_of: string;
+            totals: {
+                schools: number;
+                students: number;
+                teachers: number;
+                users: number;
+            };
+            schools_by_status: {
+                status: string;
+                total: number;
+            }[];
+            schools_by_level: {
+                level: string;
+                total: number;
+            }[];
+            attendance_trend: {
+                /** Format: date */
+                date: string;
+                present: number;
+                recorded: number;
+                attendance_percentage: number | null;
+            }[];
+            schools_today: {
+                code: string;
+                name: string;
+                present: number;
+                recorded: number;
+                attendance_percentage: number | null;
+            }[];
+        };
         School: {
             /** Format: uuid */
             id: string;
@@ -4397,6 +4446,30 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             404: components["responses"]["NotFound"];
             410: components["responses"]["InvitationUnavailable"];
+        };
+    };
+    getPlatformOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Angka total, sebaran sekolah, dan tren kehadiran 14 hari. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PlatformOverview"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
         };
     };
     listSchools: {
