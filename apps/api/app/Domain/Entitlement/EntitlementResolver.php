@@ -23,8 +23,8 @@ final class EntitlementResolver
             ->where('school_id', $schoolId)->where('status', '<>', 'ended')
             ->value('plan_code');
 
-        $planFeatures = $plan === null ? [] : DB::table('plan_features')->where('plan_code', $plan)->pluck('feature_code')->all();
-        $overrides = DB::table('school_feature_overrides')->where('school_id', $schoolId)->pluck('effect', 'feature_code')->all();
+        $planFeatures = $plan === null ? [] : array_values(array_map('strval', DB::table('plan_features')->where('plan_code', $plan)->pluck('feature_code')->all()));
+        $overrides = DB::table('school_feature_overrides')->where('school_id', $schoolId)->pluck('effect', 'feature_code')->map(fn ($effect) => (string) $effect)->all();
 
         return $this->calculator->resolve($planFeatures, $overrides);
     }
