@@ -112,13 +112,27 @@ Platform (Super Admin + 2FA):
 - `PUT /platform/schools/{school}/subscription` – ganti paket (`plan_code`, `dry_run`, `confirm_impact`, `reason`).
 - `PUT /platform/schools/{school}/entitlements/{feature}` – set override `grant`/`revoke`; `DELETE` – hapus override.
 
+Semua perubahan menerima `reason`, `dry_run`, dan `confirm_impact`, dan berjalan dalam satu transaksi yang mengunci baris
+sekolah (pratinjau dan penerapan membaca keadaan yang sama). Hasil: `{applied, unchanged, requires_confirmation, impact,
+entitlements}`; `impact` = `lost` (efektif sebelumnya, tidak lagi sesudahnya, termasuk turunan yang tertahan), `gained`,
+dan `redundant_overrides` (override yang kini sama dengan paket; tetap tersimpan). Konfirmasi diwajibkan bila `lost`
+memuat fitur selain fitur yang sedang diubah (ganti paket: bila `lost` tidak kosong). Kode error:
+`409 IMPACT_CONFIRMATION_REQUIRED` (body memuat `impact`), `422 FEATURE_UNRELEASED`, `422 FEATURE_DEPENDENCY_MISSING`
+(body memuat `missing`), `422` validasi untuk paket tidak dikenal, tidak ditawarkan (`legacy`), atau sama dengan yang berjalan.
+Override identik dengan yang sudah ada → `unchanged`, tanpa perubahan dan tanpa audit.
+
 Sekolah:
 - `GET /schools/{school}/entitlements` – daftar kode fitur efektif (inti, dipakai UI menyaring menu; hanya UX).
 
 ### 7. Audit (PRD §5.6)
 Aksi baru lewat `AuditLogger`: `platform.subscription.changed`, `platform.entitlement.override_set`,
-`platform.entitlement.override_removed`. Isi: aktor, `school_id`, sebelum/sesudah, `reason`, hasil, dan daftar
-dampak yang dikonfirmasi. Tanpa password/token. Terlihat di audit log sekolah dan di audit lintas sekolah.
+`platform.entitlement.override_removed`. Isi: aktor, sebelum/sesudah (termasuk `school_id` sekolah terdampak), `reason`,
+dan `impact` (daftar kode fitur yang hilang/bertambah). Tanpa password/token.
+
+**Perubahan dari rancangan awal (E3):** entri dicatat sebagai audit **platform** (`audit_logs.school_id` NULL, seperti
+`platform.school.*`), bukan di audit log sekolah. Alasannya: `reason` berisi catatan komersial internal (mis. alasan
+diskon/pilot) yang tidak untuk dibaca admin sekolah. Sekolah terdampak tercatat di nilai sebelum/sesudah. Halaman audit
+lintas sekolah untuk Super Admin (PRD §5.1) belum ada dan menjadi pekerjaan terpisah.
 
 ### 8. Migrasi sekolah yang sudah ada
 Paket `legacy` berisi semua fitur yang sudah rilis. Semua sekolah yang ada diberi `legacy` (status `active`), jadi

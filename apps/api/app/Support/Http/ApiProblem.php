@@ -180,6 +180,27 @@ class ApiProblem extends HttpException
         return new self(401, 'ASSIST_LOGIN_FAILED', 'Login petugas gagal.', 'Email, password, atau kode verifikasi salah, atau akun tidak berwenang membantu absensi.');
     }
 
+    public static function featureUnreleased(Feature $feature): self
+    {
+        return new self(422, 'FEATURE_UNRELEASED', 'Fitur ini belum tersedia di aplikasi.', "Fitur \"{$feature->label()}\" belum dirilis sehingga tidak dapat diaktifkan.", ['feature' => $feature->value]);
+    }
+
+    /**
+     * @param  list<string>  $missing  prasyarat yang belum efektif
+     */
+    public static function featureDependencyMissing(Feature $feature, array $missing): self
+    {
+        return new self(422, 'FEATURE_DEPENDENCY_MISSING', 'Prasyarat fitur belum terpenuhi.', "Fitur \"{$feature->label()}\" membutuhkan fitur lain yang belum aktif untuk sekolah ini.", ['feature' => $feature->value, 'missing' => $missing]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $impact  pratinjau dampak (lihat ManageEntitlements)
+     */
+    public static function impactConfirmationRequired(array $impact): self
+    {
+        return new self(409, 'IMPACT_CONFIRMATION_REQUIRED', 'Perubahan ini mematikan fitur lain.', 'Tinjau daftar dampak, lalu ulangi permintaan dengan confirm_impact=true.', ['impact' => $impact]);
+    }
+
     public static function assistSessionInvalid(): self
     {
         return new self(401, 'ASSIST_SESSION_INVALID', 'Sesi bantuan berakhir.', 'Masuk kembali sebagai petugas untuk melanjutkan.');
