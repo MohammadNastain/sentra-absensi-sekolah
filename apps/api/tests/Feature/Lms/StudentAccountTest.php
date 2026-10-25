@@ -10,6 +10,7 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 // ADR 0010 §1 — akun siswa dari NIS: pembuatan, login `kode/NIS`, sandi awal sekali pakai, ganti sandi paksa.
 
@@ -94,7 +95,7 @@ it('melewati siswa yang tidak memenuhi syarat dengan alasan', function () {
     createAccounts(['student_ids' => [$this->s1]])->assertCreated();
     $inactive = ($this->makeStudent)('2024005', 'inactive');
     $badNumber = ($this->makeStudent)('NIS dengan spasi');
-    $unknown = (string) Illuminate\Support\Str::uuid();
+    $unknown = (string) Str::uuid();
 
     $skipped = collect(createAccounts(['student_ids' => [$this->s1, $inactive, $badNumber, $unknown]])->assertCreated()
         ->assertJsonCount(0, 'data.created')->json('data.skipped'))->pluck('reason', 'student_id');

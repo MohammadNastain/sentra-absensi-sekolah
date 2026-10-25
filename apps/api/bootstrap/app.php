@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnforcePasswordChange;
+use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequireAssistSession;
 use App\Http\Middleware\RequireSchoolFeature;
