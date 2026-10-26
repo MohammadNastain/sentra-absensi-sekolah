@@ -18,8 +18,7 @@ CREATE ROLE sentra_app   LOGIN NOSUPERUSER NOCREATEROLE NOBYPASSRLS NOCREATEDB P
 CREATE DATABASE sentra OWNER sentra_owner;
 SQL
 
-for db in sentra; do
-  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$db" -v db="$db" <<'SQL'
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname sentra -v db=sentra <<'SQL'
 REVOKE ALL ON DATABASE :"db" FROM PUBLIC;
 GRANT CONNECT, TEMPORARY ON DATABASE :"db" TO sentra_app;
 
@@ -40,4 +39,3 @@ ALTER DEFAULT PRIVILEGES FOR ROLE sentra_owner IN SCHEMA public
 ALTER DEFAULT PRIVILEGES FOR ROLE sentra_owner IN SCHEMA public
   GRANT EXECUTE ON FUNCTIONS TO sentra_app;
 SQL
-done
