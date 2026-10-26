@@ -25,8 +25,10 @@ use App\Http\Controllers\School\HolidayController;
 use App\Http\Controllers\School\ImportController;
 use App\Http\Controllers\School\InvitationController;
 use App\Http\Controllers\School\LeaveRequestController;
+use App\Http\Controllers\School\LmsAssignmentController;
 use App\Http\Controllers\School\LmsAttachmentController;
 use App\Http\Controllers\School\LmsMaterialController;
+use App\Http\Controllers\School\LmsSubmissionController;
 use App\Http\Controllers\School\MemberController;
 use App\Http\Controllers\School\ReportController;
 use App\Http\Controllers\School\ScheduleController;
@@ -235,6 +237,35 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware([RequireSchoolFeature::using(Feature::LmsAttachments), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.attachments.download');
     Route::delete('lms/attachments/{attachment}', [LmsAttachmentController::class, 'destroy'])->whereUuid('attachment')
         ->middleware([RequireSchoolFeature::using(Feature::LmsAttachments), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.attachments.destroy');
+
+    Route::get('lms/assignments', [LmsAssignmentController::class, 'index'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAssignments), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.assignments.index');
+    Route::post('lms/assignments', [LmsAssignmentController::class, 'store'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAssignments), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.assignments.store');
+    Route::get('lms/assignments/{assignment}', [LmsAssignmentController::class, 'show'])->whereUuid(['assignment'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAssignments), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.assignments.show');
+    Route::patch('lms/assignments/{assignment}', [LmsAssignmentController::class, 'update'])->whereUuid(['assignment'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAssignments), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.assignments.update');
+    Route::delete('lms/assignments/{assignment}', [LmsAssignmentController::class, 'destroy'])->whereUuid(['assignment'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAssignments), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.assignments.destroy');
+    Route::post('lms/assignments/{assignment}/attachments', [LmsAttachmentController::class, 'storeForAssignment'])->whereUuid(['assignment'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAttachments), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.assignments.attachments.store');
+    Route::get('lms/assignments/{assignment}/submission', [LmsSubmissionController::class, 'showMine'])->whereUuid(['assignment'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsSubmissions), RequireSchoolPermission::using(Permission::SchoolLmsSubmit)])->name('lms.submission.show');
+    Route::put('lms/assignments/{assignment}/submission', [LmsSubmissionController::class, 'submit'])->whereUuid(['assignment'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsSubmissions), RequireSchoolPermission::using(Permission::SchoolLmsSubmit)])->name('lms.submission.submit');
+    Route::get('lms/assignments/{assignment}/submissions', [LmsSubmissionController::class, 'index'])->whereUuid(['assignment'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsSubmissions), RequireSchoolPermission::using(Permission::SchoolLmsGrade)])->name('lms.submissions.index');
+    Route::get('lms/submissions/{submission}', [LmsSubmissionController::class, 'show'])->whereUuid(['submission'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsSubmissions), RequireSchoolPermission::using(Permission::SchoolLmsGrade)])->name('lms.submissions.show');
+    Route::post('lms/submissions/{submission}/grade', [LmsSubmissionController::class, 'grade'])->whereUuid(['submission'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsGrading), RequireSchoolPermission::using(Permission::SchoolLmsGrade)])->name('lms.submissions.grade');
+    Route::post('lms/submissions/{submission}/return', [LmsSubmissionController::class, 'returnForRevision'])->whereUuid(['submission'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsGrading), RequireSchoolPermission::using(Permission::SchoolLmsGrade)])->name('lms.submissions.return');
+    Route::post('lms/submissions/{submission}/attachments', [LmsAttachmentController::class, 'storeForSubmission'])->whereUuid(['submission'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAttachments), RequireSchoolPermission::using(Permission::SchoolLmsSubmit)])->name('lms.submissions.attachments.store');
+    Route::delete('lms/submissions/{submission}/attachments/{attachment}', [LmsAttachmentController::class, 'destroyFromSubmission'])->whereUuid(['submission', 'attachment'])
+        ->middleware([RequireSchoolFeature::using(Feature::LmsAttachments), RequireSchoolPermission::using(Permission::SchoolLmsSubmit)])->name('lms.submissions.attachments.destroy');
 
     Route::get('students', [StudentController::class, 'index'])
         ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsView)])->name('students.index');

@@ -25,6 +25,8 @@ final class AuditRedactor
         'student' => ['student_number', 'nisn', 'full_name', 'date_of_birth', 'status'],
         'import_batch' => ['type', 'original_filename', 'file_sha256', 'total_rows', 'valid_rows', 'invalid_rows', 'committed_rows', 'status'],
         'lms_material' => ['class_id', 'subject_id', 'title', 'status'],
+        'lms_assignment' => ['class_id', 'subject_id', 'title', 'status', 'due_at', 'max_score'],
+        'lms_submission' => ['assignment_id', 'student_id', 'status', 'is_late', 'graded_by_user_id'],
         'lms_attachment' => ['owner_type', 'owner_id', 'original_name', 'mime', 'size'],
         'student_account' => ['username', 'membership_id'],
         'student_credential' => ['student_id', 'credential_type', 'status', 'status_reason', 'replaces_credential_id'],

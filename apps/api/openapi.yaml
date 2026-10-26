@@ -1689,6 +1689,402 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/lms/assignments:
+    get:
+      tags: [lms]
+      operationId: listLmsAssignments
+      summary: "Daftar tugas yang boleh dilihat pengguna"
+      description: "Izin: school.lms.view; fitur: lms.assignments. Siswa melihat tugas terbit dan tertutup kelasnya (beserta status pengumpulannya sendiri di `my_submission`); draf hanya penulis dan admin."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: class_id, in: query, schema: { type: string, format: uuid } }
+        - { name: subject_id, in: query, schema: { type: string, format: uuid } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: "Tugas, terbaru dulu (25 per halaman), tanpa instruksi."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/LmsAssignment" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [lms]
+      operationId: createLmsAssignment
+      summary: "Buat tugas (draf)"
+      description: "Izin: school.lms.manage; fitur: lms.assignments. Guru hanya untuk kelas-mapel jadwal mengajarnya; admin mana saja. `due_at` kosong = tanpa tenggat; `max_score` bawaan 100."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [class_id, subject_id, title]
+              properties:
+                class_id: { type: string, format: uuid }
+                subject_id: { type: string, format: uuid }
+                title: { type: string, maxLength: 200 }
+                instructions: { type: [string, "null"], maxLength: 20000 }
+                due_at: { type: [string, "null"], format: date-time }
+                max_score: { type: number, minimum: 0.01, maximum: 10000 }
+                accept_late: { type: boolean }
+      responses:
+        "201":
+          description: "Tugas dibuat berstatus draft."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsAssignmentDetail" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/lms/assignments/{assignment}:
+    parameters:
+      - $ref: "#/components/parameters/SchoolCode"
+      - $ref: "#/components/parameters/LmsAssignmentId"
+    get:
+      tags: [lms]
+      operationId: getLmsAssignment
+      summary: "Rincian tugas beserta lampiran"
+      description: "Izin: school.lms.view; fitur: lms.assignments. Yang tak boleh dilihat pengguna dijawab 404."
+      responses:
+        "200":
+          description: "Tugas."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsAssignmentDetail" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [lms]
+      operationId: updateLmsAssignment
+      summary: "Ubah tugas, terbitkan, tutup, atau buka kembali"
+      description: |
+        Izin: school.lms.manage (atas kelas-mapel tugas); fitur: lms.assignments. Alur status: draft → published ⇄ closed;
+        kembali ke draft hanya bila belum ada pengumpulan (409). Menurunkan `max_score` di bawah nilai yang sudah ada ditolak (422).
+        Mengubah tenggat tidak mengubah `is_late` pengumpulan yang sudah ada.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, maxLength: 200 }
+                instructions: { type: [string, "null"], maxLength: 20000 }
+                due_at: { type: [string, "null"], format: date-time }
+                max_score: { type: number, minimum: 0.01, maximum: 10000 }
+                accept_late: { type: boolean }
+                status: { $ref: "#/components/schemas/LmsAssignmentStatus" }
+      responses:
+        "200":
+          description: "Tugas setelah diubah."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsAssignmentDetail" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    delete:
+      tags: [lms]
+      operationId: deleteLmsAssignment
+      summary: "Hapus tugas yang belum punya pengumpulan"
+      description: "Izin: school.lms.manage; fitur: lms.assignments. Tugas yang sudah dikumpulkan ditolak (409); tutup saja."
+      responses:
+        "204": { description: "Dihapus beserta lampirannya." }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /schools/{school}/lms/assignments/{assignment}/attachments:
+    post:
+      tags: [lms]
+      operationId: uploadLmsAssignmentAttachment
+      summary: "Unggah lampiran tugas"
+      description: "Izin: school.lms.manage; fitur: lms.attachments dan lms.assignments. Aturan berkas sama dengan lampiran materi."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsAssignmentId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: "Lampiran tersimpan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsAttachment" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/lms/assignments/{assignment}/submission:
+    parameters:
+      - $ref: "#/components/parameters/SchoolCode"
+      - $ref: "#/components/parameters/LmsAssignmentId"
+    get:
+      tags: [lms]
+      operationId: getMyLmsSubmission
+      summary: "Pengumpulan saya untuk tugas ini"
+      description: "Izin: school.lms.submit; fitur: lms.submissions. 404 bila belum mengumpulkan. Nilai tampil setelah dinilai; komentar setelah dinilai atau dikembalikan."
+      responses:
+        "200":
+          description: "Pengumpulan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsSubmission" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [lms]
+      operationId: submitLmsAssignment
+      summary: "Kumpulkan atau kirim ulang tugas"
+      description: |
+        Izin: school.lms.submit; fitur: lms.submissions. Waktu kirim dan keterlambatan ditentukan server (klien tidak dapat
+        mengirimnya). Tugas harus terbit; sesudah tenggat hanya bila `accept_late` (selain itu 409). Pengumpulan yang sudah
+        dinilai terkunci (409). Siswa yang diminta revisi boleh mengirim ulang kapan pun selama tugas belum ditutup, tanpa
+        menambah keterlambatan. Mengirim ulang menghapus nilai sebelumnya.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body: { type: [string, "null"], maxLength: 20000 }
+      responses:
+        "200":
+          description: "Pengumpulan tersimpan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsSubmission" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/lms/assignments/{assignment}/submissions:
+    get:
+      tags: [lms]
+      operationId: listLmsSubmissions
+      summary: "Daftar siswa kelas beserta pengumpulannya (untuk penilai)"
+      description: "Izin: school.lms.grade; fitur: lms.submissions. Memuat semua siswa terdaftar di kelas hari ini (termasuk yang belum mengumpulkan atau belum punya akun, `submission` null) dan siswa yang sudah mengumpulkan lalu pindah. 404 bila pengguna bukan penilai kelas-mapel ini."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsAssignmentId"
+      responses:
+        "200":
+          description: "Daftar urut nama."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [student, submission]
+                      properties:
+                        student: { $ref: "#/components/schemas/LmsStudentRef" }
+                        submission:
+                          oneOf:
+                            - { $ref: "#/components/schemas/LmsSubmission" }
+                            - { type: "null" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/lms/submissions/{submission}:
+    get:
+      tags: [lms]
+      operationId: getLmsSubmission
+      summary: "Rincian pengumpulan (untuk penilai)"
+      description: "Izin: school.lms.grade; fitur: lms.submissions. 404 bila pengguna bukan penilai kelas-mapelnya."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsSubmissionId"
+      responses:
+        "200":
+          description: "Pengumpulan beserta siswanya."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/LmsSubmission"
+                      - type: object
+                        required: [student]
+                        properties:
+                          student: { $ref: "#/components/schemas/LmsStudentRef" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /schools/{school}/lms/submissions/{submission}/grade:
+    post:
+      tags: [lms]
+      operationId: gradeLmsSubmission
+      summary: "Beri atau ubah nilai"
+      description: |
+        Izin: school.lms.grade; fitur: lms.grading. Guru kelas-mapel atau admin. Nilai 0..max_score tugas (422 bila lebih).
+        Pengumpulan yang sedang menunggu revisi tidak dapat dinilai (409). Nilai dan komentar tidak masuk audit; yang tercatat
+        pelaku dan perubahan status.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsSubmissionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [score]
+              properties:
+                score: { type: number, minimum: 0, maximum: 10000 }
+                feedback: { type: [string, "null"], maxLength: 5000 }
+      responses:
+        "200":
+          description: "Pengumpulan setelah dinilai."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsSubmission" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/lms/submissions/{submission}/return:
+    post:
+      tags: [lms]
+      operationId: returnLmsSubmission
+      summary: "Minta siswa merevisi pengumpulan"
+      description: "Izin: school.lms.grade; fitur: lms.grading. Komentar wajib. Ditolak (409) bila tugas sudah ditutup atau pengumpulan sudah diminta revisi."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsSubmissionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [feedback]
+              properties:
+                feedback: { type: string, maxLength: 5000 }
+      responses:
+        "200":
+          description: "Pengumpulan dikembalikan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsSubmission" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/lms/submissions/{submission}/attachments:
+    post:
+      tags: [lms]
+      operationId: uploadLmsSubmissionAttachment
+      summary: "Unggah lampiran pengumpulan (siswa pemilik)"
+      description: "Izin: school.lms.submit; fitur: lms.attachments dan lms.submissions. Hanya siswa pemilik, selama pengumpulan belum dinilai dan tugas masih terbit (selain itu 409). Aturan berkas sama dengan lampiran materi."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsSubmissionId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: "Lampiran tersimpan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LmsAttachment" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/lms/submissions/{submission}/attachments/{attachment}:
+    delete:
+      tags: [lms]
+      operationId: deleteLmsSubmissionAttachment
+      summary: "Hapus lampiran pengumpulan (siswa pemilik)"
+      description: "Izin: school.lms.submit; fitur: lms.attachments. Aturan penguncian sama dengan unggah."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/LmsSubmissionId"
+        - $ref: "#/components/parameters/LmsAttachmentId"
+      responses:
+        "204": { description: "Dihapus." }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
   /schools/{school}/lms/attachments/{attachment}/download:
     get:
       tags: [lms]
@@ -3924,6 +4320,16 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    LmsAssignmentId:
+      name: assignment
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    LmsSubmissionId:
+      name: submission
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     LmsAttachmentId:
       name: attachment
       in: path
@@ -4101,6 +4507,80 @@ components:
         author_name: { type: [string, "null"] }
         attachment_count: { type: integer }
         can_manage: { type: boolean, description: "Pengguna ini boleh mengubah/menghapus materi (UX saja; server tetap memeriksa)." }
+    LmsAssignmentStatus:
+      type: string
+      enum: [draft, published, closed]
+    LmsSubmissionStatus:
+      type: string
+      enum: [submitted, returned_for_revision, graded]
+    LmsAssignment:
+      type: object
+      required: [id, class, subject, title, status, due_at, max_score, accept_late, published_at, created_at, author_name, attachment_count, can_manage, my_submission]
+      properties:
+        id: { type: string, format: uuid }
+        class:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: [string, "null"] }
+        subject:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: [string, "null"] }
+        title: { type: string }
+        status: { $ref: "#/components/schemas/LmsAssignmentStatus" }
+        due_at: { type: [string, "null"], format: date-time, description: "Kosong = tanpa tenggat." }
+        max_score: { type: number }
+        accept_late: { type: boolean }
+        published_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+        author_name: { type: [string, "null"] }
+        attachment_count: { type: integer }
+        can_manage: { type: boolean, description: "UX saja; server tetap memeriksa." }
+        my_submission:
+          description: "Status pengumpulan siswa yang login untuk tugas ini; null bila bukan siswa atau belum mengumpulkan."
+          type: [object, "null"]
+          required: [status, is_late]
+          properties:
+            status: { $ref: "#/components/schemas/LmsSubmissionStatus" }
+            is_late: { type: boolean }
+    LmsAssignmentDetail:
+      allOf:
+        - $ref: "#/components/schemas/LmsAssignment"
+        - type: object
+          required: [instructions, attachments]
+          properties:
+            instructions: { type: string, description: "Teks polos; tampilkan sebagai teks, bukan HTML." }
+            attachments:
+              type: array
+              items: { $ref: "#/components/schemas/LmsAttachment" }
+    LmsStudentRef:
+      type: object
+      required: [id, full_name, student_number]
+      properties:
+        id: { type: string, format: uuid }
+        full_name: { type: string }
+        student_number: { type: string }
+    LmsSubmission:
+      type: object
+      required: [id, assignment_id, status, body, submitted_at, is_late, score, feedback, graded_at]
+      properties:
+        id: { type: string, format: uuid }
+        assignment_id: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/LmsSubmissionStatus" }
+        body: { type: string }
+        submitted_at: { type: string, format: date-time, description: "Waktu server." }
+        is_late: { type: boolean }
+        score: { type: [number, "null"], description: "Bagi siswa hanya terisi setelah dinilai." }
+        feedback: { type: [string, "null"], description: "Bagi siswa hanya terisi setelah dinilai atau dikembalikan." }
+        graded_at: { type: [string, "null"], format: date-time }
+        attachments:
+          type: array
+          description: "Tidak ada pada daftar penilai (ambil lewat rincian)."
+          items: { $ref: "#/components/schemas/LmsAttachment" }
     LmsMaterialDetail:
       allOf:
         - $ref: "#/components/schemas/LmsMaterial"

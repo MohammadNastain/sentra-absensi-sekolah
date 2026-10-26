@@ -238,6 +238,20 @@ column leave_requests.start_date date nullable=NO
 column leave_requests.status text nullable=NO
 column leave_requests.student_id uuid nullable=NO
 column leave_requests.updated_at timestamp with time zone nullable=NO
+column lms_assignments.accept_late boolean nullable=NO
+column lms_assignments.author_user_id uuid nullable=NO
+column lms_assignments.class_id uuid nullable=NO
+column lms_assignments.created_at timestamp with time zone nullable=NO
+column lms_assignments.due_at timestamp with time zone nullable=YES
+column lms_assignments.id uuid nullable=NO
+column lms_assignments.instructions text nullable=NO
+column lms_assignments.max_score numeric nullable=NO
+column lms_assignments.published_at timestamp with time zone nullable=YES
+column lms_assignments.school_id uuid nullable=NO
+column lms_assignments.status text nullable=NO
+column lms_assignments.subject_id uuid nullable=NO
+column lms_assignments.title text nullable=NO
+column lms_assignments.updated_at timestamp with time zone nullable=NO
 column lms_attachments.created_at timestamp with time zone nullable=NO
 column lms_attachments.id uuid nullable=NO
 column lms_attachments.mime text nullable=NO
@@ -260,6 +274,20 @@ column lms_materials.status text nullable=NO
 column lms_materials.subject_id uuid nullable=NO
 column lms_materials.title text nullable=NO
 column lms_materials.updated_at timestamp with time zone nullable=NO
+column lms_submissions.assignment_id uuid nullable=NO
+column lms_submissions.body text nullable=NO
+column lms_submissions.created_at timestamp with time zone nullable=NO
+column lms_submissions.feedback text nullable=YES
+column lms_submissions.graded_at timestamp with time zone nullable=YES
+column lms_submissions.graded_by_user_id uuid nullable=YES
+column lms_submissions.id uuid nullable=NO
+column lms_submissions.is_late boolean nullable=NO
+column lms_submissions.school_id uuid nullable=NO
+column lms_submissions.score numeric nullable=YES
+column lms_submissions.status text nullable=NO
+column lms_submissions.student_id uuid nullable=NO
+column lms_submissions.submitted_at timestamp with time zone nullable=NO
+column lms_submissions.updated_at timestamp with time zone nullable=NO
 column membership_invitations.accepted_at timestamp with time zone nullable=YES
 column membership_invitations.accepted_user_id uuid nullable=YES
 column membership_invitations.created_at timestamp with time zone nullable=NO
@@ -449,8 +477,10 @@ index CREATE INDEX import_rows_batch_status_index ON public.import_rows USING bt
 index CREATE INDEX leave_requests_no_overlap ON public.leave_requests USING gist (school_id, student_id, daterange(start_date, end_date, '[]'::text)) WHERE (status = ANY (ARRAY['pending'::text, 'approved'::text]))
 index CREATE INDEX leave_requests_status_index ON public.leave_requests USING btree (school_id, status, created_at DESC)
 index CREATE INDEX leave_requests_student_index ON public.leave_requests USING btree (school_id, student_id, start_date, end_date)
+index CREATE INDEX lms_assignments_pair_index ON public.lms_assignments USING btree (school_id, class_id, subject_id, created_at DESC)
 index CREATE INDEX lms_attachments_owner_index ON public.lms_attachments USING btree (school_id, owner_type, owner_id)
 index CREATE INDEX lms_materials_pair_index ON public.lms_materials USING btree (school_id, class_id, subject_id, created_at DESC)
+index CREATE INDEX lms_submissions_student_index ON public.lms_submissions USING btree (school_id, student_id)
 index CREATE INDEX membership_invitations_email_index ON public.membership_invitations USING btree (email)
 index CREATE INDEX membership_roles_school_role_index ON public.membership_roles USING btree (school_id, role_code)
 index CREATE INDEX schedules_no_overlap ON public.schedules USING gist (school_id, scope_key, day_of_week, daterange(effective_from, effective_until, '[]'::text)) WHERE is_active
@@ -516,11 +546,16 @@ index CREATE UNIQUE INDEX import_rows_batch_row_unique ON public.import_rows USI
 index CREATE UNIQUE INDEX import_rows_pkey ON public.import_rows USING btree (id)
 index CREATE UNIQUE INDEX leave_requests_pkey ON public.leave_requests USING btree (id)
 index CREATE UNIQUE INDEX leave_requests_school_id_id_unique ON public.leave_requests USING btree (school_id, id)
+index CREATE UNIQUE INDEX lms_assignments_pkey ON public.lms_assignments USING btree (id)
+index CREATE UNIQUE INDEX lms_assignments_school_id_id_unique ON public.lms_assignments USING btree (school_id, id)
 index CREATE UNIQUE INDEX lms_attachments_pkey ON public.lms_attachments USING btree (id)
 index CREATE UNIQUE INDEX lms_attachments_school_id_id_unique ON public.lms_attachments USING btree (school_id, id)
 index CREATE UNIQUE INDEX lms_attachments_storage_key_unique ON public.lms_attachments USING btree (storage_key)
 index CREATE UNIQUE INDEX lms_materials_pkey ON public.lms_materials USING btree (id)
 index CREATE UNIQUE INDEX lms_materials_school_id_id_unique ON public.lms_materials USING btree (school_id, id)
+index CREATE UNIQUE INDEX lms_submissions_one_per_student ON public.lms_submissions USING btree (assignment_id, student_id)
+index CREATE UNIQUE INDEX lms_submissions_pkey ON public.lms_submissions USING btree (id)
+index CREATE UNIQUE INDEX lms_submissions_school_id_id_unique ON public.lms_submissions USING btree (school_id, id)
 index CREATE UNIQUE INDEX membership_invitations_pending_unique ON public.membership_invitations USING btree (school_id, email) WHERE ((accepted_at IS NULL) AND (revoked_at IS NULL))
 index CREATE UNIQUE INDEX membership_invitations_pkey ON public.membership_invitations USING btree (id)
 index CREATE UNIQUE INDEX membership_invitations_school_id_id_unique ON public.membership_invitations USING btree (school_id, id)
@@ -888,12 +923,34 @@ constraint leave_requests leave_requests_student_fk FOREIGN KEY (school_id, stud
 constraint leave_requests leave_requests_student_id_not_null NOT NULL student_id
 constraint leave_requests leave_requests_type_check CHECK ((leave_type = ANY (ARRAY['izin'::text, 'sakit'::text, 'dispensasi'::text])))
 constraint leave_requests leave_requests_updated_at_not_null NOT NULL updated_at
+constraint lms_assignments lms_assignments_accept_late_not_null NOT NULL accept_late
+constraint lms_assignments lms_assignments_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id)
+constraint lms_assignments lms_assignments_author_user_id_not_null NOT NULL author_user_id
+constraint lms_assignments lms_assignments_class_fk FOREIGN KEY (school_id, class_id) REFERENCES classes(school_id, id)
+constraint lms_assignments lms_assignments_class_id_not_null NOT NULL class_id
+constraint lms_assignments lms_assignments_created_at_not_null NOT NULL created_at
+constraint lms_assignments lms_assignments_id_not_null NOT NULL id
+constraint lms_assignments lms_assignments_instructions_not_null NOT NULL instructions
+constraint lms_assignments lms_assignments_max_score_check CHECK (((max_score > (0)::numeric) AND (max_score <= (10000)::numeric)))
+constraint lms_assignments lms_assignments_max_score_not_null NOT NULL max_score
+constraint lms_assignments lms_assignments_pkey PRIMARY KEY (id)
+constraint lms_assignments lms_assignments_published_at_check CHECK (((status = 'draft'::text) = (published_at IS NULL)))
+constraint lms_assignments lms_assignments_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint lms_assignments lms_assignments_school_id_id_unique UNIQUE (school_id, id)
+constraint lms_assignments lms_assignments_school_id_not_null NOT NULL school_id
+constraint lms_assignments lms_assignments_status_check CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'closed'::text])))
+constraint lms_assignments lms_assignments_status_not_null NOT NULL status
+constraint lms_assignments lms_assignments_subject_fk FOREIGN KEY (school_id, subject_id) REFERENCES subjects(school_id, id)
+constraint lms_assignments lms_assignments_subject_id_not_null NOT NULL subject_id
+constraint lms_assignments lms_assignments_title_not_blank CHECK ((btrim(title) <> ''::text))
+constraint lms_assignments lms_assignments_title_not_null NOT NULL title
+constraint lms_assignments lms_assignments_updated_at_not_null NOT NULL updated_at
 constraint lms_attachments lms_attachments_created_at_not_null NOT NULL created_at
 constraint lms_attachments lms_attachments_id_not_null NOT NULL id
 constraint lms_attachments lms_attachments_mime_not_null NOT NULL mime
 constraint lms_attachments lms_attachments_original_name_not_null NOT NULL original_name
 constraint lms_attachments lms_attachments_owner_id_not_null NOT NULL owner_id
-constraint lms_attachments lms_attachments_owner_type_check CHECK ((owner_type = 'material'::text))
+constraint lms_attachments lms_attachments_owner_type_check CHECK ((owner_type = ANY (ARRAY['material'::text, 'assignment'::text, 'submission'::text])))
 constraint lms_attachments lms_attachments_owner_type_not_null NOT NULL owner_type
 constraint lms_attachments lms_attachments_pkey PRIMARY KEY (id)
 constraint lms_attachments lms_attachments_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
@@ -925,6 +982,27 @@ constraint lms_materials lms_materials_subject_id_not_null NOT NULL subject_id
 constraint lms_materials lms_materials_title_not_blank CHECK ((btrim(title) <> ''::text))
 constraint lms_materials lms_materials_title_not_null NOT NULL title
 constraint lms_materials lms_materials_updated_at_not_null NOT NULL updated_at
+constraint lms_submissions lms_submissions_assignment_fk FOREIGN KEY (school_id, assignment_id) REFERENCES lms_assignments(school_id, id)
+constraint lms_submissions lms_submissions_assignment_id_not_null NOT NULL assignment_id
+constraint lms_submissions lms_submissions_body_not_null NOT NULL body
+constraint lms_submissions lms_submissions_created_at_not_null NOT NULL created_at
+constraint lms_submissions lms_submissions_graded_by_user_id_fkey FOREIGN KEY (graded_by_user_id) REFERENCES users(id)
+constraint lms_submissions lms_submissions_graded_has_score CHECK (((status <> 'graded'::text) OR ((score IS NOT NULL) AND (graded_by_user_id IS NOT NULL) AND (graded_at IS NOT NULL))))
+constraint lms_submissions lms_submissions_id_not_null NOT NULL id
+constraint lms_submissions lms_submissions_is_late_not_null NOT NULL is_late
+constraint lms_submissions lms_submissions_one_per_student UNIQUE (assignment_id, student_id)
+constraint lms_submissions lms_submissions_pkey PRIMARY KEY (id)
+constraint lms_submissions lms_submissions_returned_has_feedback CHECK (((status <> 'returned_for_revision'::text) OR ((feedback IS NOT NULL) AND (btrim(feedback) <> ''::text))))
+constraint lms_submissions lms_submissions_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint lms_submissions lms_submissions_school_id_id_unique UNIQUE (school_id, id)
+constraint lms_submissions lms_submissions_school_id_not_null NOT NULL school_id
+constraint lms_submissions lms_submissions_score_check CHECK (((score IS NULL) OR (score >= (0)::numeric)))
+constraint lms_submissions lms_submissions_status_check CHECK ((status = ANY (ARRAY['submitted'::text, 'returned_for_revision'::text, 'graded'::text])))
+constraint lms_submissions lms_submissions_status_not_null NOT NULL status
+constraint lms_submissions lms_submissions_student_fk FOREIGN KEY (school_id, student_id) REFERENCES students(school_id, id)
+constraint lms_submissions lms_submissions_student_id_not_null NOT NULL student_id
+constraint lms_submissions lms_submissions_submitted_at_not_null NOT NULL submitted_at
+constraint lms_submissions lms_submissions_updated_at_not_null NOT NULL updated_at
 constraint membership_invitations membership_invitations_accepted_check CHECK (((accepted_at IS NULL) = (accepted_user_id IS NULL)))
 constraint membership_invitations membership_invitations_accepted_user_id_fkey FOREIGN KEY (accepted_user_id) REFERENCES users(id)
 constraint membership_invitations membership_invitations_created_at_not_null NOT NULL created_at
@@ -1188,8 +1266,10 @@ policy holidays tenant_isolation ALL (school_id = app_school_id()) (school_id = 
 policy import_batches tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy import_rows tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy leave_requests tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy lms_assignments tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy lms_attachments tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy lms_materials tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy lms_submissions tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy membership_invitations own_invitations_read SELECT (email = ( SELECT u.email
    FROM users u
   WHERE (u.id = app_user_id()))) 
@@ -1236,8 +1316,10 @@ rls holidays enabled=true forced=true
 rls import_batches enabled=true forced=true
 rls import_rows enabled=true forced=true
 rls leave_requests enabled=true forced=true
+rls lms_assignments enabled=true forced=true
 rls lms_attachments enabled=true forced=true
 rls lms_materials enabled=true forced=true
+rls lms_submissions enabled=true forced=true
 rls membership_invitations enabled=true forced=true
 rls membership_roles enabled=true forced=true
 rls password_reset_tokens enabled=false forced=false

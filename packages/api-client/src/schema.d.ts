@@ -1132,6 +1132,237 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/lms/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar tugas yang boleh dilihat pengguna
+         * @description Izin: school.lms.view; fitur: lms.assignments. Siswa melihat tugas terbit dan tertutup kelasnya (beserta status pengumpulannya sendiri di `my_submission`); draf hanya penulis dan admin.
+         */
+        get: operations["listLmsAssignments"];
+        put?: never;
+        /**
+         * Buat tugas (draf)
+         * @description Izin: school.lms.manage; fitur: lms.assignments. Guru hanya untuk kelas-mapel jadwal mengajarnya; admin mana saja. `due_at` kosong = tanpa tenggat; `max_score` bawaan 100.
+         */
+        post: operations["createLmsAssignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/assignments/{assignment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                assignment: components["parameters"]["LmsAssignmentId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Rincian tugas beserta lampiran
+         * @description Izin: school.lms.view; fitur: lms.assignments. Yang tak boleh dilihat pengguna dijawab 404.
+         */
+        get: operations["getLmsAssignment"];
+        put?: never;
+        post?: never;
+        /**
+         * Hapus tugas yang belum punya pengumpulan
+         * @description Izin: school.lms.manage; fitur: lms.assignments. Tugas yang sudah dikumpulkan ditolak (409); tutup saja.
+         */
+        delete: operations["deleteLmsAssignment"];
+        options?: never;
+        head?: never;
+        /**
+         * Ubah tugas, terbitkan, tutup, atau buka kembali
+         * @description Izin: school.lms.manage (atas kelas-mapel tugas); fitur: lms.assignments. Alur status: draft → published ⇄ closed;
+         *     kembali ke draft hanya bila belum ada pengumpulan (409). Menurunkan `max_score` di bawah nilai yang sudah ada ditolak (422).
+         *     Mengubah tenggat tidak mengubah `is_late` pengumpulan yang sudah ada.
+         */
+        patch: operations["updateLmsAssignment"];
+        trace?: never;
+    };
+    "/schools/{school}/lms/assignments/{assignment}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unggah lampiran tugas
+         * @description Izin: school.lms.manage; fitur: lms.attachments dan lms.assignments. Aturan berkas sama dengan lampiran materi.
+         */
+        post: operations["uploadLmsAssignmentAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/assignments/{assignment}/submission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                assignment: components["parameters"]["LmsAssignmentId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Pengumpulan saya untuk tugas ini
+         * @description Izin: school.lms.submit; fitur: lms.submissions. 404 bila belum mengumpulkan. Nilai tampil setelah dinilai; komentar setelah dinilai atau dikembalikan.
+         */
+        get: operations["getMyLmsSubmission"];
+        /**
+         * Kumpulkan atau kirim ulang tugas
+         * @description Izin: school.lms.submit; fitur: lms.submissions. Waktu kirim dan keterlambatan ditentukan server (klien tidak dapat
+         *     mengirimnya). Tugas harus terbit; sesudah tenggat hanya bila `accept_late` (selain itu 409). Pengumpulan yang sudah
+         *     dinilai terkunci (409). Siswa yang diminta revisi boleh mengirim ulang kapan pun selama tugas belum ditutup, tanpa
+         *     menambah keterlambatan. Mengirim ulang menghapus nilai sebelumnya.
+         */
+        put: operations["submitLmsAssignment"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/assignments/{assignment}/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar siswa kelas beserta pengumpulannya (untuk penilai)
+         * @description Izin: school.lms.grade; fitur: lms.submissions. Memuat semua siswa terdaftar di kelas hari ini (termasuk yang belum mengumpulkan atau belum punya akun, `submission` null) dan siswa yang sudah mengumpulkan lalu pindah. 404 bila pengguna bukan penilai kelas-mapel ini.
+         */
+        get: operations["listLmsSubmissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/submissions/{submission}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rincian pengumpulan (untuk penilai)
+         * @description Izin: school.lms.grade; fitur: lms.submissions. 404 bila pengguna bukan penilai kelas-mapelnya.
+         */
+        get: operations["getLmsSubmission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/submissions/{submission}/grade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Beri atau ubah nilai
+         * @description Izin: school.lms.grade; fitur: lms.grading. Guru kelas-mapel atau admin. Nilai 0..max_score tugas (422 bila lebih).
+         *     Pengumpulan yang sedang menunggu revisi tidak dapat dinilai (409). Nilai dan komentar tidak masuk audit; yang tercatat
+         *     pelaku dan perubahan status.
+         */
+        post: operations["gradeLmsSubmission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/submissions/{submission}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Minta siswa merevisi pengumpulan
+         * @description Izin: school.lms.grade; fitur: lms.grading. Komentar wajib. Ditolak (409) bila tugas sudah ditutup atau pengumpulan sudah diminta revisi.
+         */
+        post: operations["returnLmsSubmission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/submissions/{submission}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unggah lampiran pengumpulan (siswa pemilik)
+         * @description Izin: school.lms.submit; fitur: lms.attachments dan lms.submissions. Hanya siswa pemilik, selama pengumpulan belum dinilai dan tugas masih terbit (selain itu 409). Aturan berkas sama dengan lampiran materi.
+         */
+        post: operations["uploadLmsSubmissionAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/submissions/{submission}/attachments/{attachment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Hapus lampiran pengumpulan (siswa pemilik)
+         * @description Izin: school.lms.submit; fitur: lms.attachments. Aturan penguncian sama dengan unggah.
+         */
+        delete: operations["deleteLmsSubmissionAttachment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/lms/attachments/{attachment}/download": {
         parameters: {
             query?: never;
@@ -2775,6 +3006,79 @@ export interface components {
             /** @description Pengguna ini boleh mengubah/menghapus materi (UX saja; server tetap memeriksa). */
             can_manage: boolean;
         };
+        /** @enum {string} */
+        LmsAssignmentStatus: "draft" | "published" | "closed";
+        /** @enum {string} */
+        LmsSubmissionStatus: "submitted" | "returned_for_revision" | "graded";
+        LmsAssignment: {
+            /** Format: uuid */
+            id: string;
+            class: {
+                /** Format: uuid */
+                id: string;
+                name: string | null;
+            };
+            subject: {
+                /** Format: uuid */
+                id: string;
+                name: string | null;
+            };
+            title: string;
+            status: components["schemas"]["LmsAssignmentStatus"];
+            /**
+             * Format: date-time
+             * @description Kosong = tanpa tenggat.
+             */
+            due_at: string | null;
+            max_score: number;
+            accept_late: boolean;
+            /** Format: date-time */
+            published_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            author_name: string | null;
+            attachment_count: number;
+            /** @description UX saja; server tetap memeriksa. */
+            can_manage: boolean;
+            /** @description Status pengumpulan siswa yang login untuk tugas ini; null bila bukan siswa atau belum mengumpulkan. */
+            my_submission: {
+                status: components["schemas"]["LmsSubmissionStatus"];
+                is_late: boolean;
+            } | null;
+        };
+        LmsAssignmentDetail: components["schemas"]["LmsAssignment"] & {
+            /** @description Teks polos; tampilkan sebagai teks, bukan HTML. */
+            instructions: string;
+            attachments: components["schemas"]["LmsAttachment"][];
+        };
+        LmsStudentRef: {
+            /** Format: uuid */
+            id: string;
+            full_name: string;
+            student_number: string;
+        };
+        LmsSubmission: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            assignment_id: string;
+            status: components["schemas"]["LmsSubmissionStatus"];
+            body: string;
+            /**
+             * Format: date-time
+             * @description Waktu server.
+             */
+            submitted_at: string;
+            is_late: boolean;
+            /** @description Bagi siswa hanya terisi setelah dinilai. */
+            score: number | null;
+            /** @description Bagi siswa hanya terisi setelah dinilai atau dikembalikan. */
+            feedback: string | null;
+            /** Format: date-time */
+            graded_at: string | null;
+            /** @description Tidak ada pada daftar penilai (ambil lewat rincian). */
+            attachments?: components["schemas"]["LmsAttachment"][];
+        };
         LmsMaterialDetail: components["schemas"]["LmsMaterial"] & {
             /** @description Teks polos; tampilkan sebagai teks, bukan HTML. */
             body: string;
@@ -4339,6 +4643,8 @@ export interface components {
         ImportId: string;
         SubjectId: string;
         LmsMaterialId: string;
+        LmsAssignmentId: string;
+        LmsSubmissionId: string;
         LmsAttachmentId: string;
         TeachingSlotId: string;
         HolidayId: string;
@@ -6530,6 +6836,486 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listLmsAssignments: {
+        parameters: {
+            query?: {
+                class_id?: string;
+                subject_id?: string;
+                page?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tugas, terbaru dulu (25 per halaman), tanpa instruksi. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsAssignment"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createLmsAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    class_id: string;
+                    /** Format: uuid */
+                    subject_id: string;
+                    title: string;
+                    instructions?: string | null;
+                    /** Format: date-time */
+                    due_at?: string | null;
+                    max_score?: number;
+                    accept_late?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Tugas dibuat berstatus draft. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsAssignmentDetail"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getLmsAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                assignment: components["parameters"]["LmsAssignmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tugas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsAssignmentDetail"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteLmsAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                assignment: components["parameters"]["LmsAssignmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dihapus beserta lampirannya. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateLmsAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                assignment: components["parameters"]["LmsAssignmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title?: string;
+                    instructions?: string | null;
+                    /** Format: date-time */
+                    due_at?: string | null;
+                    max_score?: number;
+                    accept_late?: boolean;
+                    status?: components["schemas"]["LmsAssignmentStatus"];
+                };
+            };
+        };
+        responses: {
+            /** @description Tugas setelah diubah. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsAssignmentDetail"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    uploadLmsAssignmentAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                assignment: components["parameters"]["LmsAssignmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Lampiran tersimpan. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsAttachment"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getMyLmsSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                assignment: components["parameters"]["LmsAssignmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pengumpulan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsSubmission"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    submitLmsAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                assignment: components["parameters"]["LmsAssignmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    body?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Pengumpulan tersimpan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsSubmission"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listLmsSubmissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                assignment: components["parameters"]["LmsAssignmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daftar urut nama. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            student: components["schemas"]["LmsStudentRef"];
+                            submission: components["schemas"]["LmsSubmission"] | null;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getLmsSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                submission: components["parameters"]["LmsSubmissionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pengumpulan beserta siswanya. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsSubmission"] & {
+                            student: components["schemas"]["LmsStudentRef"];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    gradeLmsSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                submission: components["parameters"]["LmsSubmissionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    score: number;
+                    feedback?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Pengumpulan setelah dinilai. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsSubmission"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    returnLmsSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                submission: components["parameters"]["LmsSubmissionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    feedback: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Pengumpulan dikembalikan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsSubmission"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    uploadLmsSubmissionAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                submission: components["parameters"]["LmsSubmissionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Lampiran tersimpan. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LmsAttachment"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    deleteLmsSubmissionAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                submission: components["parameters"]["LmsSubmissionId"];
+                attachment: components["parameters"]["LmsAttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     downloadLmsAttachment: {

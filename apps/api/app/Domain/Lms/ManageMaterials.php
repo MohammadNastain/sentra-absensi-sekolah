@@ -38,30 +38,7 @@ final class ManageMaterials
      */
     public function visible(User $viewer): Builder
     {
-        $query = LmsMaterial::query();
-
-        if ($this->scope->managesAll()) {
-            return $query;
-        }
-
-        return $query->where(function (Builder $any) use ($viewer): void {
-            foreach ($this->scope->teachingPairs() as $pair) {
-                $any->orWhere(fn (Builder $q) => $q
-                    ->where('class_id', $pair['class_id'])->where('subject_id', $pair['subject_id'])
-                    ->where(fn (Builder $s) => $s->where('status', LmsMaterial::STATUS_PUBLISHED)->orWhere('author_user_id', $viewer->id)));
-            }
-
-            $published = fn (Builder $q) => $q->where('status', LmsMaterial::STATUS_PUBLISHED);
-
-            if ($this->scope->viewsAll()) {
-                $any->orWhere($published);
-            }
-            if (($classIds = $this->scope->studentClassIds()) !== []) {
-                $any->orWhere(fn (Builder $q) => $published($q->whereIn('class_id', $classIds)));
-            }
-            // Tanpa satu pun syarat di atas (mis. guru tanpa jadwal), hasil harus kosong, bukan semua.
-            $any->orWhereRaw('false');
-        });
+        return $this->scope->restrict(LmsMaterial::query(), $viewer->id, [LmsMaterial::STATUS_PUBLISHED]);
     }
 
     public function find(User $viewer, string $id): LmsMaterial
