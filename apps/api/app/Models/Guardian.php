@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property string $full_name
  * @property string|null $phone
  * @property string|null $membership_id
+ * @property string|null $invitation_id
  * @property string $status
  * @property Carbon $created_at
  */

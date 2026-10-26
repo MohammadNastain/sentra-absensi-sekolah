@@ -121,11 +121,11 @@ function schoolRoutes(): array
         ->all();
 }
 
-/** Modul LMS belum dirilis di registri; matriks peran menyalakannya agar rute LMS diuji seperti rute lain. */
+/** Modul LMS dan portal orang tua belum dirilis di registri; matriks peran menyalakannya agar rutenya diuji seperti rute lain. */
 function releaseLmsFor(School $school): void
 {
-    config(['sentra.lms_released' => true]);
-    foreach (['lms', 'lms.materials', 'lms.attachments', 'lms.assignments', 'lms.submissions', 'lms.grading'] as $feature) {
+    config(['sentra.lms_released' => true, 'sentra.parent_portal_released' => true]);
+    foreach (['lms', 'lms.materials', 'lms.attachments', 'lms.assignments', 'lms.submissions', 'lms.grading', 'parent_portal', 'parent_portal.attendance', 'parent_portal.leave'] as $feature) {
         setFeatureOverride($school->id, $feature, 'grant');
     }
 }

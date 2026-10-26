@@ -28,6 +28,8 @@ final class AuditRedactor
         'lms_assignment' => ['class_id', 'subject_id', 'title', 'status', 'due_at', 'max_score'],
         'lms_submission' => ['assignment_id', 'student_id', 'status', 'is_late', 'graded_by_user_id'],
         'lms_attachment' => ['owner_type', 'owner_id', 'original_name', 'mime', 'size'],
+        'guardian' => ['full_name', 'membership_id', 'status'],
+        'student_guardian' => ['student_id', 'guardian_id', 'relationship', 'is_primary'],
         'student_account' => ['username', 'membership_id'],
         'student_credential' => ['student_id', 'credential_type', 'status', 'status_reason', 'replaces_credential_id'],
         'attendance_event' => ['student_id', 'event_type', 'result', 'reason_code', 'assist_reason_code', 'device_id', 'method', 'attendance_status'],

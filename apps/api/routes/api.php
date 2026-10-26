@@ -22,6 +22,7 @@ use App\Http\Controllers\School\CredentialController;
 use App\Http\Controllers\School\DeviceController;
 use App\Http\Controllers\School\EntitlementController;
 use App\Http\Controllers\School\ExportController;
+use App\Http\Controllers\School\GuardianController;
 use App\Http\Controllers\School\HolidayController;
 use App\Http\Controllers\School\ImportController;
 use App\Http\Controllers\School\InvitationController;
@@ -287,6 +288,21 @@ Route::middleware(['auth:sanctum', BlockDemoUploads::class, ResolveSchoolMembers
         ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('students.accounts.store');
     Route::post('students/{student}/account/password', [StudentAccountController::class, 'resetPassword'])->whereUuid('student')
         ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsManage)])->name('students.account.password');
+    // Portal orang tua (ADR 0011): admin mengelola wali dan tautannya ke anak.
+    Route::get('guardians', [GuardianController::class, 'index'])
+        ->middleware([RequireSchoolFeature::using(Feature::ParentPortal), RequireSchoolPermission::using(Permission::SchoolGuardiansManage)])->name('guardians.index');
+    Route::patch('guardians/{guardian}', [GuardianController::class, 'update'])->whereUuid('guardian')
+        ->middleware([RequireSchoolFeature::using(Feature::ParentPortal), RequireSchoolPermission::using(Permission::SchoolGuardiansManage)])->name('guardians.update');
+    Route::post('guardians/{guardian}/invitation', [GuardianController::class, 'reinvite'])->whereUuid('guardian')
+        ->middleware([EnsureEmailTransportReady::ALIAS, RequireSchoolFeature::using(Feature::ParentPortal), RequireSchoolPermission::using(Permission::SchoolGuardiansManage)])->name('guardians.reinvite');
+    Route::get('students/{student}/guardians', [GuardianController::class, 'forStudent'])->whereUuid('student')
+        ->middleware([RequireSchoolFeature::using(Feature::ParentPortal), RequireSchoolPermission::using(Permission::SchoolGuardiansManage)])->name('students.guardians.index');
+    Route::post('students/{student}/guardians', [GuardianController::class, 'store'])->whereUuid('student')
+        ->middleware([EnsureEmailTransportReady::ALIAS, RequireSchoolFeature::using(Feature::ParentPortal), RequireSchoolPermission::using(Permission::SchoolGuardiansManage)])->name('students.guardians.store');
+    Route::patch('students/{student}/guardians/{guardian}', [GuardianController::class, 'updateLink'])->whereUuid(['student', 'guardian'])
+        ->middleware([RequireSchoolFeature::using(Feature::ParentPortal), RequireSchoolPermission::using(Permission::SchoolGuardiansManage)])->name('students.guardians.update');
+    Route::delete('students/{student}/guardians/{guardian}', [GuardianController::class, 'destroyLink'])->whereUuid(['student', 'guardian'])
+        ->middleware([RequireSchoolFeature::using(Feature::ParentPortal), RequireSchoolPermission::using(Permission::SchoolGuardiansManage)])->name('students.guardians.destroy');
     Route::get('students/{student}', [StudentController::class, 'show'])->whereUuid('student')
         ->middleware([RequireSchoolFeature::using(Feature::Students), RequireSchoolPermission::using(Permission::SchoolStudentsView)])->name('students.show');
     Route::patch('students/{student}', [StudentController::class, 'update'])->whereUuid('student')

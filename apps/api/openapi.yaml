@@ -18,6 +18,7 @@ tags:
   - name: platform
   - name: school
   - name: lms
+  - name: guardians
   - name: terminal
   - name: invitation
 
@@ -2430,6 +2431,198 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/guardians:
+    get:
+      tags: [guardians]
+      operationId: listGuardians
+      summary: "Daftar wali beserta anak dan status akunnya"
+      description: "Izin: school.guardians.manage; fitur: parent_portal. Filter q (nama) dan status. Status akun: active, invited, invitation_expired, none."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [active, inactive] } }
+      responses:
+        "200":
+          description: "Wali."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Guardian" }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /schools/{school}/guardians/{guardian}:
+    patch:
+      tags: [guardians]
+      operationId: updateGuardian
+      summary: "Ubah nama, telepon, atau status wali"
+      description: "Izin: school.guardians.manage; fitur: parent_portal. Wali nonaktif kehilangan akses ke semua anaknya; data dan tautan tetap tersimpan."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/GuardianId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name: { type: string, maxLength: 150 }
+                phone: { type: [string, "null"], maxLength: 30 }
+                status: { type: string, enum: [active, inactive] }
+      responses:
+        "200":
+          description: "Wali diperbarui."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuardianEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /schools/{school}/guardians/{guardian}/invitation:
+    post:
+      tags: [guardians]
+      operationId: reinviteGuardian
+      summary: "Kirim ulang undangan wali"
+      description: |
+        Izin: school.guardians.manage; fitur: parent_portal. Undangan yang masih berlaku atau kedaluwarsa dikirim ulang dengan
+        token baru; undangan yang dicabut atau ditolak diganti undangan baru ke surel yang sama. email hanya perlu bila wali
+        belum pernah diundang. 409 bila wali sudah punya akun.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/GuardianId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: "Undangan dikirim."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuardianEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "503": { description: "Layanan surel belum dikonfigurasi (EMAIL_NOT_CONFIGURED)." }
+  /schools/{school}/students/{student}/guardians:
+    get:
+      tags: [guardians]
+      operationId: listStudentGuardians
+      summary: "Wali sebuah siswa (wali utama lebih dulu)"
+      description: "Izin: school.guardians.manage; fitur: parent_portal."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+      responses:
+        "200":
+          description: "Wali siswa."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Guardian" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [guardians]
+      operationId: addStudentGuardian
+      summary: "Tambah wali baru (diundang lewat surel) atau tautkan wali yang sudah ada"
+      description: |
+        Izin: school.guardians.manage; fitur: parent_portal. Dengan guardian_id menautkan wali yang sudah ada ke siswa ini;
+        tanpa itu membuat wali baru (full_name, email, phone opsional) dan mengundangnya. Orang yang sudah menjadi anggota
+        sekolah (mis. guru) mendapat peran wali tanpa undangan. Wali pertama otomatis menjadi wali utama. 409 bila siswa sudah punya
+        4 wali, wali sudah tertaut, ada undangan berlaku untuk surel itu, atau akunnya sudah terdaftar sebagai wali.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [relationship]
+              properties:
+                guardian_id: { type: string, format: uuid }
+                full_name: { type: string, maxLength: 150 }
+                email: { type: string, format: email }
+                phone: { type: [string, "null"], maxLength: 30 }
+                relationship: { type: string, enum: [ayah, ibu, wali] }
+                is_primary: { type: boolean }
+      responses:
+        "201":
+          description: "Wali tertaut."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuardianEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+        "503": { description: "Layanan surel belum dikonfigurasi (EMAIL_NOT_CONFIGURED)." }
+  /schools/{school}/students/{student}/guardians/{guardian}:
+    patch:
+      tags: [guardians]
+      operationId: updateStudentGuardian
+      summary: "Ubah hubungan atau jadikan wali utama"
+      description: "Izin: school.guardians.manage; fitur: parent_portal. Wali utama hanya bisa diganti dengan menunjuk wali lain sebagai utama (409 bila diturunkan tanpa pengganti)."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+        - $ref: "#/components/parameters/GuardianId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                relationship: { type: string, enum: [ayah, ibu, wali] }
+                is_primary: { type: boolean }
+      responses:
+        "200":
+          description: "Tautan diperbarui."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuardianEnvelope" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+    delete:
+      tags: [guardians]
+      operationId: unlinkStudentGuardian
+      summary: "Lepas wali dari siswa"
+      description: "Izin: school.guardians.manage; fitur: parent_portal. Akses wali ke anak ini tertutup seketika. Bila yang dilepas wali utama, wali tertua yang tersisa menjadi utama."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+        - $ref: "#/components/parameters/StudentId"
+        - $ref: "#/components/parameters/GuardianId"
+      responses:
+        "204": { description: "Dilepas." }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /schools/{school}/students/{student}/enrollments:
     post:
       tags: [school]
@@ -4432,6 +4625,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    GuardianId:
+      name: guardian
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     ImportId:
       name: import
       in: path
@@ -4610,6 +4808,33 @@ components:
         assignment_id: { type: [string, "null"], format: uuid }
         read: { type: boolean }
         created_at: { type: string, format: date-time }
+    Guardian:
+      type: object
+      required: [id, full_name, phone, status, email, account, children]
+      properties:
+        id: { type: string, format: uuid }
+        full_name: { type: string }
+        phone: { type: [string, "null"] }
+        status: { type: string, enum: [active, inactive] }
+        email: { type: [string, "null"], format: email }
+        account: { type: string, enum: [active, invited, invitation_expired, none] }
+        children:
+          type: array
+          items:
+            type: object
+            required: [student_id, full_name, student_number, status, relationship, is_primary]
+            properties:
+              student_id: { type: string, format: uuid }
+              full_name: { type: string }
+              student_number: { type: string }
+              status: { type: string }
+              relationship: { type: string, enum: [ayah, ibu, wali] }
+              is_primary: { type: boolean }
+    GuardianEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Guardian" }
     LmsNamedRef:
       type: object
       required: [id, name]
