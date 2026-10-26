@@ -123,6 +123,11 @@ matriks rute (T08/T09) mencakup rute baru.
 | L5 | UI siswa (materi, tugas, kumpul, nilai) dan menu per peran | rendah |
 | L6 | Pengerasan: tes negatif menyeluruh, rilis fitur di registri, dokumen | rendah |
 
+### Status pelaksanaan
+L1a–L6 selesai (PR #45, #46, #47, #48, #49, L4, L5, L6). Tes mencakup kriteria §8: negatif lintas sekolah per rute dan unduhan, guru tanpa jadwal, siswa kelas lain, draf tak terlihat, tenggat berbasis waktu server, fitur dicabut menutup rute dan file, siswa bersandi awal ditolak, serta constraint dan RLS tabel LMS langsung di DB (`tests/Database/LmsTablesTest.php`).
+
+**Rilis.** Fitur `lms.*` ditandai rilis di registri lewat `config(sentra.lms_released)` (env `LMS_RELEASED`). Rilis sungguhan = mengubah nilai awal ini ke `true` dalam PR tersendiri setelah tinjauan hukum D-26 (nilai dan komentar siswa) selesai; sampai itu terjadi, tidak ada sekolah yang dapat memakai LMS walau paketnya memuat fitur tersebut. Setelah rilis, paket Premium otomatis mendapat LMS.
+
 ## Konsekuensi
 - Pertama kalinya ada pengguna siswa; halaman web dan menu harus sadar peran (siswa tidak melihat menu admin).
   Login, 2FA, dan kebijakan kata sandi mengikuti akun yang ada; 2FA tidak diwajibkan bagi siswa (hanya Super Admin).

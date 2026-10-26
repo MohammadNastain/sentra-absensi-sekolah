@@ -385,3 +385,32 @@ it('lintas sekolah: admin sekolah lain tidak melihat, mengumpulkan, menilai, ata
     $this->actingAs($outsider)->postJson("{$b}/submissions/{$sid}/grade", ['score' => 1])->assertNotFound();
     $this->actingAs($outsider)->get("{$b}/attachments/{$attId}/download")->assertNotFound();
 });
+
+it('siswa dengan sandi awal belum boleh memakai LMS sebelum menggantinya', function () {
+    $id = ($this->makeAssignment)();
+    $sid = ($this->submit)($this->student, $id)->json('data.id');
+    $attId = ($this->upload)($this->student, "submissions/{$sid}/attachments", workPdf())->json('data.id');
+
+    $this->student->forceFill(['must_change_password' => true])->save();
+
+    foreach (['materials', 'assignments', "assignments/{$id}", "assignments/{$id}/submission", "attachments/{$attId}/download"] as $path) {
+        $this->actingAs($this->student)->getJson("{$this->url}/{$path}")->assertStatus(403)->assertJsonPath('code', 'PASSWORD_CHANGE_REQUIRED');
+    }
+    ($this->submit)($this->student, $id, 'diam-diam')->assertStatus(403)->assertJsonPath('code', 'PASSWORD_CHANGE_REQUIRED');
+
+    $this->student->forceFill(['must_change_password' => false])->save();
+    $this->actingAs($this->student)->getJson("{$this->url}/assignments/{$id}")->assertOk();
+});
+
+it('batas masukan: jawaban dan instruksi terlalu panjang, nilai di luar rentang, dan HTML disimpan sebagai teks', function () {
+    $id = ($this->makeAssignment)();
+
+    ($this->submit)($this->student, $id, str_repeat('a', 20001))->assertUnprocessable();
+    $html = '<script>alert(1)</script>';
+    ($this->submit)($this->student, $id, $html)->assertOk()->assertJsonPath('data.body', $html);
+
+    $sid = $this->actingAs($this->teacher)->getJson("{$this->url}/assignments/{$id}/submissions")->json('data.0.submission.id');
+    foreach ([-1, 21, 'abc'] as $bad) {
+        $this->actingAs($this->teacher)->postJson("{$this->url}/submissions/{$sid}/grade", ['score' => $bad])->assertUnprocessable();
+    }
+});
