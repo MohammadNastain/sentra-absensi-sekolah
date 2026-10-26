@@ -43,6 +43,7 @@ export function AppShell({
   userLabel,
   userName,
   demo = false,
+  actions,
   children,
 }: {
   context: string;
@@ -51,6 +52,8 @@ export function AppShell({
   userName?: string;
   /** Akun demo bersama: menu keamanan akun disembunyikan (sandi/2FA tidak boleh diubah). */
   demo?: boolean;
+  /** Tombol tambahan di bilah atas, sebelum pengalih tema (mis. lonceng notifikasi). */
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -66,7 +69,7 @@ export function AppShell({
     <div className="flex min-h-dvh flex-1">
       {hasSidebar ? <Sidebar nav={nav} context={context} open={drawer} onClose={() => setDrawer(false)} /> : null}
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar context={context} userLabel={userLabel} userName={userName} demo={demo} onMenu={hasSidebar ? () => setDrawer(true) : undefined} />
+        <TopBar context={context} userLabel={userLabel} userName={userName} demo={demo} actions={actions} onMenu={hasSidebar ? () => setDrawer(true) : undefined} />
         <main key={pathname} className="mx-auto w-full max-w-[1280px] flex-1 animate-rise space-y-6 px-4 pb-12 pt-2 sm:px-8">
           {children}
         </main>
@@ -163,7 +166,7 @@ function Sidebar({ nav, context, open, onClose }: { nav: NavItem[]; context: str
   );
 }
 
-function TopBar({ context, userLabel, userName, demo, onMenu }: { context: string; userLabel?: string; userName?: string; demo: boolean; onMenu?: () => void }) {
+function TopBar({ context, userLabel, userName, demo, actions, onMenu }: { context: string; userLabel?: string; userName?: string; demo: boolean; actions?: ReactNode; onMenu?: () => void }) {
   const router = useRouter();
   const [menu, setMenu] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -208,6 +211,7 @@ function TopBar({ context, userLabel, userName, demo, onMenu }: { context: strin
         <p className="hidden text-xs text-zinc-500 sm:block">Sentra Sekolah</p>
       </div>
 
+      {actions}
       <ThemeToggle />
 
       <div ref={box} className="relative">

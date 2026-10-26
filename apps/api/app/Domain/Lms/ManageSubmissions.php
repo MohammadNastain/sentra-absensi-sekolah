@@ -30,6 +30,7 @@ final class ManageSubmissions
         private readonly AuditLogger $audit,
         private readonly LmsScope $scope,
         private readonly ManageAssignments $assignments,
+        private readonly LmsNotifier $notifier,
     ) {}
 
     /** Id siswa pemilik akun ini, atau 403 bila akun ini bukan siswa aktif. */
@@ -157,6 +158,7 @@ final class ManageSubmissions
             $submission->graded_at = now();
             $submission->save();
             $this->audit->record('school.lms_submission.graded', $school->id, 'lms_submission', $submission->id, $before, self::audited($submission), null, $actor);
+            $this->notifier->submissionGraded($school, $assignment, $submission);
 
             return $submission;
         }));
@@ -183,6 +185,7 @@ final class ManageSubmissions
             $submission->graded_at = now();
             $submission->save();
             $this->audit->record('school.lms_submission.returned', $school->id, 'lms_submission', $submission->id, $before, self::audited($submission), null, $actor);
+            $this->notifier->submissionReturned($school, $assignment, $submission);
 
             return $submission;
         }));

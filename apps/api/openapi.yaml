@@ -1597,6 +1597,68 @@ paths:
                         items: { $ref: "#/components/schemas/LmsNamedRef" }
         "401": { $ref: "#/components/responses/Unauthenticated" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /schools/{school}/lms/notifications:
+    get:
+      tags: [lms]
+      operationId: listLmsNotifications
+      summary: "Notifikasi LMS milik saya"
+      description: |
+        Izin: school.lms.view; fitur: lms. 30 notifikasi terbaru milik pengguna yang login di sekolah ini beserta jumlah yang
+        belum dibaca. Jenis: tugas baru terbit, tugas dinilai, tugas diminta revisi. Isi tidak memuat komentar guru.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Notifikasi."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [unread_count, items]
+                    properties:
+                      unread_count: { type: integer }
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/LmsNotification" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /schools/{school}/lms/notifications/read:
+    post:
+      tags: [lms]
+      operationId: readLmsNotifications
+      summary: "Tandai notifikasi sudah dibaca"
+      description: "Izin: school.lms.view; fitur: lms. Dengan `id` menandai satu notifikasi milik sendiri; tanpa `id` menandai semuanya. Id milik orang lain diabaikan."
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: "Sisa yang belum dibaca."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [unread_count]
+                    properties:
+                      unread_count: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
   /schools/{school}/lms/materials:
     get:
       tags: [lms]
@@ -4537,6 +4599,17 @@ components:
       type: object
       properties:
         message: { type: string }
+    LmsNotification:
+      type: object
+      required: [id, type, title, body, assignment_id, read, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [lms.assignment_published, lms.submission_graded, lms.submission_returned] }
+        title: { type: string }
+        body: { type: string }
+        assignment_id: { type: [string, "null"], format: uuid }
+        read: { type: boolean }
+        created_at: { type: string, format: date-time }
     LmsNamedRef:
       type: object
       required: [id, name]

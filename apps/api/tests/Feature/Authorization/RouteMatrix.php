@@ -109,6 +109,8 @@ final class RouteMatrix
 
             // LMS materi dan lampiran (ADR 0010)
             'GET api/v1/schools/{school}/lms/options' => Permission::SchoolLmsManage,
+            'GET api/v1/schools/{school}/lms/notifications' => Permission::SchoolLmsView,
+            'POST api/v1/schools/{school}/lms/notifications/read' => Permission::SchoolLmsView,
             'GET api/v1/schools/{school}/lms/materials' => Permission::SchoolLmsView,
             'POST api/v1/schools/{school}/lms/materials' => Permission::SchoolLmsManage,
             'GET api/v1/schools/{school}/lms/materials/{material}' => Permission::SchoolLmsView,
@@ -255,7 +257,7 @@ final class RouteMatrix
             $head === 'teachers' => [Feature::Teachers],
             $head === 'lms' => [match (true) {
                 ($parts[1] ?? null) === 'attachments', ($parts[3] ?? null) === 'attachments' => Feature::LmsAttachments,
-                ($parts[1] ?? null) === 'options' => Feature::Lms,
+                ($parts[1] ?? null) === 'options', ($parts[1] ?? null) === 'notifications' => Feature::Lms,
                 ($parts[1] ?? null) === 'materials' => Feature::LmsMaterials,
                 ($parts[1] ?? null) === 'assignments' && ($parts[3] ?? null) === null => Feature::LmsAssignments,
                 ($parts[1] ?? null) === 'assignments', ($parts[1] ?? null) === 'submissions' && ($parts[3] ?? null) === null => Feature::LmsSubmissions,

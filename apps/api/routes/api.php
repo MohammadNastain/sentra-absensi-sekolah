@@ -29,6 +29,7 @@ use App\Http\Controllers\School\LeaveRequestController;
 use App\Http\Controllers\School\LmsAssignmentController;
 use App\Http\Controllers\School\LmsAttachmentController;
 use App\Http\Controllers\School\LmsMaterialController;
+use App\Http\Controllers\School\LmsNotificationController;
 use App\Http\Controllers\School\LmsOptionsController;
 use App\Http\Controllers\School\LmsSubmissionController;
 use App\Http\Controllers\School\MemberController;
@@ -228,6 +229,10 @@ Route::middleware(['auth:sanctum', BlockDemoUploads::class, ResolveSchoolMembers
     // LMS (ADR 0010): materi dan lampiran. Lampiran digerbang fitur sendiri, termasuk saat mengunduh.
     Route::get('lms/options', [LmsOptionsController::class, 'index'])
         ->middleware([RequireSchoolFeature::using(Feature::Lms), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.options');
+    Route::get('lms/notifications', [LmsNotificationController::class, 'index'])
+        ->middleware([RequireSchoolFeature::using(Feature::Lms), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.notifications.index');
+    Route::post('lms/notifications/read', [LmsNotificationController::class, 'read'])
+        ->middleware([RequireSchoolFeature::using(Feature::Lms), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.notifications.read');
     Route::get('lms/materials', [LmsMaterialController::class, 'index'])
         ->middleware([RequireSchoolFeature::using(Feature::LmsMaterials), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.materials.index');
     Route::post('lms/materials', [LmsMaterialController::class, 'store'])
