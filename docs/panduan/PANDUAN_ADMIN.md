@@ -81,12 +81,30 @@ Dashboard memuat **tren kehadiran** harian (14/30/90 hari) dan pengingat alpa se
 
 Menu **Audit** menampilkan siapa melakukan apa dan kapan (koreksi, keputusan izin, perangkat, impor, ekspor, dst.). Catatan audit tidak dapat diubah atau dihapus.
 
-## 9. Keamanan akun
+## 9. Pembelajaran (LMS)
+
+Menu **Pembelajaran** (Materi, Tugas) hanya muncul bila paket sekolah Anda menyertakan modul LMS.
+
+**Menyiapkan**
+1. Pastikan guru sudah punya akun anggota berperan **Guru Mata Pelajaran** dan terhubung ke data guru. Guru hanya bisa mengelola kelas dan mata pelajaran yang ada di **jadwal mengajarnya**; tanpa jadwal, guru tidak dapat membuat materi atau tugas.
+2. Buat akun siswa dari halaman **Siswa** (satu per satu, atau semua siswa aktif sebuah kelas). Sandi awal ditampilkan **sekali saja**: cetak lembar kredensial atau unduh CSV, lalu bagikan ke siswa. Siswa masuk dengan `kode-sekolah/NIS` dan wajib mengganti sandi pada login pertama.
+3. Siswa lupa sandi: gunakan **Atur ulang sandi** pada baris siswa; sandi awal baru dibuat dan siswa wajib menggantinya lagi. Siswa tidak memakai fitur lupa sandi lewat surel.
+
+**Cara kerja**
+- Materi dan tugas berstatus *draf* sampai diterbitkan; siswa hanya melihat yang terbit di kelasnya.
+- Tugas dapat diberi tenggat dan nilai maksimum. Waktu pengumpulan dicatat server; jawaban setelah tenggat ditolak kecuali tugas menerima jawaban terlambat (ditandai *terlambat*).
+- Guru menilai atau meminta revisi dengan komentar. Hasil yang sudah dinilai terkunci. Tugas yang sudah ada pengumpulannya tidak dapat dihapus; tutup saja.
+- Admin sekolah dapat mengelola semua kelas dan mata pelajaran; Kepala Sekolah hanya melihat.
+- Lampiran: PDF, Office, TXT, CSV, JPG, PNG; maksimal 10 MB per berkas dan 5 berkas per materi, tugas, atau pengumpulan. Berkas bersifat privat dan hanya dapat diunduh oleh yang berhak.
+
+**Perlu diketahui:** nilai dan komentar adalah data pribadi anak. Belum ada pemindaian malware, kuota berkas per sekolah, maupun notifikasi tugas dan nilai.
+
+## 10. Keamanan akun
 
 - Kata sandi kuat; aktifkan autentikasi dua langkah bila tersedia untuk akun Anda.
 - Keluar dari komputer bersama. Jangan membagikan akun.
 - Anggota yang berhenti bertugas: nonaktifkan dari menu **Anggota**.
 
-## 10. Yang belum tersedia
+## 11. Yang belum tersedia
 
 Notifikasi ke orang tua, dan penarikan data otomatis saat server mati *(rencana)*. Bila hari terlewat penutupannya, hubungi pengelola teknis untuk menjalankan penutupan hari manual.
