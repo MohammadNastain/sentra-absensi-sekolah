@@ -31,7 +31,7 @@ export function AuthShell({
       <div className="absolute right-4 top-4 z-20 sm:right-8 sm:top-6">
         <ThemeToggle />
       </div>
-      <section className="relative flex flex-col items-center overflow-hidden bg-gradient-to-br from-brand-sidebar-from via-brand-900 to-brand-sidebar-to px-6 pb-24 pt-5 text-white sm:px-10 lg:items-stretch lg:justify-between lg:p-14 lg:pb-14">
+      <section className="relative flex flex-col items-center overflow-hidden bg-gradient-to-br from-brand-sidebar-from via-brand-900 to-brand-sidebar-to px-6 pb-24 pt-5 text-white sm:px-10 lg:items-stretch lg:justify-between lg:px-14 lg:py-8">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <div className="absolute -right-24 -top-24 size-[28rem] animate-float rounded-full bg-brand-400/15 blur-3xl" />
           <div className="absolute -bottom-32 -left-20 size-[26rem] animate-float rounded-full bg-gold-400/10 blur-3xl [animation-delay:-3s]" />
@@ -53,16 +53,16 @@ export function AuthShell({
           </span>
         </div>
 
-        <LogoStage className="relative -my-2 h-64 w-full max-w-md sm:h-80 lg:-my-6 lg:h-auto lg:min-h-0 lg:flex-1 lg:max-w-none" />
+        <LogoStage className="relative -my-2 h-64 w-full max-w-md sm:h-80 lg:-my-8 lg:h-[min(36rem,56vh)] lg:max-w-none" />
 
         <div className="relative max-w-md text-center lg:text-left">
-          <h2 className="animate-rise text-2xl font-bold sm:text-3xl lg:text-4xl leading-[1.15] tracking-tight">
+          <h2 className="animate-rise text-2xl font-bold sm:text-3xl lg:text-3xl xl:text-4xl leading-[1.15] tracking-tight">
             Satu platform untuk sekolah yang <span className="text-gold-400">rapi dan terpercaya.</span>
           </h2>
-          <p className="mt-3 animate-rise text-sm leading-relaxed sm:text-base lg:mt-4 text-brand-50/75 [animation-delay:100ms]">
+          <p className="mt-3 animate-rise text-sm leading-relaxed sm:text-base lg:mt-2 lg:[@media(max-height:900px)]:hidden text-brand-50/75 [animation-delay:100ms]">
             Dari absensi di gerbang, data siswa dan guru, sampai jadwal dan laporan. Satu sistem untuk admin, guru, wali kelas, dan pimpinan sekolah.
           </p>
-          <ul className="mt-8 hidden space-y-3 lg:block">
+          <ul className="mt-5 hidden space-y-2 lg:block lg:[@media(max-height:1100px)]:hidden">
             {HIGHLIGHTS.map(({ icon: Icon, text }, i) => (
               <li key={text} className="flex animate-rise items-center gap-3 text-sm text-brand-50/90" style={{ animationDelay: `${200 + i * 90}ms` }}>
                 <span className="flex size-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
@@ -74,7 +74,7 @@ export function AuthShell({
           </ul>
         </div>
 
-        <p className="relative hidden items-center gap-2 text-xs text-brand-100/60 lg:flex">
+        <p className="relative hidden items-center gap-2 text-xs text-brand-100/60 lg:flex lg:[@media(max-height:1100px)]:hidden">
           <IconCheck width={16} height={16} /> Sentra Sekolah
         </p>
       </section>
