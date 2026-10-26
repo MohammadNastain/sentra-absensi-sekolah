@@ -1096,6 +1096,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schools/{school}/lms/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Notifikasi LMS milik saya
+         * @description Izin: school.lms.view; fitur: lms. 30 notifikasi terbaru milik pengguna yang login di sekolah ini beserta jumlah yang
+         *     belum dibaca. Jenis: tugas baru terbit, tugas dinilai, tugas diminta revisi. Isi tidak memuat komentar guru.
+         */
+        get: operations["listLmsNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/lms/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tandai notifikasi sudah dibaca
+         * @description Izin: school.lms.view; fitur: lms. Dengan `id` menandai satu notifikasi milik sendiri; tanpa `id` menandai semuanya. Id milik orang lain diabaikan.
+         */
+        post: operations["readLmsNotifications"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/lms/materials": {
         parameters: {
             query?: never;
@@ -3013,6 +3054,19 @@ export interface components {
         };
         Message: {
             message?: string;
+        };
+        LmsNotification: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "lms.assignment_published" | "lms.submission_graded" | "lms.submission_returned";
+            title: string;
+            body: string;
+            /** Format: uuid */
+            assignment_id: string | null;
+            read: boolean;
+            /** Format: date-time */
+            created_at: string;
         };
         LmsNamedRef: {
             /** Format: uuid */
@@ -6745,6 +6799,73 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    listLmsNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Notifikasi. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            unread_count: number;
+                            items: components["schemas"]["LmsNotification"][];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    readLmsNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sisa yang belum dibaca. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            unread_count: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     listLmsMaterials: {

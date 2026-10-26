@@ -307,6 +307,15 @@ column membership_roles.granted_by_user_id uuid nullable=YES
 column membership_roles.membership_id uuid nullable=NO
 column membership_roles.role_code text nullable=NO
 column membership_roles.school_id uuid nullable=NO
+column notifications.body text nullable=NO
+column notifications.created_at timestamp with time zone nullable=NO
+column notifications.data jsonb nullable=NO
+column notifications.id uuid nullable=NO
+column notifications.read_at timestamp with time zone nullable=YES
+column notifications.school_id uuid nullable=NO
+column notifications.title text nullable=NO
+column notifications.type text nullable=NO
+column notifications.user_id uuid nullable=NO
 column password_reset_tokens.created_at timestamp with time zone nullable=YES
 column password_reset_tokens.email USER-DEFINED nullable=NO
 column password_reset_tokens.token text nullable=NO
@@ -483,6 +492,8 @@ index CREATE INDEX lms_materials_pair_index ON public.lms_materials USING btree 
 index CREATE INDEX lms_submissions_student_index ON public.lms_submissions USING btree (school_id, student_id)
 index CREATE INDEX membership_invitations_email_index ON public.membership_invitations USING btree (email)
 index CREATE INDEX membership_roles_school_role_index ON public.membership_roles USING btree (school_id, role_code)
+index CREATE INDEX notifications_unread_index ON public.notifications USING btree (school_id, user_id) WHERE (read_at IS NULL)
+index CREATE INDEX notifications_user_index ON public.notifications USING btree (school_id, user_id, created_at DESC)
 index CREATE INDEX schedules_no_overlap ON public.schedules USING gist (school_id, scope_key, day_of_week, daterange(effective_from, effective_until, '[]'::text)) WHERE is_active
 index CREATE INDEX schedules_school_scope_index ON public.schedules USING btree (school_id, scope_key, day_of_week, effective_from)
 index CREATE INDEX school_memberships_user_id_index ON public.school_memberships USING btree (user_id)
@@ -561,6 +572,7 @@ index CREATE UNIQUE INDEX membership_invitations_pkey ON public.membership_invit
 index CREATE UNIQUE INDEX membership_invitations_school_id_id_unique ON public.membership_invitations USING btree (school_id, id)
 index CREATE UNIQUE INDEX membership_invitations_token_hash_unique ON public.membership_invitations USING btree (token_hash)
 index CREATE UNIQUE INDEX membership_roles_pkey ON public.membership_roles USING btree (membership_id, role_code)
+index CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)
 index CREATE UNIQUE INDEX password_reset_tokens_pkey ON public.password_reset_tokens USING btree (email)
 index CREATE UNIQUE INDEX plan_features_pkey ON public.plan_features USING btree (plan_code, feature_code)
 index CREATE UNIQUE INDEX plans_pkey ON public.plans USING btree (code)
@@ -1032,6 +1044,19 @@ constraint membership_roles membership_roles_pkey PRIMARY KEY (membership_id, ro
 constraint membership_roles membership_roles_role_code_fkey FOREIGN KEY (role_code) REFERENCES roles(code)
 constraint membership_roles membership_roles_role_code_not_null NOT NULL role_code
 constraint membership_roles membership_roles_school_id_not_null NOT NULL school_id
+constraint notifications notifications_body_not_null NOT NULL body
+constraint notifications notifications_created_at_not_null NOT NULL created_at
+constraint notifications notifications_data_not_null NOT NULL data
+constraint notifications notifications_id_not_null NOT NULL id
+constraint notifications notifications_pkey PRIMARY KEY (id)
+constraint notifications notifications_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint notifications notifications_school_id_not_null NOT NULL school_id
+constraint notifications notifications_title_not_blank CHECK ((btrim(title) <> ''::text))
+constraint notifications notifications_title_not_null NOT NULL title
+constraint notifications notifications_type_check CHECK ((type = ANY (ARRAY['lms.assignment_published'::text, 'lms.submission_graded'::text, 'lms.submission_returned'::text])))
+constraint notifications notifications_type_not_null NOT NULL type
+constraint notifications notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
+constraint notifications notifications_user_id_not_null NOT NULL user_id
 constraint password_reset_tokens password_reset_tokens_email_not_null NOT NULL email
 constraint password_reset_tokens password_reset_tokens_pkey PRIMARY KEY (email)
 constraint password_reset_tokens password_reset_tokens_token_not_null NOT NULL token
@@ -1279,6 +1304,7 @@ policy membership_roles own_membership_roles_read SELECT (EXISTS ( SELECT 1
    FROM school_memberships m
   WHERE ((m.id = membership_roles.membership_id) AND (m.user_id = app_user_id())))) 
 policy membership_roles tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy notifications tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy schedules tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy school_feature_overrides platform_delete DELETE app_is_platform() 
 policy school_feature_overrides platform_insert INSERT  app_is_platform()
@@ -1322,6 +1348,7 @@ rls lms_materials enabled=true forced=true
 rls lms_submissions enabled=true forced=true
 rls membership_invitations enabled=true forced=true
 rls membership_roles enabled=true forced=true
+rls notifications enabled=true forced=true
 rls password_reset_tokens enabled=false forced=false
 rls plan_features enabled=false forced=false
 rls plans enabled=false forced=false

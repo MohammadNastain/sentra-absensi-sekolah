@@ -5,6 +5,7 @@ import { use, useEffect, useMemo, useState } from "react";
 import { AppShell, type NavItem } from "@/components/AppShell";
 import { DemoBanner } from "@/components/DemoBanner";
 import { LogoutButton } from "@/components/LogoutButton";
+import { NotificationBell } from "@/components/NotificationBell";
 import { PlatformBanner } from "@/components/PlatformBanner";
 import { IconArrowLeft } from "@/components/icons";
 import { EmptyState, LinkButton, Skeleton } from "@/components/ui";
@@ -124,7 +125,9 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
 
   return (
     <SchoolProvider value={value}>
-      <AppShell context={value.profile.name} nav={nav} userLabel={me?.email} userName={me?.name} demo={me?.is_demo}>
+      <AppShell context={value.profile.name} nav={nav} userLabel={me?.email} userName={me?.name} demo={me?.is_demo}
+        actions={value.can("school.lms.view") && value.hasFeature("lms") ? <NotificationBell code={code} timeZone={value.profile.timezone} /> : null}
+      >
         {me?.is_demo ? <DemoBanner /> : null}
         {value.profile.acting_as_platform_admin ? <PlatformBanner code={code} /> : null}
         {unavailable ? (

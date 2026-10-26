@@ -136,5 +136,11 @@ L1a–L6 selesai (PR #45, #46, #47, #48, #49, L4, L5, L6). Tes mencakup kriteria
 - Penyimpanan file menambah biaya dan beban operasional (backup, retensi) yang belum dihitung di paket harga.
 
 ## Pertanyaan terbuka
-Tidak ada. Hal yang sengaja ditunda: pemindaian malware dan kuota file per sekolah, notifikasi tugas/nilai,
-portal orang tua, 2FA untuk siswa, dan penugasan guru lepas dari jadwal (`teaching_assignments`).
+Tidak ada. Hal yang sengaja ditunda: pemindaian malware dan kuota file per sekolah, portal orang tua, 2FA untuk siswa, dan penugasan guru lepas dari jadwal (`teaching_assignments`).
+
+## 8. Notifikasi dalam aplikasi
+Tabel `notifications` (satu baris per penerima, RLS per sekolah). Dibuat di dalam transaksi aksi asalnya oleh `LmsNotifier`:
+tugas terbit dari draf (semua siswa berakun aktif di kelasnya hari itu, sekali saja), tugas dinilai, dan tugas diminta revisi
+(pemilik pengumpulan). Isi hanya judul tugas, tenggat atau nilai; komentar guru tidak disalin. Pembaca: `GET lms/notifications`
+(30 terbaru + jumlah belum dibaca) dan `POST lms/notifications/read`, izin `school.lms.view`, fitur `lms`. Web memeriksa tiap
+60 detik selagi tab terlihat. Belum ada: surel/push, notifikasi untuk guru (pengumpulan baru), pembersihan notifikasi lama.

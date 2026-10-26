@@ -31,6 +31,7 @@ final class ManageAssignments
         private readonly AuditLogger $audit,
         private readonly LmsScope $scope,
         private readonly AttachmentStorage $files,
+        private readonly LmsNotifier $notifier,
     ) {}
 
     /** @return Builder<LmsAssignment> */
@@ -119,6 +120,10 @@ final class ManageAssignments
 
             if ($before['status'] !== $assignment->status) {
                 $this->audit->record('school.lms_assignment.'.$assignment->status, $school->id, 'lms_assignment', $assignment->id, $before, self::audited($assignment), null, $actor);
+            }
+            // Hanya terbit pertama dari draf yang memberi tahu siswa; membuka kembali tugas yang ditutup tidak mengulang.
+            if ($before['status'] === LmsAssignment::STATUS_DRAFT && $assignment->status === LmsAssignment::STATUS_PUBLISHED) {
+                $this->notifier->assignmentPublished($school, $assignment);
             }
 
             return $assignment;
