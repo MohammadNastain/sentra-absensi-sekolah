@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Domain\Demo\DemoMode;
 use App\Domain\Identity\SessionPolicy;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -23,6 +24,7 @@ final class MeController extends Controller
                 'two_factor_enabled' => $user->hasConfirmedTwoFactor(),
                 'must_change_password' => $user->must_change_password,
                 'is_platform_admin' => $user->isPlatformAdmin(),
+                'is_demo' => DemoMode::isDemoUser($user),
                 'two_factor_passed' => SessionPolicy::twoFactorPassed($request, $user),
             ],
         ]);

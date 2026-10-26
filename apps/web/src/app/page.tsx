@@ -4,7 +4,8 @@ import { BrandMark } from "@/components/AppShell";
 import { IconBook, IconCalendar, IconCheck, IconChart, IconClock, IconDevice, IconDoc, IconGrad, IconMail, IconShield, IconUsers } from "@/components/icons";
 import { LogoStage } from "@/components/LogoStage";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { HeroCta, NavCta } from "./landing-cta";
+import { DEMO_ENABLED, WA_DISPLAY, waLink } from "@/lib/contact";
+import { DemoCta, HeroCta, NavCta } from "./landing-cta";
 
 type Icon = (props: { width?: number; height?: number }) => ReactNode;
 
@@ -53,7 +54,7 @@ const FAQ = [
   { q: "Bagaimana kalau internet sekolah mati?", a: "Mode bantuan dan penutupan hari manual tersedia agar petugas tetap dapat mencatat kehadiran. Prosedurnya ada di panduan petugas." },
   { q: "Siapa yang dapat melihat data siswa?", a: "Hanya anggota sekolah itu sendiri sesuai perannya. Data setiap sekolah terisolasi, dan akses penting tercatat di audit." },
   { q: "Bagaimana siswa masuk ke LMS?", a: "Admin membuat akun dari NIS. Siswa masuk dengan kode sekolah dan NIS, lalu wajib mengganti sandi awalnya." },
-  { q: "Bagaimana cara mendaftarkan sekolah kami?", a: "Hubungi kami. Kami membuat akun sekolah dan mengundang Admin Sekolah pertama lewat surel." },
+  { q: "Bagaimana cara mendaftarkan sekolah kami?", a: "Hubungi kami lewat WhatsApp. Kami membuat akun sekolah dan mengundang Admin Sekolah pertama lewat surel." },
 ];
 
 const NAV = [
@@ -119,8 +120,8 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="relative mx-auto grid max-w-6xl items-center gap-4 px-5 pb-8 pt-8 sm:px-8 sm:pb-16 sm:pt-10 lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-16">
-          <div className="text-center lg:text-left">
+        <section className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-4 px-5 pb-8 pt-8 sm:px-8 sm:pb-16 sm:pt-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:pb-24 lg:pt-16">
+          <div className="min-w-0 text-center lg:text-left">
             <p className="inline-flex animate-rise items-center gap-2 rounded-full border border-brand-200/80 bg-white/70 px-3 py-1 text-xs font-bold text-brand-800 dark:border-brand-700/50 dark:bg-white/5 dark:text-brand-200">
               <IconCheck width={14} height={14} /> Absensi, administrasi, dan pembelajaran
             </p>
@@ -131,21 +132,25 @@ export default function Home() {
               Dari absensi di gerbang, data siswa dan guru, sampai jadwal, laporan, dan pembelajaran. Satu sistem untuk admin, guru, wali kelas, kepala sekolah, dan siswa.
             </p>
             <div className="mt-8 flex animate-rise flex-wrap items-center justify-center gap-3 lg:justify-start [animation-delay:200ms]">
-              <HeroCta />
+              {DEMO_ENABLED ? <DemoCta /> : <HeroCta />}
               <a
-                href="#kontak"
+                href={waLink("Halo, saya tertarik dengan Sentra Sekolah dan ingin bertanya.")}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center rounded-2xl border border-zinc-300/80 bg-white/70 px-5 py-3 text-sm font-bold text-zinc-800 transition hover:bg-white dark:border-zinc-700 dark:bg-white/5 dark:text-zinc-100 dark:hover:bg-white/10"
               >
                 Hubungi kami
               </a>
             </div>
           </div>
-          <LogoStage className="relative -mx-5 h-64 w-[calc(100%+2.5rem)] max-w-none sm:mx-0 sm:h-80 sm:w-full lg:h-[28rem]" />
+          <div className="relative -mx-5 min-w-0 overflow-hidden sm:mx-0 [&_canvas]:!h-full [&_canvas]:!w-full">
+            <LogoStage className="h-64 w-full sm:h-80 lg:h-[28rem]" />
+          </div>
         </section>
 
         <section id="fitur" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Fitur" title="Yang dibutuhkan sekolah sehari-hari" text="Modul yang saling terhubung, dari gerbang sekolah sampai ruang kelas." />
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ icon: Icon, title, text, soon }) => (
               <article key={title} className={`${CARD} p-6`}>
                 <div className={ICON_BOX}>
@@ -163,7 +168,7 @@ export default function Home() {
 
         <section id="alur" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Cara kerja" title="Mulai dalam tiga langkah" />
-          <ol className="mt-10 grid gap-5 md:grid-cols-3">
+          <ol className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
             {STEPS.map((step, i) => (
               <li key={step.title} className={`${CARD} p-6`}>
                 <span className="flex size-10 items-center justify-center rounded-full bg-brand-700 text-base font-black text-white">{i + 1}</span>
@@ -176,7 +181,7 @@ export default function Home() {
 
         <section className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Untuk siapa" title="Setiap peran punya tampilannya sendiri" />
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {ROLES.map((r) => (
               <article key={r.role} className={`${CARD} p-6`}>
                 <h3 className="text-base font-extrabold tracking-tight text-brand-800 dark:text-brand-200">{r.role}</h3>
@@ -188,7 +193,7 @@ export default function Home() {
 
         <section className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Keamanan" title="Data sekolah dijaga dengan serius" text="Data siswa adalah data pribadi anak. Karena itu keamanan menjadi bagian dari rancangan, bukan tambahan." />
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
             {TRUST.map(({ icon: Icon, title, text }) => (
               <article key={title} className={`${CARD} flex gap-4 p-6`}>
                 <div className={ICON_BOX}>
@@ -205,7 +210,7 @@ export default function Home() {
 
         <section id="paket" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Paket" title="Pilih sesuai kebutuhan sekolah" text="Fitur dibuka per paket. Hubungi kami untuk penawaran yang sesuai jumlah siswa Anda." />
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-3">
             {PLANS.map((plan) => (
               <article
                 key={plan.name}
@@ -234,7 +239,9 @@ export default function Home() {
                   ))}
                 </ul>
                 <a
-                  href="#kontak"
+                  href={waLink(`Halo, saya ingin menanyakan harga paket ${plan.name} Sentra Sekolah.`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="mt-6 inline-flex items-center justify-center rounded-2xl border border-zinc-300/80 bg-white/80 px-4 py-2.5 text-sm font-bold text-zinc-800 transition hover:bg-white dark:border-zinc-700 dark:bg-white/5 dark:text-zinc-100 dark:hover:bg-white/10"
                 >
                   Tanyakan harga
@@ -265,9 +272,17 @@ export default function Home() {
           <div className="rounded-[2rem] bg-gradient-to-br from-brand-700 via-brand-800 to-brand-950 px-6 py-12 text-center text-white shadow-lift sm:px-12">
             <h2 className="text-3xl font-extrabold leading-[1.1] tracking-[-0.03em] sm:text-4xl">Siap merapikan sekolah Anda?</h2>
             <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-brand-100/85">
-              Hubungi kami untuk mendaftarkan sekolah, melihat demo, atau menanyakan paket. Sudah punya akun? Masuk dari tombol di bawah.
+              Hubungi kami lewat WhatsApp untuk mendaftarkan sekolah, melihat demo, atau menanyakan paket. Sudah punya akun? Masuk dari tombol di bawah.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href={waLink("Halo, saya ingin mendaftarkan sekolah ke Sentra Sekolah.")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-brand-900 transition hover:bg-brand-50"
+              >
+                WhatsApp {WA_DISPLAY}
+              </a>
               {CONTACT_EMAIL ? (
                 <a
                   href={`mailto:${CONTACT_EMAIL}`}
@@ -276,6 +291,7 @@ export default function Home() {
                   <IconMail width={18} height={18} /> {CONTACT_EMAIL}
                 </a>
               ) : null}
+              {DEMO_ENABLED ? <DemoCta onDark /> : null}
               <Link
                 href="/login"
                 className="inline-flex items-center justify-center rounded-2xl border border-white/40 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"

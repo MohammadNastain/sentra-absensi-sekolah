@@ -42,12 +42,15 @@ export function AppShell({
   nav = [],
   userLabel,
   userName,
+  demo = false,
   children,
 }: {
   context: string;
   nav?: NavItem[];
   userLabel?: string;
   userName?: string;
+  /** Akun demo bersama: menu keamanan akun disembunyikan (sandi/2FA tidak boleh diubah). */
+  demo?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -63,7 +66,7 @@ export function AppShell({
     <div className="flex min-h-dvh flex-1">
       {hasSidebar ? <Sidebar nav={nav} context={context} open={drawer} onClose={() => setDrawer(false)} /> : null}
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar context={context} userLabel={userLabel} userName={userName} onMenu={hasSidebar ? () => setDrawer(true) : undefined} />
+        <TopBar context={context} userLabel={userLabel} userName={userName} demo={demo} onMenu={hasSidebar ? () => setDrawer(true) : undefined} />
         <main key={pathname} className="mx-auto w-full max-w-[1280px] flex-1 animate-rise space-y-6 px-4 pb-12 pt-2 sm:px-8">
           {children}
         </main>
@@ -160,7 +163,7 @@ function Sidebar({ nav, context, open, onClose }: { nav: NavItem[]; context: str
   );
 }
 
-function TopBar({ context, userLabel, userName, onMenu }: { context: string; userLabel?: string; userName?: string; onMenu?: () => void }) {
+function TopBar({ context, userLabel, userName, demo, onMenu }: { context: string; userLabel?: string; userName?: string; demo: boolean; onMenu?: () => void }) {
   const router = useRouter();
   const [menu, setMenu] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -221,9 +224,11 @@ function TopBar({ context, userLabel, userName, onMenu }: { context: string; use
         {menu ? (
           <div role="menu" className="absolute right-0 mt-2 w-56 animate-pop overflow-hidden rounded-2xl border border-zinc-200/70 bg-white p-1.5 shadow-lift dark:border-zinc-800 dark:bg-zinc-900">
             {userLabel ? <p className="truncate px-3 py-2 text-xs text-zinc-500">{userLabel}</p> : null}
-            <Link role="menuitem" href="/account/two-factor" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">
-              <IconShield width={18} height={18} /> Keamanan akun
-            </Link>
+            {demo ? null : (
+              <Link role="menuitem" href="/account/two-factor" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                <IconShield width={18} height={18} /> Keamanan akun
+              </Link>
+            )}
             <button role="menuitem" type="button" onClick={logout} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">
               <IconLogout width={18} height={18} /> Keluar
             </button>

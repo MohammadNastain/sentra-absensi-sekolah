@@ -27,6 +27,17 @@ return [
     */
     'lms_released' => (bool) env('LMS_RELEASED', false),
 
+    /*
+    | Mode demo: tombol "Coba demo" di landing page masuk sebagai admin sekolah contoh tanpa sandi. Mati bawaan;
+    | dinyalakan hanya di lingkungan yang menyiapkan sekolah demo (`php artisan demo:reset`). Sekolah demo
+    | dirotasi: yang lama dinonaktifkan (tabel absensi append-only), yang baru dibuat dengan kode yang sama.
+    */
+    'demo' => [
+        'enabled' => (bool) env('DEMO_ENABLED', false),
+        'school_code' => 'demo-sentra',
+        'admin_email' => 'admin@demo.sentra.test',
+    ],
+
     /* Retensi alamat IP pada audit log (hari). D-26: usulan 90 hari, menunggu tinjauan hukum. */
     'audit_ip_retention_days' => (int) env('AUDIT_IP_RETENTION_DAYS', 90),
 ];

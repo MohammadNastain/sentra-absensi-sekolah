@@ -55,6 +55,31 @@ paths:
                   two_factor: { type: boolean }
         "422": { $ref: "#/components/responses/ValidationFailed" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+  /auth/demo:
+    post:
+      tags: [auth]
+      operationId: demoLogin
+      summary: "Masuk satu klik sebagai admin sekolah demo"
+      description: |
+        Tanpa sandi. Hanya ada bila mode demo menyala (`DEMO_ENABLED`); selain itu 404. Akun demo dipakai bersama:
+        sandi dan 2FA-nya tidak dapat diubah (`DEMO_RESTRICTED`), dan sekolah demo tidak mengirim surel.
+      security: []
+      responses:
+        "200":
+          description: "Sesi demo terbentuk."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [demo]
+                    properties:
+                      demo: { type: boolean }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
   /auth/two-factor-challenge:
     post:
       tags: [auth]
@@ -4667,7 +4692,7 @@ components:
       enum: [Asia/Jakarta, Asia/Makassar, Asia/Jayapura]
     Me:
       type: object
-      required: [id, email, name, two_factor_enabled, must_change_password, is_platform_admin, two_factor_passed]
+      required: [id, email, name, two_factor_enabled, must_change_password, is_platform_admin, is_demo, two_factor_passed]
       properties:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
@@ -4677,6 +4702,9 @@ components:
           type: boolean
           description: "True bila akun masih memakai kata sandi awal dari admin (siswa); selama true API menolak rute lain dengan PASSWORD_CHANGE_REQUIRED."
         is_platform_admin: { type: boolean }
+        is_demo:
+          type: boolean
+          description: "True untuk akun admin sekolah demo (mode demo); antarmuka menampilkan banner dan menyembunyikan pengaturan akun."
         two_factor_passed: { type: boolean }
     SchoolRef:
       type: object

@@ -2,6 +2,7 @@
 
 use App\Domain\Entitlement\Feature;
 use App\Domain\Identity\Permission;
+use App\Http\Controllers\Auth\DemoLoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Invitation\PublicInvitationController;
@@ -40,6 +41,8 @@ use App\Http\Controllers\School\StudentController;
 use App\Http\Controllers\School\SubjectController;
 use App\Http\Controllers\School\TeacherController;
 use App\Http\Controllers\School\TeachingSlotController;
+use App\Http\Middleware\BlockDemoAccount;
+use App\Http\Middleware\BlockDemoUploads;
 use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\RejectRememberMe;
@@ -70,6 +73,7 @@ Route::prefix('auth')->group(function () {
         ->middleware([RejectRememberMe::class, 'throttle:login'])->name('login');
     Route::post('two-factor-challenge', [TwoFactorAuthenticatedSessionController::class, 'store'])
         ->middleware('throttle:two-factor')->name('two-factor.login');
+    Route::post('demo', DemoLoginController::class)->middleware('throttle:demo-login')->name('demo.login');
     Route::post('forgot-password', ForgotPasswordController::class)
         ->middleware([EnsureEmailTransportReady::ALIAS, 'throttle:password-reset'])->name('password.email');
     Route::post('reset-password', [NewPasswordController::class, 'store'])
@@ -78,11 +82,11 @@ Route::prefix('auth')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
         Route::get('me', MeController::class)->name('auth.me');
-        Route::put('password', [PasswordController::class, 'update'])->name('user-password.update');
+        Route::put('password', [PasswordController::class, 'update'])->middleware(BlockDemoAccount::ALIAS)->name('user-password.update');
         Route::post('confirm-password', [ConfirmablePasswordController::class, 'store'])->name('password.confirm.store');
         Route::get('confirmed-password-status', [ConfirmedPasswordStatusController::class, 'show'])->name('password.confirmation');
 
-        Route::middleware('password.confirm')->prefix('two-factor')->group(function () {
+        Route::middleware([BlockDemoAccount::ALIAS, 'password.confirm'])->prefix('two-factor')->group(function () {
             Route::post('/', [TwoFactorAuthenticationController::class, 'store'])->name('two-factor.enable');
             Route::delete('/', [TwoFactorAuthenticationController::class, 'destroy'])->name('two-factor.disable');
             Route::post('confirm', [ConfirmedTwoFactorAuthenticationController::class, 'store'])->name('two-factor.confirm');
@@ -132,7 +136,7 @@ Route::middleware(['auth:sanctum', EnsurePlatformAdmin::class])->prefix('platfor
 });
 
 // --- Sekolah (keanggotaan divalidasi setiap request, D-34) ---
-Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('schools/{school}')->name('schools.')->group(function () {
+Route::middleware(['auth:sanctum', BlockDemoUploads::class, ResolveSchoolMembership::class])->prefix('schools/{school}')->name('schools.')->group(function () {
     Route::get('/', [SchoolProfileController::class, 'show'])
         ->middleware(RequireSchoolPermission::using(Permission::SchoolProfileView))->name('show');
     Route::patch('/', [SchoolProfileController::class, 'update'])
