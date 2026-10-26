@@ -14,7 +14,7 @@ const HIGHLIGHTS = [
   { icon: IconShield, text: "Modul sesuai paket, data terisolasi dan teraudit" },
 ];
 
-/** Kerangka halaman autentikasi: panel merek bergerak di kiri, kartu formulir di kanan (menumpuk di layar kecil). */
+/** Kerangka halaman autentikasi: satu latar utuh (tanpa sekat warna), merek dan logo bergerak di kiri, kartu formulir melayang di kanan (menumpuk di layar kecil). */
 export function AuthShell({
   title,
   description,
@@ -27,45 +27,46 @@ export function AuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <main className="relative grid min-h-dvh flex-1 lg:h-dvh lg:min-h-0 lg:flex-none lg:grid-cols-[1.05fr_1fr] lg:overflow-hidden">
+    <main className="relative grid min-h-dvh flex-1 overflow-hidden bg-gradient-to-br from-brand-50 via-white to-brand-100/80 lg:h-dvh lg:min-h-0 lg:flex-none lg:grid-cols-[1.05fr_1fr] dark:from-brand-950 dark:via-zinc-950 dark:to-brand-900">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute -right-24 -top-24 size-[30rem] animate-float rounded-full bg-brand-300/30 blur-3xl dark:bg-brand-500/15" />
+        <div className="absolute -bottom-32 -left-20 size-[28rem] animate-float rounded-full bg-gold-400/15 blur-3xl [animation-delay:-3s] dark:bg-gold-400/10" />
+        <svg className="absolute inset-0 size-full text-brand-700 opacity-[0.05] dark:text-white dark:opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+              <path d="M44 0H0V44" fill="none" stroke="currentColor" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </div>
+
       <div className="absolute right-4 top-4 z-20 sm:right-8 sm:top-6">
         <ThemeToggle />
       </div>
-      <section className="relative flex flex-col items-center overflow-hidden bg-gradient-to-br from-brand-sidebar-from via-brand-900 to-brand-sidebar-to px-6 pb-24 pt-5 text-white sm:px-10 lg:items-stretch lg:justify-between lg:px-14 lg:py-8">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute -right-24 -top-24 size-[28rem] animate-float rounded-full bg-brand-400/15 blur-3xl" />
-          <div className="absolute -bottom-32 -left-20 size-[26rem] animate-float rounded-full bg-gold-400/10 blur-3xl [animation-delay:-3s]" />
-          <svg className="absolute inset-0 size-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
-                <path d="M44 0H0V44" fill="none" stroke="white" strokeWidth="1" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
 
+      <section className="relative flex flex-col items-center px-6 pb-24 pt-5 sm:px-10 lg:items-stretch lg:justify-between lg:px-14 lg:py-8 lg:pb-8">
         <div className="relative flex items-center gap-3 self-start">
           <BrandMark size={46} />
           <span className="leading-tight">
-            <span className="block text-2xl font-bold tracking-tight">Sentra</span>
-            <span className="block text-xs font-medium uppercase tracking-[0.16em] text-brand-200/80">Manajemen Sekolah</span>
+            <span className="block text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">Sentra</span>
+            <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-200/80">Manajemen Sekolah</span>
           </span>
         </div>
 
         <LogoStage className="relative -my-2 h-64 w-full max-w-md sm:h-80 lg:-my-8 lg:h-[min(36rem,56vh)] lg:max-w-none" />
 
         <div className="relative max-w-md text-center lg:text-left">
-          <h2 className="animate-rise text-2xl font-bold sm:text-3xl lg:text-3xl xl:text-4xl leading-[1.15] tracking-tight">
-            Satu platform untuk sekolah yang <span className="text-gold-400">rapi dan terpercaya.</span>
+          <h2 className="animate-rise text-2xl font-extrabold leading-[1.1] tracking-[-0.03em] text-zinc-900 sm:text-3xl lg:text-3xl xl:text-4xl dark:text-white">
+            Satu platform untuk sekolah yang <span className="text-brand-600 dark:text-brand-400">rapi dan terpercaya.</span>
           </h2>
-          <p className="mt-3 animate-rise text-sm leading-relaxed sm:text-base lg:mt-2 lg:[@media(max-height:900px)]:hidden text-brand-50/75 [animation-delay:100ms]">
+          <p className="mt-3 animate-rise text-sm leading-relaxed text-zinc-600 sm:text-base lg:mt-2 lg:[@media(max-height:900px)]:hidden dark:text-zinc-300 [animation-delay:100ms]">
             Dari absensi di gerbang, data siswa dan guru, sampai jadwal dan laporan. Satu sistem untuk admin, guru, wali kelas, dan pimpinan sekolah.
           </p>
           <ul className="mt-5 hidden space-y-2 lg:block lg:[@media(max-height:1100px)]:hidden">
             {HIGHLIGHTS.map(({ icon: Icon, text }, i) => (
-              <li key={text} className="flex animate-rise items-center gap-3 text-sm text-brand-50/90" style={{ animationDelay: `${200 + i * 90}ms` }}>
-                <span className="flex size-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
+              <li key={text} className="flex animate-rise items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-200" style={{ animationDelay: `${200 + i * 90}ms` }}>
+                <span className="flex size-9 items-center justify-center rounded-xl bg-brand-100 text-brand-700 ring-1 ring-brand-200/70 dark:bg-white/10 dark:text-brand-200 dark:ring-white/15">
                   <Icon width={18} height={18} />
                 </span>
                 {text}
@@ -74,14 +75,14 @@ export function AuthShell({
           </ul>
         </div>
 
-        <p className="relative hidden items-center gap-2 text-xs text-brand-100/60 lg:flex lg:[@media(max-height:1100px)]:hidden">
+        <p className="relative hidden items-center gap-2 text-xs text-zinc-500 lg:flex lg:[@media(max-height:1100px)]:hidden dark:text-zinc-400">
           <IconCheck width={16} height={16} /> Sentra Sekolah
         </p>
       </section>
 
       <section className="relative z-10 -mt-16 flex items-start justify-center px-4 pb-10 sm:px-8 lg:mt-0 lg:items-center lg:overflow-y-auto lg:py-12">
-        <div className="w-full max-w-md animate-rise rounded-3xl border border-zinc-200/70 bg-white p-6 shadow-lift sm:p-10 dark:border-zinc-800 dark:bg-zinc-900">
-                    <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{title}</h1>
+        <div className="w-full max-w-md animate-rise rounded-3xl border border-white/70 bg-white/85 p-6 shadow-lift backdrop-blur-xl sm:p-10 dark:border-zinc-700/60 dark:bg-zinc-900/80">
+          <h1 className="text-2xl font-black tracking-[-0.03em] text-zinc-900 dark:text-zinc-50">{title}</h1>
           {description ? <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{description}</p> : null}
           <div className="mt-7">{children}</div>
           {footer ? <div className="mt-6 text-sm text-zinc-600 dark:text-zinc-400">{footer}</div> : null}
