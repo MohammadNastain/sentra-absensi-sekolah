@@ -1,6 +1,6 @@
 # ADR 0011 — Portal orang tua/wali
 
-**Status:** Diusulkan (26 Okt 2026). Menunggu jawaban §"Pertanyaan terbuka" sebelum G1 dikerjakan.
+**Status:** Diterima (26 Okt 2026). Semua pertanyaan di §"Keputusan atas pertanyaan terbuka" disetujui sesuai usulan.
 **Sumber:** PRD Sentra Sekolah v1.1 §1.2 (portal orang tua di luar MVP, modul P3), registri entitlement `parent_portal` (ADR 0009); ADR 0004 (keanggotaan), ADR 0005 (kehadiran), ADR 0008 (surel), ADR 0010 (LMS, notifikasi §8); D-26, D-27, R11 (`DECISIONS.md`)
 
 ## Konteks
@@ -70,7 +70,8 @@ atau data guru selain nama pengajar pada tugas anaknya. Komentar guru hanya mili
   daripada akun sekolah. Rentang tanggal dibatasi (tidak di masa lalu lebih dari 7 hari, maksimal 30 hari per pengajuan).
 - Pembatasan laju per wali (mis. 10 pengajuan/hari) agar tidak jadi jalur spam.
 
-### 6. Notifikasi untuk wali (G7)
+### 6. Notifikasi untuk wali (G7, tidak termasuk rilis awal)
+Portal dirilis **lihat-saja dulu**; G7 dikerjakan terpisah setelah portal dipakai dan sinyalnya terbukti benar.
 Memakai tabel dan lonceng ADR 0010 §8, endpoint disamaratakan dari `lms/notifications` ke `notifications` (digerbang
 `notifications`; `lms/notifications` tetap sebagai alias sampai klien berpindah). Tipe baru: `attendance.absent`
 (alpa terverifikasi), `attendance.late` (terlambat), `leave.decided` (izin disetujui/ditolak). **Tidak** ada notifikasi
@@ -109,20 +110,19 @@ menutup rute; matriks rute (T08/T09) mencakup rute baru; undangan wali tidak mem
 | G4 | Pengajuan dan pembatalan izin oleh wali | sedang |
 | G5 | Web: menu dan beranda wali, pemilih anak, halaman kehadiran dan izin | rendah |
 | G6 | Web admin: kelola wali dari halaman siswa; kolom wali di impor siswa (opsional) | rendah |
-| G7 | Notifikasi wali (alpa, terlambat, izin diputuskan) | sedang (kebenaran sinyal) |
+| G7 | Notifikasi wali (alpa, terlambat, izin diputuskan); **setelah rilis awal** | sedang (kebenaran sinyal) |
 | G8 | Pengerasan, dokumen panduan wali/admin, demo, bendera rilis | rendah |
 `parent_portal.lms` dikerjakan terpisah setelah D-26 selesai dan LMS dirilis.
 
 ## Konsekuensi
 - Pertama kalinya akun non-staf/non-siswa melihat data anak; kebenaran `GuardianScope` adalah titik kritis dan wajib punya tes negatif lengkap.
-- Surel wali menjadi syarat; sekolah tanpa surel wali tidak terlayani di tahap ini (§Pertanyaan terbuka a).
+- Surel wali menjadi syarat; sekolah tanpa surel wali tidak terlayani di tahap ini (keputusan a).
 - Menambah beban dukungan (lupa sandi wali, salah tautan anak); admin memerlukan panduan dan layar yang jelas.
 - Perlu masuk tinjauan hukum D-26/R11: dasar pemrosesan, persetujuan, dan retensi data anak untuk wali.
 
-## Pertanyaan terbuka
-a. **Wali tanpa surel.** Banyak wali di sekolah tertentu tidak punya surel. Opsi: (1) surel wajib (usulan, paling aman dan paling sederhana);
-   (2) akun tanpa surel dari NIS anak + sandi awal seperti siswa, dengan reset oleh admin (lebih inklusif, tetapi sandi dibagikan lewat kertas dan satu NIS bisa dipakai bersama).
-b. **Paket.** Setuju attendance + leave di Standard dan Premium, lms di Premium?
-c. **Notifikasi alpa otomatis** (G7) apakah diinginkan sejak awal, atau portal dirilis dengan lihat-saja dulu?
-d. **Batas 4 wali per anak** dan hubungan `ayah/ibu/wali` cukup?
-e. **Tinjauan hukum** (D-26/R11): kapan, dan apakah bagian kehadiran boleh dipakai sekolah pilot sebelum selesai (nilai tetap tertahan)?
+## Keputusan atas pertanyaan terbuka
+a. **Surel wajib** untuk akun wali; akun tanpa surel dari NIS anak tidak dibuat. Dapat ditinjau ulang bila pilot menunjukkan banyak wali tanpa surel.
+b. **Paket:** `parent_portal.attendance` dan `.leave` di Standard dan Premium; `parent_portal.lms` di Premium (tetap tertahan oleh rilis).
+c. **Lihat-saja dulu:** rilis awal tanpa notifikasi otomatis; G7 menyusul.
+d. **Maksimal 4 wali per anak**; hubungan `ayah`/`ibu`/`wali`.
+e. **Hukum:** bagian kehadiran dan izin boleh dipakai sekolah pilot sebelum tinjauan D-26/R11 selesai, dengan dasar persetujuan dan SOP verifikasi wali oleh sekolah; nilai dan komentar tetap tertahan sampai tinjauan itu selesai. Jadwal tinjauan menunggu pihak hukum.
