@@ -1,0 +1,65 @@
+name: Publish images
+
+# Membangun image produksi (API dan web) di GitHub, bukan di VPS (build Next.js terlalu berat untuk 2 GB RAM).
+# Dijalankan manual dari tab Actions, atau otomatis saat tag v* dibuat.
+on:
+  workflow_dispatch:
+    inputs:
+      demo:
+        description: "Aktifkan tombol Coba demo di web (NEXT_PUBLIC_DEMO_ENABLED)"
+        type: boolean
+        default: false
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Nama image (huruf kecil)
+        id: names
+        run: |
+          owner="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          echo "owner=$owner" >> "$GITHUB_OUTPUT"
+          echo "tag=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+
+      - name: Build dan push API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/prod/api.Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.names.outputs.owner }}/sentra-api:latest
+            ghcr.io/${{ steps.names.outputs.owner }}/sentra-api:${{ steps.names.outputs.tag }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+
+      - name: Build dan push web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/prod/web.Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_DEMO_ENABLED=${{ inputs.demo || 'false' }}
+          tags: |
+            ghcr.io/${{ steps.names.outputs.owner }}/sentra-web:latest
+            ghcr.io/${{ steps.names.outputs.owner }}/sentra-web:${{ steps.names.outputs.tag }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max

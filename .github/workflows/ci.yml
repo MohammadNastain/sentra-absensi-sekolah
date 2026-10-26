@@ -186,7 +186,7 @@ jobs:
           fetch-depth: 0
 
       - name: Shellcheck
-        run: shellcheck scripts/*.sh infra/docker/postgres/initdb/*.sh
+        run: shellcheck scripts/*.sh infra/docker/postgres/initdb/*.sh infra/docker/prod/initdb/*.sh infra/docker/prod/*.sh infra/prod/*.sh
 
       - name: Pindai secret (gitleaks, isi working tree)
         run: |

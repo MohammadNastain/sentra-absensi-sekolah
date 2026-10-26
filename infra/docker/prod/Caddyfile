@@ -1,0 +1,33 @@
+# Edge produksi: FrankenPHP (Caddy + PHP) menerima semua lalu lintas.
+#   /api, /sanctum, /up  -> Laravel (php_server, mode klasik tanpa worker)
+#   selain itu            -> Next.js (container web:3000)
+# HTTPS otomatis (Let's Encrypt) bila SITE_ADDRESS berupa nama domain; `:80` untuk uji tanpa TLS.
+{
+	frankenphp
+	order php_server before file_server
+	email {$ACME_EMAIL}
+}
+
+{$SITE_ADDRESS:localhost} {
+	encode zstd gzip
+
+	# Unggahan terbesar 10 MB per berkas (lampiran LMS, impor); sisakan ruang untuk badan multipart.
+	request_body {
+		max_size 12MB
+	}
+
+	root * /app/public
+
+	@backend path /api/* /sanctum/* /up
+	handle @backend {
+		php_server
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output stdout
+	}
+}

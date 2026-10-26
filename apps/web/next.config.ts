@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 /** Asal API Laravel. Browser selalu memanggil same-origin; Next meneruskannya (cookie sesi tidak lintas situs). */
@@ -18,7 +19,11 @@ const common = [
     : []),
 ];
 
+// Build image produksi (infra/docker/prod/web.Dockerfile) memakai keluaran standalone; dev dan CI tidak berubah.
+const standalone = process.env.NEXT_OUTPUT === "standalone";
+
 const nextConfig: NextConfig = {
+  ...(standalone ? { output: "standalone" as const, outputFileTracingRoot: path.join(import.meta.dirname, "../..") } : {}),
   transpilePackages: ["@sentra/api-client"],
   async rewrites() {
     return [
