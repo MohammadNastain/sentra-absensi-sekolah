@@ -119,8 +119,8 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="relative mx-auto grid max-w-6xl items-center gap-4 px-5 pb-8 pt-8 sm:px-8 sm:pb-16 sm:pt-10 lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-16">
-          <div className="text-center lg:text-left">
+        <section className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-4 px-5 pb-8 pt-8 sm:px-8 sm:pb-16 sm:pt-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:pb-24 lg:pt-16">
+          <div className="min-w-0 text-center lg:text-left">
             <p className="inline-flex animate-rise items-center gap-2 rounded-full border border-brand-200/80 bg-white/70 px-3 py-1 text-xs font-bold text-brand-800 dark:border-brand-700/50 dark:bg-white/5 dark:text-brand-200">
               <IconCheck width={14} height={14} /> Absensi, administrasi, dan pembelajaran
             </p>
@@ -140,12 +140,14 @@ export default function Home() {
               </a>
             </div>
           </div>
-          <LogoStage className="relative -mx-5 h-64 w-[calc(100%+2.5rem)] max-w-none sm:mx-0 sm:h-80 sm:w-full lg:h-[28rem]" />
+          <div className="relative -mx-5 min-w-0 overflow-hidden sm:mx-0 [&_canvas]:!h-full [&_canvas]:!w-full">
+            <LogoStage className="h-64 w-full sm:h-80 lg:h-[28rem]" />
+          </div>
         </section>
 
         <section id="fitur" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Fitur" title="Yang dibutuhkan sekolah sehari-hari" text="Modul yang saling terhubung, dari gerbang sekolah sampai ruang kelas." />
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ icon: Icon, title, text, soon }) => (
               <article key={title} className={`${CARD} p-6`}>
                 <div className={ICON_BOX}>
@@ -163,7 +165,7 @@ export default function Home() {
 
         <section id="alur" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Cara kerja" title="Mulai dalam tiga langkah" />
-          <ol className="mt-10 grid gap-5 md:grid-cols-3">
+          <ol className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
             {STEPS.map((step, i) => (
               <li key={step.title} className={`${CARD} p-6`}>
                 <span className="flex size-10 items-center justify-center rounded-full bg-brand-700 text-base font-black text-white">{i + 1}</span>
@@ -176,7 +178,7 @@ export default function Home() {
 
         <section className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Untuk siapa" title="Setiap peran punya tampilannya sendiri" />
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {ROLES.map((r) => (
               <article key={r.role} className={`${CARD} p-6`}>
                 <h3 className="text-base font-extrabold tracking-tight text-brand-800 dark:text-brand-200">{r.role}</h3>
@@ -188,7 +190,7 @@ export default function Home() {
 
         <section className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Keamanan" title="Data sekolah dijaga dengan serius" text="Data siswa adalah data pribadi anak. Karena itu keamanan menjadi bagian dari rancangan, bukan tambahan." />
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2">
             {TRUST.map(({ icon: Icon, title, text }) => (
               <article key={title} className={`${CARD} flex gap-4 p-6`}>
                 <div className={ICON_BOX}>
@@ -205,7 +207,7 @@ export default function Home() {
 
         <section id="paket" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Paket" title="Pilih sesuai kebutuhan sekolah" text="Fitur dibuka per paket. Hubungi kami untuk penawaran yang sesuai jumlah siswa Anda." />
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-3">
             {PLANS.map((plan) => (
               <article
                 key={plan.name}
