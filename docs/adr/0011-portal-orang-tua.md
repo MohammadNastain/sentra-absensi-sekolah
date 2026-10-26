@@ -81,8 +81,8 @@ Tidak ada surel, WhatsApp, atau push di tahap ini (butuh layanan dan biaya yang 
 ### 7. Entitlement
 Daftarkan `parent_portal.attendance`, `parent_portal.leave`, `parent_portal.lms` sebagai anak `parent_portal`
 (sekarang hanya induknya yang terdaftar). Prasyarat: `parent_portal.attendance` butuh `attendance`; `.leave` butuh
-`attendance.leave`; `.lms` butuh `lms.assignments`. Penempatan di paket adalah keputusan bisnis (§Pertanyaan terbuka);
-usulan teknis: attendance + leave di Standard dan Premium, lms di Premium. Rilis lewat `config(sentra.parent_portal_released)`
+`attendance.leave`; `.lms` butuh `lms.assignments`. Penempatan di paket: attendance + leave di Standard dan Premium,
+lms di Premium (diputuskan, lihat bawah). Rilis lewat `config(sentra.parent_portal_released)`
 (env `PARENT_PORTAL_RELEASED`), mati sampai G8; sekolah demo dikecualikan seperti LMS.
 
 ### 8. Audit dan privasi
