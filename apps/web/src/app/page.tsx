@@ -75,16 +75,16 @@ function SectionTitle({ eyebrow, title, text }: { eyebrow: string; title: ReactN
   );
 }
 
-const CARD = "rounded-3xl border border-white/70 bg-white/80 shadow-card backdrop-blur-xl dark:border-zinc-700/60 dark:bg-zinc-900/70";
+const CARD = "rounded-3xl border border-white/70 bg-white/95 shadow-card md:bg-white/80 md:backdrop-blur-xl dark:border-zinc-700/60 dark:bg-zinc-900/90 md:dark:bg-zinc-900/70";
 const ICON_BOX = "flex size-11 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-brand-700 ring-1 ring-brand-200/70 dark:bg-white/10 dark:text-brand-200 dark:ring-white/15";
 
 /** Beranda publik: perkenalan produk. Tombol masuk mengarah ke /login (atau dashboard bila sudah masuk). */
 export default function Home() {
   return (
     <div className="relative flex-1 overflow-x-clip bg-gradient-to-br from-brand-50 via-white to-brand-100/80 text-zinc-900 dark:from-brand-950 dark:via-zinc-950 dark:to-brand-900 dark:text-zinc-100">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[48rem] overflow-hidden">
-        <div className="absolute -right-24 -top-24 size-[30rem] animate-float rounded-full bg-brand-300/30 blur-3xl dark:bg-brand-500/15" />
-        <div className="absolute -left-24 top-72 size-[26rem] animate-float rounded-full bg-gold-400/15 blur-3xl [animation-delay:-3s] dark:bg-gold-400/10" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[48rem] overflow-hidden [mask-image:linear-gradient(to_bottom,black_65%,transparent)]">
+        <div className="absolute -right-24 -top-24 hidden size-[30rem] animate-float md:block rounded-full bg-brand-300/30 blur-3xl dark:bg-brand-500/15" />
+        <div className="absolute -left-24 top-72 hidden size-[26rem] animate-float md:block rounded-full bg-gold-400/15 blur-3xl [animation-delay:-3s] dark:bg-gold-400/10" />
         <svg className="absolute inset-0 size-full text-brand-700 opacity-[0.05] dark:text-white dark:opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="landing-grid" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -95,7 +95,7 @@ export default function Home() {
         </svg>
       </div>
 
-      <header className="sticky top-0 z-30 border-b border-white/60 bg-white/70 backdrop-blur-xl dark:border-zinc-800/70 dark:bg-zinc-950/60">
+      <header className="sticky top-0 z-30 border-b border-white/60 bg-white/90 md:bg-white/70 md:backdrop-blur-xl dark:border-zinc-800/70 dark:bg-zinc-950/90 md:dark:bg-zinc-950/60">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3 sm:px-8">
           <Link href="/" className="flex items-center gap-3">
             <BrandMark size={40} />
@@ -119,7 +119,7 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="relative mx-auto grid max-w-6xl items-center gap-4 px-5 pb-16 pt-10 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-16">
+        <section className="relative mx-auto grid max-w-6xl items-center gap-4 px-5 pb-8 pt-8 sm:px-8 sm:pb-16 sm:pt-10 lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-16">
           <div className="text-center lg:text-left">
             <p className="inline-flex animate-rise items-center gap-2 rounded-full border border-brand-200/80 bg-white/70 px-3 py-1 text-xs font-bold text-brand-800 dark:border-brand-700/50 dark:bg-white/5 dark:text-brand-200">
               <IconCheck width={14} height={14} /> Absensi, administrasi, dan pembelajaran
@@ -143,7 +143,7 @@ export default function Home() {
           <LogoStage className="relative -mx-5 h-64 w-[calc(100%+2.5rem)] max-w-none sm:mx-0 sm:h-80 sm:w-full lg:h-[28rem]" />
         </section>
 
-        <section id="fitur" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16 sm:px-8">
+        <section id="fitur" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Fitur" title="Yang dibutuhkan sekolah sehari-hari" text="Modul yang saling terhubung, dari gerbang sekolah sampai ruang kelas." />
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ icon: Icon, title, text, soon }) => (
@@ -161,7 +161,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="alur" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16 sm:px-8">
+        <section id="alur" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Cara kerja" title="Mulai dalam tiga langkah" />
           <ol className="mt-10 grid gap-5 md:grid-cols-3">
             {STEPS.map((step, i) => (
@@ -174,7 +174,7 @@ export default function Home() {
           </ol>
         </section>
 
-        <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8">
+        <section className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Untuk siapa" title="Setiap peran punya tampilannya sendiri" />
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {ROLES.map((r) => (
@@ -186,7 +186,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8">
+        <section className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Keamanan" title="Data sekolah dijaga dengan serius" text="Data siswa adalah data pribadi anak. Karena itu keamanan menjadi bagian dari rancangan, bukan tambahan." />
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {TRUST.map(({ icon: Icon, title, text }) => (
@@ -203,7 +203,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="paket" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16 sm:px-8">
+        <section id="paket" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="Paket" title="Pilih sesuai kebutuhan sekolah" text="Fitur dibuka per paket. Hubungi kami untuk penawaran yang sesuai jumlah siswa Anda." />
           <div className="mt-10 grid gap-5 lg:grid-cols-3">
             {PLANS.map((plan) => (
@@ -244,7 +244,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="faq" className="mx-auto max-w-3xl scroll-mt-20 px-5 py-16 sm:px-8">
+        <section id="faq" className="mx-auto max-w-3xl scroll-mt-20 px-5 py-10 sm:px-8 sm:py-16">
           <SectionTitle eyebrow="FAQ" title="Pertanyaan yang sering muncul" />
           <div className="mt-10 space-y-3">
             {FAQ.map((item) => (
@@ -261,7 +261,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="kontak" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-20 pt-10 sm:px-8">
+        <section id="kontak" className="mx-auto max-w-6xl scroll-mt-20 px-5 pb-14 pt-6 sm:px-8 sm:pb-20 sm:pt-10">
           <div className="rounded-[2rem] bg-gradient-to-br from-brand-700 via-brand-800 to-brand-950 px-6 py-12 text-center text-white shadow-lift sm:px-12">
             <h2 className="text-3xl font-extrabold leading-[1.1] tracking-[-0.03em] sm:text-4xl">Siap merapikan sekolah Anda?</h2>
             <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-brand-100/85">
