@@ -64,7 +64,7 @@ Setelah diputuskan, butir dipindahkan ke `docs/adr/NNNN-judul.md` (format: konte
 | D-22 | Sekolah `suspended` | Login dashboard & terminal ditolak; data tetap utuh. Konfirmasi kebijakan komersial. |
 | D-25 | 2FA & reset password | TOTP wajib Super Admin; reset oleh Admin Sekolah; reset via email setelah penyedia email dipilih |
 | D-26 | Retensi (usulan awal, wajib ditinjau hukum) | Event & harian: selama siswa aktif + 5 tahun · Audit log: 5 tahun · IP address: 90 hari · Foto: dihapus 30 hari setelah siswa keluar · Staging impor: 30 hari · File ekspor: 7 hari |
-| D-27 | Tabel guardians/notifications | Ditunda (aditif nanti) |
+| D-27 | Tabel guardians/notifications | `notifications` sudah ada (ADR 0010 §8). `guardians`/`student_guardians` diusulkan di ADR 0011 (portal orang tua), diterima |
 | D-30 | Jumlah device per sekolah di MVP | 1 aktif (batas dapat diubah Super Admin) + penggantian device |
 | D-31 | Login petugas di terminal | Email+password → sesi bantuan 10/30 menit; PIN dievaluasi setelah pilot |
 | D-32 | Verifikasi wajah | Tidak dibangun di MVP; `method='face'` diblokir constraint; Tahap 7 dengan gerbang kepatuhan |

@@ -359,7 +359,7 @@ Indeks `(school_id, created_at DESC)`, `(school_id, entity_type, entity_id)`. Tr
 ### 3.7 Ditunda (tidak dibuat di MVP)
 | Tabel | Alasan |
 |---|---|
-| `guardians`, `student_guardians`, `notifications` | Portal orang tua di luar MVP [PRD 1.2]. Menambahkannya nanti bersifat aditif, tanpa migrasi destruktif. Membuat tabel kosong sekarang tidak memberi nilai dan menambah permukaan data pribadi. [TERBUKA D-27] |
+| `guardians`, `student_guardians`, `notifications` | Portal orang tua di luar MVP [PRD 1.2]. Menambahkannya nanti bersifat aditif, tanpa migrasi destruktif. `notifications` sudah ada (ADR 0010 §8); rancangan `guardians`/`student_guardians` ada di ADR 0011. Membuat tabel kosong sekarang tidak memberi nilai dan menambah permukaan data pribadi. [TERBUKA D-27] |
 | `biometric_profiles` | Dibuat hanya di Tahap 7 setelah gerbang kepatuhan terpenuhi [PRD 7.1, 8.2]. |
 
 ---
