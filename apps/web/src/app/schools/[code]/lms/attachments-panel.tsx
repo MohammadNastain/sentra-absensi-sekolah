@@ -25,7 +25,7 @@ export function AttachmentsPanel({
   onChanged,
 }: {
   code: string;
-  kind: "materials" | "assignments";
+  kind: "materials" | "assignments" | "submissions";
   ownerId: string;
   attachments: Attachment[];
   canManage: boolean;
@@ -42,6 +42,9 @@ export function AttachmentsPanel({
       const form = new FormData();
       form.append("file", file);
       // Multipart: nilai `body.file` hanya memenuhi tipe, isi sebenarnya dari FormData.
+      if (kind === "submissions") {
+        return api.POST("/schools/{school}/lms/submissions/{submission}/attachments", { params: { path: { school: code, submission: ownerId } }, body: { file: "" }, bodySerializer: () => form });
+      }
       return kind === "materials"
         ? api.POST("/schools/{school}/lms/materials/{material}/attachments", { params: { path: { school: code, material: ownerId } }, body: { file: "" }, bodySerializer: () => form })
         : api.POST("/schools/{school}/lms/assignments/{assignment}/attachments", { params: { path: { school: code, assignment: ownerId } }, body: { file: "" }, bodySerializer: () => form });
@@ -59,6 +62,9 @@ export function AttachmentsPanel({
     setError(null);
     const outcome = await attempt(async () => {
       await api.ensureCsrfCookie();
+      if (kind === "submissions") {
+        return api.DELETE("/schools/{school}/lms/submissions/{submission}/attachments/{attachment}", { params: { path: { school: code, submission: ownerId, attachment: attachment.id } } });
+      }
       return api.DELETE("/schools/{school}/lms/attachments/{attachment}", { params: { path: { school: code, attachment: attachment.id } } });
     });
     setBusy(false);

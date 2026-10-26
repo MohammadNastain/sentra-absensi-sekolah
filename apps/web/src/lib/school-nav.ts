@@ -69,8 +69,8 @@ export function buildSchoolNav(
   if (has("students") && can("school.students.view")) {
     nav.push({ href: `${base}/students`, label: "Siswa", icon: IconUsers, group: group("Akademik"), active: on("students") });
   }
-  // Pembelajaran (LMS, ADR 0010): guru dan admin mengelola; tampilan siswa menyusul di tahap berikutnya.
-  if (can("school.lms.manage")) {
+  // Pembelajaran (LMS, ADR 0010): pengelola melihat layar kelola, siswa dan peran lihat-saja melihat materi dan tugas.
+  if (can("school.lms.manage") || can("school.lms.view")) {
     if (has("lms.materials")) {
       nav.push({ href: `${base}/lms/materials`, label: "Materi", icon: IconBook, group: group("Pembelajaran"), active: on("lms/materials") });
     }
