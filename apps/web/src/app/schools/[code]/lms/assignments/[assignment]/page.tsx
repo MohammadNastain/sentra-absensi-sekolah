@@ -9,6 +9,7 @@ import { attempt, toFormFailure, type FormFailure } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
 import { useSchool } from "../../../school-context";
 import { AttachmentLinks } from "../../attachments-panel";
+import { StudentAssignmentPage } from "../../student-views";
 
 type Row = { student: Schemas["LmsStudentRef"]; submission: Schemas["LmsSubmission"] | null };
 type SubmissionDetail = Schemas["LmsSubmission"] & { student: Schemas["LmsStudentRef"] };
@@ -22,7 +23,15 @@ function statusText(row: Row, max: number): { label: string; tone: string } {
   return { label: `Perlu dinilai${late}`, tone: "text-brand-700 dark:text-brand-300" };
 }
 
-export default function GradingPage(props: { params: Promise<{ code: string; assignment: string }> }) {
+type PageProps = { params: Promise<{ code: string; assignment: string }> };
+
+/** Penilai melihat layar penilaian; siswa melihat rincian tugas dan formulir pengumpulannya. */
+export default function AssignmentRoute(props: PageProps) {
+  const { can } = useSchool();
+  return can("school.lms.grade") ? <GradingPage {...props} /> : <StudentAssignmentPage {...props} />;
+}
+
+function GradingPage(props: PageProps) {
   const { assignment: assignmentId } = use(props.params);
   const { code, profile } = useSchool();
   const [assignment, setAssignment] = useState<Schemas["LmsAssignmentDetail"] | null>(null);

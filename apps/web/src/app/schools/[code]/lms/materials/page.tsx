@@ -12,13 +12,20 @@ import { formatDateTime } from "@/lib/format";
 import { subjectsFor, useLmsOptions, type LmsOptions } from "@/lib/lms";
 import { useSchool } from "../../school-context";
 import { AttachmentsPanel } from "../attachments-panel";
+import { StudentMaterials } from "../student-views";
 
 type Material = Schemas["LmsMaterial"];
 type MaterialDetail = Schemas["LmsMaterialDetail"];
 
 const STATUS_LABEL: Record<Schemas["LmsMaterialStatus"], string> = { draft: "Draf", published: "Terbit" };
 
+/** Pengelola (guru/admin) melihat layar kelola; siswa dan peran lihat-saja melihat daftar materi terbit. */
 export default function MaterialsPage() {
+  const { can } = useSchool();
+  return can("school.lms.manage") ? <ManageMaterials /> : <StudentMaterials />;
+}
+
+function ManageMaterials() {
   const { code, profile, can } = useSchool();
   const { options, error: optionsError } = useLmsOptions(code);
   const [items, setItems] = useState<Material[] | null>(null);

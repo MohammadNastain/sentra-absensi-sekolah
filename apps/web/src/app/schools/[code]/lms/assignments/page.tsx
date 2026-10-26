@@ -12,6 +12,7 @@ import { formatDateTime } from "@/lib/format";
 import { fromLocalInput, subjectsFor, toLocalInput, useLmsOptions, type LmsOptions } from "@/lib/lms";
 import { useSchool } from "../../school-context";
 import { AttachmentsPanel } from "../attachments-panel";
+import { StudentAssignments } from "../student-views";
 
 type Assignment = Schemas["LmsAssignment"];
 type AssignmentDetail = Schemas["LmsAssignmentDetail"];
@@ -19,7 +20,13 @@ type Status = Schemas["LmsAssignmentStatus"];
 
 const STATUS_LABEL: Record<Status, string> = { draft: "Draf", published: "Terbit", closed: "Ditutup" };
 
+/** Pengelola melihat layar kelola; siswa dan peran lihat-saja melihat tugas beserta status pengumpulannya. */
 export default function AssignmentsPage() {
+  const { can } = useSchool();
+  return can("school.lms.manage") ? <ManageAssignments /> : <StudentAssignments />;
+}
+
+function ManageAssignments() {
   const { code, profile, can } = useSchool();
   const { options, error: optionsError } = useLmsOptions(code);
   const [items, setItems] = useState<Assignment[] | null>(null);
