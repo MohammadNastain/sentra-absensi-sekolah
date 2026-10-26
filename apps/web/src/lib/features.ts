@@ -19,6 +19,9 @@ const FEATURES_BY_PATH: Record<string, readonly string[]> = {
   teaching: ["academic.teaching_schedule"],
   "teaching/subjects": ["academic.subjects"],
   students: ["students"],
+  lms: ["lms"],
+  "lms/materials": ["lms.materials"],
+  "lms/assignments": ["lms.assignments"],
 };
 
 /** Fitur yang dibutuhkan halaman `/schools/{code}/...`; null untuk halaman inti (ringkasan, anggota, undangan, audit). */
