@@ -53,7 +53,7 @@ const FAQ = [
   { q: "Bagaimana kalau internet sekolah mati?", a: "Mode bantuan dan penutupan hari manual tersedia agar petugas tetap dapat mencatat kehadiran. Prosedurnya ada di panduan petugas." },
   { q: "Siapa yang dapat melihat data siswa?", a: "Hanya anggota sekolah itu sendiri sesuai perannya. Data setiap sekolah terisolasi, dan akses penting tercatat di audit." },
   { q: "Bagaimana siswa masuk ke LMS?", a: "Admin membuat akun dari NIS. Siswa masuk dengan kode sekolah dan NIS, lalu wajib mengganti sandi awalnya." },
-  { q: "Bagaimana cara mendaftarkan sekolah kami?", a: "Hubungi kami. Kami membuat akun sekolah dan mengundang Admin Sekolah pertama lewat surel." },
+  { q: "Bagaimana cara mendaftarkan sekolah kami?", a: "Hubungi kami lewat WhatsApp. Kami membuat akun sekolah dan mengundang Admin Sekolah pertama lewat surel." },
 ];
 
 const NAV = [
@@ -64,6 +64,14 @@ const NAV = [
 ];
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
+
+/** Kontak WhatsApp (format internasional tanpa +) dan tampilannya. */
+const WA_NUMBER = "6282231277648";
+const WA_DISPLAY = "0822-3127-7648";
+
+function waLink(message: string): string {
+  return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
+}
 
 function SectionTitle({ eyebrow, title, text }: { eyebrow: string; title: ReactNode; text?: string }) {
   return (
@@ -133,7 +141,9 @@ export default function Home() {
             <div className="mt-8 flex animate-rise flex-wrap items-center justify-center gap-3 lg:justify-start [animation-delay:200ms]">
               <HeroCta />
               <a
-                href="#kontak"
+                href={waLink("Halo, saya tertarik dengan Sentra Sekolah dan ingin bertanya.")}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center rounded-2xl border border-zinc-300/80 bg-white/70 px-5 py-3 text-sm font-bold text-zinc-800 transition hover:bg-white dark:border-zinc-700 dark:bg-white/5 dark:text-zinc-100 dark:hover:bg-white/10"
               >
                 Hubungi kami
@@ -236,7 +246,9 @@ export default function Home() {
                   ))}
                 </ul>
                 <a
-                  href="#kontak"
+                  href={waLink(`Halo, saya ingin menanyakan harga paket ${plan.name} Sentra Sekolah.`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="mt-6 inline-flex items-center justify-center rounded-2xl border border-zinc-300/80 bg-white/80 px-4 py-2.5 text-sm font-bold text-zinc-800 transition hover:bg-white dark:border-zinc-700 dark:bg-white/5 dark:text-zinc-100 dark:hover:bg-white/10"
                 >
                   Tanyakan harga
@@ -267,9 +279,17 @@ export default function Home() {
           <div className="rounded-[2rem] bg-gradient-to-br from-brand-700 via-brand-800 to-brand-950 px-6 py-12 text-center text-white shadow-lift sm:px-12">
             <h2 className="text-3xl font-extrabold leading-[1.1] tracking-[-0.03em] sm:text-4xl">Siap merapikan sekolah Anda?</h2>
             <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-brand-100/85">
-              Hubungi kami untuk mendaftarkan sekolah, melihat demo, atau menanyakan paket. Sudah punya akun? Masuk dari tombol di bawah.
+              Hubungi kami lewat WhatsApp untuk mendaftarkan sekolah, melihat demo, atau menanyakan paket. Sudah punya akun? Masuk dari tombol di bawah.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href={waLink("Halo, saya ingin mendaftarkan sekolah ke Sentra Sekolah.")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-brand-900 transition hover:bg-brand-50"
+              >
+                WhatsApp {WA_DISPLAY}
+              </a>
               {CONTACT_EMAIL ? (
                 <a
                   href={`mailto:${CONTACT_EMAIL}`}
