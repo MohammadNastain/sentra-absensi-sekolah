@@ -126,3 +126,6 @@ b. **Paket:** `parent_portal.attendance` dan `.leave` di Standard dan Premium; `
 c. **Lihat-saja dulu:** rilis awal tanpa notifikasi otomatis; G7 menyusul.
 d. **Maksimal 4 wali per anak**; hubungan `ayah`/`ibu`/`wali`.
 e. **Hukum:** bagian kehadiran dan izin boleh dipakai sekolah pilot sebelum tinjauan D-26/R11 selesai, dengan dasar persetujuan dan SOP verifikasi wali oleh sekolah; nilai dan komentar tetap tertahan sampai tinjauan itu selesai. Jadwal tinjauan menunggu pihak hukum.
+
+## Status pelaksanaan
+- **G1 selesai:** peran `guardian` (di luar `assignableValues`), izin `school.portal.view|leave` dan `school.guardians.manage` (admin), tabel `guardians` dan `student_guardians` (RLS, FK komposit, satu wali utama per siswa), `GuardianScope`, fitur `parent_portal.attendance|leave|lms` di Standard/Premium, bendera `PARENT_PORTAL_RELEASED` (mati). Belum ada rute atau UI.

@@ -28,6 +28,11 @@ return [
     'lms_released' => (bool) env('LMS_RELEASED', false),
 
     /*
+    | Rilis portal orang tua (ADR 0011). Mati sampai G8; `parent_portal.lms` juga menunggu `lms_released` (tinjauan D-26).
+    */
+    'parent_portal_released' => (bool) env('PARENT_PORTAL_RELEASED', false),
+
+    /*
     | Mode demo: tombol "Coba demo" di landing page masuk sebagai admin sekolah contoh tanpa sandi. Mati bawaan;
     | dinyalakan hanya di lingkungan yang menyiapkan sekolah demo (`php artisan demo:reset`). Sekolah demo
     | dirotasi: yang lama dinonaktifkan (tabel absensi append-only), yang baru dibuat dengan kode yang sama.

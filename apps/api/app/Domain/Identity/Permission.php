@@ -36,6 +36,9 @@ enum Permission: string
     case SchoolLmsManage = 'school.lms.manage';
     case SchoolLmsSubmit = 'school.lms.submit';
     case SchoolLmsGrade = 'school.lms.grade';
+    case SchoolPortalView = 'school.portal.view';
+    case SchoolPortalLeave = 'school.portal.leave';
+    case SchoolGuardiansManage = 'school.guardians.manage';
 
     /**
      * @param  iterable<Role>  $roles

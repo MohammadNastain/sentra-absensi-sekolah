@@ -188,6 +188,14 @@ column failed_jobs.queue text nullable=NO
 column failed_jobs.uuid text nullable=NO
 column features.code text nullable=NO
 column features.parent_code text nullable=YES
+column guardians.created_at timestamp with time zone nullable=NO
+column guardians.full_name text nullable=NO
+column guardians.id uuid nullable=NO
+column guardians.membership_id uuid nullable=YES
+column guardians.phone text nullable=YES
+column guardians.school_id uuid nullable=NO
+column guardians.status text nullable=NO
+column guardians.updated_at timestamp with time zone nullable=NO
 column holidays.created_at timestamp with time zone nullable=NO
 column holidays.created_by_user_id uuid nullable=YES
 column holidays.end_date date nullable=NO
@@ -405,6 +413,13 @@ column student_credentials.student_id uuid nullable=NO
 column student_credentials.updated_at timestamp with time zone nullable=NO
 column student_credentials.value_hash bytea nullable=NO
 column student_credentials.value_hint text nullable=YES
+column student_guardians.created_at timestamp with time zone nullable=NO
+column student_guardians.guardian_id uuid nullable=NO
+column student_guardians.id uuid nullable=NO
+column student_guardians.is_primary boolean nullable=NO
+column student_guardians.relationship text nullable=NO
+column student_guardians.school_id uuid nullable=NO
+column student_guardians.student_id uuid nullable=NO
 column students.created_at timestamp with time zone nullable=NO
 column students.date_of_birth date nullable=YES
 column students.full_name text nullable=NO
@@ -499,6 +514,7 @@ index CREATE INDEX schedules_school_scope_index ON public.schedules USING btree 
 index CREATE INDEX school_memberships_user_id_index ON public.school_memberships USING btree (user_id)
 index CREATE INDEX school_subscriptions_plan_index ON public.school_subscriptions USING btree (plan_code)
 index CREATE INDEX student_credentials_student_index ON public.student_credentials USING btree (school_id, student_id, issued_at DESC)
+index CREATE INDEX student_guardians_guardian_index ON public.student_guardians USING btree (school_id, guardian_id)
 index CREATE INDEX students_full_name_trgm ON public.students USING gin (full_name gin_trgm_ops)
 index CREATE INDEX students_school_name_index ON public.students USING btree (school_id, full_name)
 index CREATE INDEX teacher_subjects_subject_index ON public.teacher_subjects USING btree (school_id, subject_id)
@@ -549,6 +565,9 @@ index CREATE UNIQUE INDEX export_jobs_school_id_id_unique ON public.export_jobs 
 index CREATE UNIQUE INDEX failed_jobs_pkey ON public.failed_jobs USING btree (id)
 index CREATE UNIQUE INDEX failed_jobs_uuid_key ON public.failed_jobs USING btree (uuid)
 index CREATE UNIQUE INDEX features_pkey ON public.features USING btree (code)
+index CREATE UNIQUE INDEX guardians_membership_id_unique ON public.guardians USING btree (membership_id)
+index CREATE UNIQUE INDEX guardians_pkey ON public.guardians USING btree (id)
+index CREATE UNIQUE INDEX guardians_school_id_id_unique ON public.guardians USING btree (school_id, id)
 index CREATE UNIQUE INDEX holidays_pkey ON public.holidays USING btree (id)
 index CREATE UNIQUE INDEX holidays_school_id_id_unique ON public.holidays USING btree (school_id, id)
 index CREATE UNIQUE INDEX import_batches_pkey ON public.import_batches USING btree (id)
@@ -594,6 +613,9 @@ index CREATE UNIQUE INDEX student_credentials_one_active ON public.student_crede
 index CREATE UNIQUE INDEX student_credentials_pkey ON public.student_credentials USING btree (id)
 index CREATE UNIQUE INDEX student_credentials_school_id_id_unique ON public.student_credentials USING btree (school_id, id)
 index CREATE UNIQUE INDEX student_credentials_value_unique ON public.student_credentials USING btree (school_id, credential_type, value_hash) WHERE (status <> 'revoked'::text)
+index CREATE UNIQUE INDEX student_guardians_one_primary ON public.student_guardians USING btree (student_id) WHERE is_primary
+index CREATE UNIQUE INDEX student_guardians_pair_unique ON public.student_guardians USING btree (student_id, guardian_id)
+index CREATE UNIQUE INDEX student_guardians_pkey ON public.student_guardians USING btree (id)
 index CREATE UNIQUE INDEX students_membership_id_unique ON public.students USING btree (membership_id)
 index CREATE UNIQUE INDEX students_nisn_unique ON public.students USING btree (school_id, nisn) WHERE (nisn IS NOT NULL)
 index CREATE UNIQUE INDEX students_pkey ON public.students USING btree (id)
@@ -865,6 +887,19 @@ constraint features features_code_format CHECK ((code ~ '^[a-z_]+(\.[a-z_]+)?$':
 constraint features features_code_not_null NOT NULL code
 constraint features features_parent_code_fkey FOREIGN KEY (parent_code) REFERENCES features(code)
 constraint features features_pkey PRIMARY KEY (code)
+constraint guardians guardians_created_at_not_null NOT NULL created_at
+constraint guardians guardians_full_name_not_blank CHECK ((btrim(full_name) <> ''::text))
+constraint guardians guardians_full_name_not_null NOT NULL full_name
+constraint guardians guardians_id_not_null NOT NULL id
+constraint guardians guardians_membership_fk FOREIGN KEY (school_id, membership_id) REFERENCES school_memberships(school_id, id)
+constraint guardians guardians_membership_id_unique UNIQUE (membership_id)
+constraint guardians guardians_pkey PRIMARY KEY (id)
+constraint guardians guardians_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint guardians guardians_school_id_id_unique UNIQUE (school_id, id)
+constraint guardians guardians_school_id_not_null NOT NULL school_id
+constraint guardians guardians_status_check CHECK ((status = ANY (ARRAY['active'::text, 'inactive'::text])))
+constraint guardians guardians_status_not_null NOT NULL status
+constraint guardians guardians_updated_at_not_null NOT NULL updated_at
 constraint holidays holidays_created_at_not_null NOT NULL created_at
 constraint holidays holidays_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id)
 constraint holidays holidays_dates_check CHECK ((end_date >= start_date))
@@ -1027,7 +1062,7 @@ constraint membership_invitations membership_invitations_id_not_null NOT NULL id
 constraint membership_invitations membership_invitations_invited_by_user_id_fkey FOREIGN KEY (invited_by_user_id) REFERENCES users(id)
 constraint membership_invitations membership_invitations_invited_by_user_id_not_null NOT NULL invited_by_user_id
 constraint membership_invitations membership_invitations_pkey PRIMARY KEY (id)
-constraint membership_invitations membership_invitations_role_codes_check CHECK (((cardinality(role_codes) >= 1) AND (role_codes <@ ARRAY['school_admin'::text, 'principal'::text, 'homeroom_teacher'::text, 'duty_officer'::text, 'terminal_operator'::text, 'teacher'::text])))
+constraint membership_invitations membership_invitations_role_codes_check CHECK (((cardinality(role_codes) >= 1) AND (role_codes <@ ARRAY['school_admin'::text, 'principal'::text, 'homeroom_teacher'::text, 'duty_officer'::text, 'terminal_operator'::text, 'teacher'::text, 'guardian'::text])))
 constraint membership_invitations membership_invitations_role_codes_not_null NOT NULL role_codes
 constraint membership_invitations membership_invitations_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
 constraint membership_invitations membership_invitations_school_id_id_unique UNIQUE (school_id, id)
@@ -1187,6 +1222,19 @@ constraint student_credentials student_credentials_student_id_not_null NOT NULL 
 constraint student_credentials student_credentials_type_check CHECK ((credential_type = ANY (ARRAY['qr'::text, 'rfid'::text])))
 constraint student_credentials student_credentials_updated_at_not_null NOT NULL updated_at
 constraint student_credentials student_credentials_value_hash_not_null NOT NULL value_hash
+constraint student_guardians student_guardians_created_at_not_null NOT NULL created_at
+constraint student_guardians student_guardians_guardian_fk FOREIGN KEY (school_id, guardian_id) REFERENCES guardians(school_id, id)
+constraint student_guardians student_guardians_guardian_id_not_null NOT NULL guardian_id
+constraint student_guardians student_guardians_id_not_null NOT NULL id
+constraint student_guardians student_guardians_is_primary_not_null NOT NULL is_primary
+constraint student_guardians student_guardians_pair_unique UNIQUE (student_id, guardian_id)
+constraint student_guardians student_guardians_pkey PRIMARY KEY (id)
+constraint student_guardians student_guardians_relationship_check CHECK ((relationship = ANY (ARRAY['ayah'::text, 'ibu'::text, 'wali'::text])))
+constraint student_guardians student_guardians_relationship_not_null NOT NULL relationship
+constraint student_guardians student_guardians_school_id_fkey FOREIGN KEY (school_id) REFERENCES schools(id)
+constraint student_guardians student_guardians_school_id_not_null NOT NULL school_id
+constraint student_guardians student_guardians_student_fk FOREIGN KEY (school_id, student_id) REFERENCES students(school_id, id)
+constraint student_guardians student_guardians_student_id_not_null NOT NULL student_id
 constraint students students_created_at_not_null NOT NULL created_at
 constraint students students_full_name_not_blank CHECK ((btrim(full_name) <> ''::text))
 constraint students students_full_name_not_null NOT NULL full_name
@@ -1287,6 +1335,7 @@ policy devices device_claim_owner_update UPDATE (status = 'pending_pairing'::tex
 policy devices device_lookup_owner_read SELECT true 
 policy devices tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy export_jobs tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy guardians tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy holidays tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy import_batches tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy import_rows tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
@@ -1317,6 +1366,7 @@ policy school_subscriptions platform_insert INSERT  app_is_platform()
 policy school_subscriptions platform_update UPDATE app_is_platform() app_is_platform()
 policy school_subscriptions read_own_or_platform SELECT ((school_id = app_school_id()) OR app_is_platform()) 
 policy student_credentials tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
+policy student_guardians tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy students tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy subjects tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
 policy teacher_subjects tenant_isolation ALL (school_id = app_school_id()) (school_id = app_school_id())
@@ -1338,6 +1388,7 @@ rls devices enabled=true forced=true
 rls export_jobs enabled=true forced=true
 rls failed_jobs enabled=false forced=false
 rls features enabled=false forced=false
+rls guardians enabled=true forced=true
 rls holidays enabled=true forced=true
 rls import_batches enabled=true forced=true
 rls import_rows enabled=true forced=true
@@ -1360,6 +1411,7 @@ rls school_memberships enabled=true forced=true
 rls school_subscriptions enabled=true forced=true
 rls schools enabled=false forced=false
 rls student_credentials enabled=true forced=true
+rls student_guardians enabled=true forced=true
 rls students enabled=true forced=true
 rls subjects enabled=true forced=true
 rls teacher_subjects enabled=true forced=true
