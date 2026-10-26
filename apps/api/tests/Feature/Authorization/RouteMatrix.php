@@ -109,6 +109,13 @@ final class RouteMatrix
 
             // LMS materi dan lampiran (ADR 0010)
             'GET api/v1/schools/{school}/lms/options' => Permission::SchoolLmsManage,
+            'GET api/v1/schools/{school}/guardians' => Permission::SchoolGuardiansManage,
+            'PATCH api/v1/schools/{school}/guardians/{guardian}' => Permission::SchoolGuardiansManage,
+            'POST api/v1/schools/{school}/guardians/{guardian}/invitation' => Permission::SchoolGuardiansManage,
+            'GET api/v1/schools/{school}/students/{student}/guardians' => Permission::SchoolGuardiansManage,
+            'POST api/v1/schools/{school}/students/{student}/guardians' => Permission::SchoolGuardiansManage,
+            'PATCH api/v1/schools/{school}/students/{student}/guardians/{guardian}' => Permission::SchoolGuardiansManage,
+            'DELETE api/v1/schools/{school}/students/{student}/guardians/{guardian}' => Permission::SchoolGuardiansManage,
             'GET api/v1/schools/{school}/lms/notifications' => Permission::SchoolLmsView,
             'POST api/v1/schools/{school}/lms/notifications/read' => Permission::SchoolLmsView,
             'GET api/v1/schools/{school}/lms/materials' => Permission::SchoolLmsView,
@@ -267,6 +274,7 @@ final class RouteMatrix
             $head === 'teaching-slots' => [Feature::AcademicTeachingSchedule],
             $head === 'classes' && ($parts[2] ?? null) === 'credentials' => [Feature::AttendanceScanQr],
             $head === 'classes' => [Feature::AcademicClasses],
+            $head === 'guardians', $head === 'students' && ($parts[2] ?? null) === 'guardians' => [Feature::ParentPortal],
             $head === 'students' && ($parts[2] ?? null) === 'credentials' => match ($parts[3] ?? null) {
                 'qr' => [Feature::AttendanceScanQr],
                 'rfid' => [Feature::AttendanceScanRfid],

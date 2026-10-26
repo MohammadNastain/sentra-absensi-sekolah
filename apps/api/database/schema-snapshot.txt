@@ -191,6 +191,7 @@ column features.parent_code text nullable=YES
 column guardians.created_at timestamp with time zone nullable=NO
 column guardians.full_name text nullable=NO
 column guardians.id uuid nullable=NO
+column guardians.invitation_id uuid nullable=YES
 column guardians.membership_id uuid nullable=YES
 column guardians.phone text nullable=YES
 column guardians.school_id uuid nullable=NO
@@ -565,6 +566,7 @@ index CREATE UNIQUE INDEX export_jobs_school_id_id_unique ON public.export_jobs 
 index CREATE UNIQUE INDEX failed_jobs_pkey ON public.failed_jobs USING btree (id)
 index CREATE UNIQUE INDEX failed_jobs_uuid_key ON public.failed_jobs USING btree (uuid)
 index CREATE UNIQUE INDEX features_pkey ON public.features USING btree (code)
+index CREATE UNIQUE INDEX guardians_invitation_id_unique ON public.guardians USING btree (invitation_id)
 index CREATE UNIQUE INDEX guardians_membership_id_unique ON public.guardians USING btree (membership_id)
 index CREATE UNIQUE INDEX guardians_pkey ON public.guardians USING btree (id)
 index CREATE UNIQUE INDEX guardians_school_id_id_unique ON public.guardians USING btree (school_id, id)
@@ -891,6 +893,8 @@ constraint guardians guardians_created_at_not_null NOT NULL created_at
 constraint guardians guardians_full_name_not_blank CHECK ((btrim(full_name) <> ''::text))
 constraint guardians guardians_full_name_not_null NOT NULL full_name
 constraint guardians guardians_id_not_null NOT NULL id
+constraint guardians guardians_invitation_fk FOREIGN KEY (invitation_id) REFERENCES membership_invitations(id)
+constraint guardians guardians_invitation_id_unique UNIQUE (invitation_id)
 constraint guardians guardians_membership_fk FOREIGN KEY (school_id, membership_id) REFERENCES school_memberships(school_id, id)
 constraint guardians guardians_membership_id_unique UNIQUE (membership_id)
 constraint guardians guardians_pkey PRIMARY KEY (id)

@@ -48,6 +48,10 @@ final class ManageMembers
             }
 
             $newCodes = array_map(fn (Role $role) => $role->value, $roles);
+            // Peran wali dikelola dari data wali (ADR 0011); mengubah peran lain tidak boleh mencabutnya diam-diam.
+            if (DB::table('membership_roles')->where('membership_id', $membership->id)->where('role_code', Role::Guardian->value)->exists()) {
+                $newCodes[] = Role::Guardian->value;
+            }
             sort($newCodes);
             $before = $this->snapshot($membership);
 

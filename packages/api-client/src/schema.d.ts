@@ -1580,6 +1580,119 @@ export interface paths {
         patch: operations["updateStudent"];
         trace?: never;
     };
+    "/schools/{school}/guardians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daftar wali beserta anak dan status akunnya
+         * @description Izin: school.guardians.manage; fitur: parent_portal. Filter q (nama) dan status. Status akun: active, invited, invitation_expired, none.
+         */
+        get: operations["listGuardians"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/guardians/{guardian}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Ubah nama, telepon, atau status wali
+         * @description Izin: school.guardians.manage; fitur: parent_portal. Wali nonaktif kehilangan akses ke semua anaknya; data dan tautan tetap tersimpan.
+         */
+        patch: operations["updateGuardian"];
+        trace?: never;
+    };
+    "/schools/{school}/guardians/{guardian}/invitation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Kirim ulang undangan wali
+         * @description Izin: school.guardians.manage; fitur: parent_portal. Undangan yang masih berlaku atau kedaluwarsa dikirim ulang dengan
+         *     token baru; undangan yang dicabut atau ditolak diganti undangan baru ke surel yang sama. email hanya perlu bila wali
+         *     belum pernah diundang. 409 bila wali sudah punya akun.
+         */
+        post: operations["reinviteGuardian"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/students/{student}/guardians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Wali sebuah siswa (wali utama lebih dulu)
+         * @description Izin: school.guardians.manage; fitur: parent_portal.
+         */
+        get: operations["listStudentGuardians"];
+        put?: never;
+        /**
+         * Tambah wali baru (diundang lewat surel) atau tautkan wali yang sudah ada
+         * @description Izin: school.guardians.manage; fitur: parent_portal. Dengan guardian_id menautkan wali yang sudah ada ke siswa ini;
+         *     tanpa itu membuat wali baru (full_name, email, phone opsional) dan mengundangnya. Orang yang sudah menjadi anggota
+         *     sekolah (mis. guru) mendapat peran wali tanpa undangan. Wali pertama otomatis menjadi wali utama. 409 bila siswa sudah punya
+         *     4 wali, wali sudah tertaut, ada undangan berlaku untuk surel itu, atau akunnya sudah terdaftar sebagai wali.
+         */
+        post: operations["addStudentGuardian"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schools/{school}/students/{student}/guardians/{guardian}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Lepas wali dari siswa
+         * @description Izin: school.guardians.manage; fitur: parent_portal. Akses wali ke anak ini tertutup seketika. Bila yang dilepas wali utama, wali tertua yang tersisa menjadi utama.
+         */
+        delete: operations["unlinkStudentGuardian"];
+        options?: never;
+        head?: never;
+        /**
+         * Ubah hubungan atau jadikan wali utama
+         * @description Izin: school.guardians.manage; fitur: parent_portal. Wali utama hanya bisa diganti dengan menunjuk wali lain sebagai utama (409 bila diturunkan tanpa pengganti).
+         */
+        patch: operations["updateStudentGuardian"];
+        trace?: never;
+    };
     "/schools/{school}/students/{student}/enrollments": {
         parameters: {
             query?: never;
@@ -3067,6 +3180,31 @@ export interface components {
             read: boolean;
             /** Format: date-time */
             created_at: string;
+        };
+        Guardian: {
+            /** Format: uuid */
+            id: string;
+            full_name: string;
+            phone: string | null;
+            /** @enum {string} */
+            status: "active" | "inactive";
+            /** Format: email */
+            email: string | null;
+            /** @enum {string} */
+            account: "active" | "invited" | "invitation_expired" | "none";
+            children: {
+                /** Format: uuid */
+                student_id: string;
+                full_name: string;
+                student_number: string;
+                status: string;
+                /** @enum {string} */
+                relationship: "ayah" | "ibu" | "wali";
+                is_primary: boolean;
+            }[];
+        };
+        GuardianEnvelope: {
+            data: components["schemas"]["Guardian"];
         };
         LmsNamedRef: {
             /** Format: uuid */
@@ -4744,6 +4882,7 @@ export interface components {
         TeacherId: string;
         ClassId: string;
         StudentId: string;
+        GuardianId: string;
         ImportId: string;
         SubjectId: string;
         LmsMaterialId: string;
@@ -7796,6 +7935,260 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentDetailEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listGuardians: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: "active" | "inactive";
+            };
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wali. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Guardian"][];
+                        meta: components["schemas"]["PageMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateGuardian: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                guardian: components["parameters"]["GuardianId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    full_name?: string;
+                    phone?: string | null;
+                    /** @enum {string} */
+                    status?: "active" | "inactive";
+                };
+            };
+        };
+        responses: {
+            /** @description Wali diperbarui. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    reinviteGuardian: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                guardian: components["parameters"]["GuardianId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Undangan dikirim. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            /** @description Layanan surel belum dikonfigurasi (EMAIL_NOT_CONFIGURED). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listStudentGuardians: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Wali siswa. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Guardian"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    addStudentGuardian: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    guardian_id?: string;
+                    full_name?: string;
+                    /** Format: email */
+                    email?: string;
+                    phone?: string | null;
+                    /** @enum {string} */
+                    relationship: "ayah" | "ibu" | "wali";
+                    is_primary?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Wali tertaut. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianEnvelope"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            /** @description Layanan surel belum dikonfigurasi (EMAIL_NOT_CONFIGURED). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlinkStudentGuardian: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+                guardian: components["parameters"]["GuardianId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dilepas. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateStudentGuardian: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+                student: components["parameters"]["StudentId"];
+                guardian: components["parameters"]["GuardianId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    relationship?: "ayah" | "ibu" | "wali";
+                    is_primary?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Tautan diperbarui. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianEnvelope"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

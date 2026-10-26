@@ -54,6 +54,8 @@ final class ResolveInvitation
             }
 
             $membership = $this->joinSchool($school, $user, $invitation);
+            // Undangan wali (ADR 0011): isi keanggotaan pada data wali yang diundang.
+            DB::table('guardians')->where('invitation_id', $invitation->id)->update(['membership_id' => $membership->id, 'updated_at' => now()]);
 
             DB::table('membership_invitations')->where('id', $invitation->id)->update([
                 'accepted_at' => now(),
