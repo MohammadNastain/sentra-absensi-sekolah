@@ -1532,6 +1532,46 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
 
+  /schools/{school}/lms/options:
+    get:
+      tags: [lms]
+      operationId: getLmsOptions
+      summary: "Pilihan kelas dan mapel untuk membuat konten"
+      description: |
+        Izin: school.lms.manage; fitur: lms. Guru memperoleh hanya pasangan kelas-mapel dari jadwal mengajarnya (`pairs`);
+        admin memperoleh seluruh kelas aktif dan mapel dengan `pairs` null (semua kombinasi boleh). Dibuat karena guru tidak
+        memegang izin akademik untuk memuat daftar kelas dan mapel sendiri.
+      parameters:
+        - $ref: "#/components/parameters/SchoolCode"
+      responses:
+        "200":
+          description: "Pilihan."
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [pairs, classes, subjects]
+                    properties:
+                      pairs:
+                        type: [array, "null"]
+                        items:
+                          type: object
+                          required: [class, subject]
+                          properties:
+                            class: { $ref: "#/components/schemas/LmsNamedRef" }
+                            subject: { $ref: "#/components/schemas/LmsNamedRef" }
+                      classes:
+                        type: array
+                        items: { $ref: "#/components/schemas/LmsNamedRef" }
+                      subjects:
+                        type: array
+                        items: { $ref: "#/components/schemas/LmsNamedRef" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /schools/{school}/lms/materials:
     get:
       tags: [lms]
@@ -4472,6 +4512,12 @@ components:
       type: object
       properties:
         message: { type: string }
+    LmsNamedRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
     LmsMaterialStatus:
       type: string
       enum: [draft, published]

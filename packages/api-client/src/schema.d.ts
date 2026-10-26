@@ -1053,6 +1053,28 @@ export interface paths {
         patch: operations["updateClass"];
         trace?: never;
     };
+    "/schools/{school}/lms/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pilihan kelas dan mapel untuk membuat konten
+         * @description Izin: school.lms.manage; fitur: lms. Guru memperoleh hanya pasangan kelas-mapel dari jadwal mengajarnya (`pairs`);
+         *     admin memperoleh seluruh kelas aktif dan mapel dengan `pairs` null (semua kombinasi boleh). Dibuat karena guru tidak
+         *     memegang izin akademik untuk memuat daftar kelas dan mapel sendiri.
+         */
+        get: operations["getLmsOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools/{school}/lms/materials": {
         parameters: {
             query?: never;
@@ -2970,6 +2992,11 @@ export interface components {
         };
         Message: {
             message?: string;
+        };
+        LmsNamedRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
         };
         /** @enum {string} */
         LmsMaterialStatus: "draft" | "published";
@@ -6635,6 +6662,40 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getLmsOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Kode sekolah (slug), bukan UUID. */
+                school: components["parameters"]["SchoolCode"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pilihan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            pairs: {
+                                class: components["schemas"]["LmsNamedRef"];
+                                subject: components["schemas"]["LmsNamedRef"];
+                            }[] | null;
+                            classes: components["schemas"]["LmsNamedRef"][];
+                            subjects: components["schemas"]["LmsNamedRef"][];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
         };
     };
     listLmsMaterials: {

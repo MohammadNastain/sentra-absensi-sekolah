@@ -28,6 +28,7 @@ use App\Http\Controllers\School\LeaveRequestController;
 use App\Http\Controllers\School\LmsAssignmentController;
 use App\Http\Controllers\School\LmsAttachmentController;
 use App\Http\Controllers\School\LmsMaterialController;
+use App\Http\Controllers\School\LmsOptionsController;
 use App\Http\Controllers\School\LmsSubmissionController;
 use App\Http\Controllers\School\MemberController;
 use App\Http\Controllers\School\ReportController;
@@ -221,6 +222,8 @@ Route::middleware(['auth:sanctum', ResolveSchoolMembership::class])->prefix('sch
         ->middleware([RequireSchoolFeature::using(Feature::AcademicClasses), RequireSchoolPermission::using(Permission::SchoolAcademicManage)])->name('classes.update');
 
     // LMS (ADR 0010): materi dan lampiran. Lampiran digerbang fitur sendiri, termasuk saat mengunduh.
+    Route::get('lms/options', [LmsOptionsController::class, 'index'])
+        ->middleware([RequireSchoolFeature::using(Feature::Lms), RequireSchoolPermission::using(Permission::SchoolLmsManage)])->name('lms.options');
     Route::get('lms/materials', [LmsMaterialController::class, 'index'])
         ->middleware([RequireSchoolFeature::using(Feature::LmsMaterials), RequireSchoolPermission::using(Permission::SchoolLmsView)])->name('lms.materials.index');
     Route::post('lms/materials', [LmsMaterialController::class, 'store'])

@@ -300,3 +300,18 @@ it('mencatat audit untuk terbit dan tarik, tetapi tidak untuk simpan draf', func
         expect($actions)->toBe(['school.lms_material.created', 'school.lms_material.published', 'school.lms_material.unpublished']);
     });
 });
+
+it('pilihan kelas-mapel: guru hanya pasangan jadwalnya; admin semua; siswa dan kepala sekolah tidak', function () {
+    $mine = $this->actingAs($this->teacher)->getJson("{$this->url}/options")->assertOk()->json('data');
+    expect($mine['pairs'])->toHaveCount(1)
+        ->and($mine['pairs'][0]['class']['name'])->toBe('7A')->and($mine['pairs'][0]['subject']['name'])->toBe('Matematika')
+        ->and(array_column($mine['classes'], 'name'))->toBe(['7A'])->and(array_column($mine['subjects'], 'name'))->toBe(['Matematika']);
+
+    $all = $this->actingAs($this->admin)->getJson("{$this->url}/options")->assertOk()->json('data');
+    expect($all['pairs'])->toBeNull()
+        ->and(array_column($all['classes'], 'name'))->toBe(['7A', '7B'])
+        ->and(array_column($all['subjects'], 'name'))->toBe(['Matematika', 'Seni']);
+
+    $this->actingAs($this->student7a)->getJson("{$this->url}/options")->assertForbidden();
+    $this->actingAs($this->principal)->getJson("{$this->url}/options")->assertForbidden();
+});
