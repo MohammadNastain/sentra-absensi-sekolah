@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Demo\DemoMode;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -18,3 +19,6 @@ Schedule::command('audit:scrub-ip')->dailyAt('03:00')->withoutOverlapping();
 
 // Penutupan hari absensi (ADR 0005 §5): tiap jam; idempoten, jadi aman diulang. Aturan alpa baru berlaku setelah cutoff sekolah.
 Schedule::command('attendance:close-day')->hourly()->withoutOverlapping();
+
+// Sekolah demo (tombol "Coba demo"): dibangun ulang tiap hari agar riwayat absensi selalu segar; hanya bila DEMO_ENABLED aktif.
+Schedule::command('demo:reset')->dailyAt('04:30')->withoutOverlapping()->when(fn () => DemoMode::enabled());

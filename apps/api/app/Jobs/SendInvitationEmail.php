@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Domain\Demo\DemoMode;
 use App\Domain\Tenancy\TenantAwareJob;
 use App\Mail\InvitationMail;
 use App\Models\MembershipInvitation;
@@ -34,6 +35,13 @@ class SendInvitationEmail extends TenantAwareJob implements ShouldBeEncrypted, S
         $invitation = MembershipInvitation::query()->safe()->whereKey($this->invitationId)->first();
 
         if ($invitation === null || ! $invitation->isPending()) {
+            return;
+        }
+
+        // Sekolah demo tidak boleh mengirim surel ke alamat sembarang (bisa dipakai untuk spam).
+        if (DemoMode::isDemoSchoolId($this->schoolId)) {
+            $this->markDelivery('failed', 'Pengiriman surel dinonaktifkan di mode demo.');
+
             return;
         }
 

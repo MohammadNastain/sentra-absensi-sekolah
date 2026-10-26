@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Domain\Demo\DemoMode;
 use App\Domain\Identity\StudentLogin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -21,7 +22,7 @@ final class ForgotPasswordController extends Controller
 
         Password::sendResetLink(['email' => mb_strtolower(trim($validated['email']))], function ($user, string $token) {
             // Akun siswa tanpa email (alamat sintetis): sandi diatur ulang admin, tidak ada surat yang dikirim.
-            if ($user instanceof User && $user->isActive() && ! StudentLogin::isSynthetic($user->email)) {
+            if ($user instanceof User && $user->isActive() && ! StudentLogin::isSynthetic($user->email) && ! DemoMode::isDemoUser($user)) {
                 $user->sendPasswordResetNotification($token);
             }
         });

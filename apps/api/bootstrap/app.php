@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\BlockDemoAccount;
 use App\Http\Middleware\EnforcePasswordChange;
 use App\Http\Middleware\EnsureEmailTransportReady;
 use App\Http\Middleware\EnsureUserActive;
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
             RequireSchoolPermission::ALIAS => RequireSchoolPermission::class,
             RequireSchoolFeature::ALIAS => RequireSchoolFeature::class,
             EnsureEmailTransportReady::ALIAS => EnsureEmailTransportReady::class,
+            BlockDemoAccount::ALIAS => BlockDemoAccount::class,
             RequireTerminalHeader::ALIAS => RequireTerminalHeader::class,
             'assist.session' => RequireAssistSession::class,
         ]);

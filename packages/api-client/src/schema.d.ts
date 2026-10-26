@@ -26,6 +26,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/demo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Masuk satu klik sebagai admin sekolah demo
+         * @description Tanpa sandi. Hanya ada bila mode demo menyala (`DEMO_ENABLED`); selain itu 404. Akun demo dipakai bersama:
+         *     sandi dan 2FA-nya tidak dapat diubah (`DEMO_RESTRICTED`), dan sekolah demo tidak mengirim surel.
+         */
+        post: operations["demoLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/two-factor-challenge": {
         parameters: {
             query?: never;
@@ -3140,6 +3161,8 @@ export interface components {
             /** @description True bila akun masih memakai kata sandi awal dari admin (siswa); selama true API menolak rute lain dengan PASSWORD_CHANGE_REQUIRED. */
             must_change_password: boolean;
             is_platform_admin: boolean;
+            /** @description True untuk akun admin sekolah demo (mode demo); antarmuka menampilkan banner dan menyembunyikan pengaturan akun. */
+            is_demo: boolean;
             two_factor_passed: boolean;
         };
         SchoolRef: {
@@ -4718,6 +4741,32 @@ export interface operations {
                 };
             };
             422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    demoLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sesi demo terbentuk. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            demo: boolean;
+                        };
+                    };
+                };
+            };
+            404: components["responses"]["NotFound"];
             429: components["responses"]["TooManyRequests"];
         };
     };

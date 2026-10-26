@@ -3,6 +3,7 @@
 namespace App\Domain\Membership\Actions;
 
 use App\Domain\Audit\AuditLogger;
+use App\Domain\Demo\DemoMode;
 use App\Domain\Identity\Role;
 use App\Domain\Identity\StudentLogin;
 use App\Domain\Tenancy\DatabaseContext;
@@ -97,6 +98,10 @@ final class ManageMembers
             }
             if ($membership->status !== SchoolMembership::STATUS_ACTIVE) {
                 throw ApiProblem::invalidStateTransition('Hanya anggota aktif yang dapat dikirimi tautan reset.');
+            }
+
+            if (DemoMode::isDemoSchoolId($school->id)) {
+                throw ApiProblem::demoRestricted();
             }
 
             $user = User::query()->find($membership->user_id) ?? throw new NotFoundHttpException;

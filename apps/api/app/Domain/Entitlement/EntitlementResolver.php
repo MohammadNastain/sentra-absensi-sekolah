@@ -2,6 +2,7 @@
 
 namespace App\Domain\Entitlement;
 
+use App\Domain\Demo\DemoMode;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -48,7 +49,7 @@ final class EntitlementResolver
     {
         $state = $this->state($schoolId);
 
-        return $this->calculator->resolve($state['plan_features'], $state['overrides']);
+        return $this->calculator->resolve($state['plan_features'], $state['overrides'], DemoMode::isDemoSchoolId($schoolId));
     }
 
     /** @return list<string> kode fitur yang efektif, terurut */

@@ -31,6 +31,7 @@ final class RouteMatrix
             // Autentikasi
             'POST api/v1/auth/login' => 'public',
             'POST api/v1/auth/two-factor-challenge' => 'public',
+            'POST api/v1/auth/demo' => 'public',
             'POST api/v1/auth/forgot-password' => 'public',
             'POST api/v1/auth/reset-password' => 'public',
             'POST api/v1/auth/logout' => 'authenticated',

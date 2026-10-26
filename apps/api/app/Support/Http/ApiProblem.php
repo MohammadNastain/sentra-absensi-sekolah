@@ -165,6 +165,11 @@ class ApiProblem extends HttpException
         return new self(400, 'TERMINAL_REQUEST_REJECTED', 'Permintaan terminal tidak valid.');
     }
 
+    public static function demoRestricted(string $detail = 'Akun demo dipakai bersama; sandi dan keamanan akun tidak dapat diubah.'): self
+    {
+        return new self(403, 'DEMO_RESTRICTED', 'Tidak tersedia di akun demo.', $detail);
+    }
+
     public static function resetThrottled(): self
     {
         return new self(429, 'RESET_THROTTLED', 'Tautan reset baru saja dikirim.', 'Tunggu sebentar sebelum meminta tautan reset lagi untuk anggota ini.');

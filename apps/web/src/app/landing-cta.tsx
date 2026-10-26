@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { IconArrowRight } from "@/components/icons";
+import { api } from "@/lib/api";
+import { attempt } from "@/lib/errors";
 import { destinationPath, resolveDestination } from "@/lib/session";
 
 const PRIMARY =
@@ -37,6 +40,50 @@ export function HeroCta() {
     <Link href={href} className={PRIMARY}>
       {label} <IconArrowRight width={18} height={18} />
     </Link>
+  );
+}
+
+/** Masuk satu klik ke sekolah demo (admin sekolah contoh). */
+export function DemoCta({ onDark = false }: { onDark?: boolean }) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  async function start() {
+    setPending(true);
+    setFailed(false);
+    const outcome = await attempt(async () => {
+      await api.ensureCsrfCookie();
+      return api.POST("/auth/demo");
+    });
+    if (!outcome.ok) {
+      setFailed(true);
+      setPending(false);
+      return;
+    }
+    router.replace(destinationPath(await resolveDestination()));
+  }
+
+  return (
+    <span className="inline-flex flex-col items-center gap-1.5">
+      <button
+        type="button"
+        onClick={start}
+        disabled={pending}
+        className={
+          onDark
+            ? "inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-brand-900 transition hover:bg-brand-50 disabled:opacity-70"
+            : PRIMARY + " disabled:opacity-70"
+        }
+      >
+        {pending ? "Menyiapkan demo…" : "Coba demo"} <IconArrowRight width={18} height={18} />
+      </button>
+      {failed ? (
+        <span role="alert" className="text-xs font-medium text-red-600 dark:text-red-400">
+          Demo belum tersedia. Coba lagi sebentar.
+        </span>
+      ) : null}
+    </span>
   );
 }
 

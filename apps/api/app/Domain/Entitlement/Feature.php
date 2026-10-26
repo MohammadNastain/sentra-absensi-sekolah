@@ -102,6 +102,16 @@ enum Feature: string
         };
     }
 
+    /** Rilis khusus sekolah demo: modul LMS tampil walau belum dirilis untuk umum, agar pengunjung demo melihat fitur lengkap. */
+    public function releasedInDemo(): bool
+    {
+        return $this->released() || match ($this) {
+            self::Lms, self::LmsMaterials, self::LmsAttachments, self::LmsAssignments,
+            self::LmsSubmissions, self::LmsGrading => true,
+            default => false,
+        };
+    }
+
     public function label(): string
     {
         return match ($this) {

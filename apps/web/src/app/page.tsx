@@ -4,7 +4,8 @@ import { BrandMark } from "@/components/AppShell";
 import { IconBook, IconCalendar, IconCheck, IconChart, IconClock, IconDevice, IconDoc, IconGrad, IconMail, IconShield, IconUsers } from "@/components/icons";
 import { LogoStage } from "@/components/LogoStage";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { HeroCta, NavCta } from "./landing-cta";
+import { DEMO_ENABLED, WA_DISPLAY, waLink } from "@/lib/contact";
+import { DemoCta, HeroCta, NavCta } from "./landing-cta";
 
 type Icon = (props: { width?: number; height?: number }) => ReactNode;
 
@@ -64,14 +65,6 @@ const NAV = [
 ];
 
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
-
-/** Kontak WhatsApp (format internasional tanpa +) dan tampilannya. */
-const WA_NUMBER = "6282231277648";
-const WA_DISPLAY = "0822-3127-7648";
-
-function waLink(message: string): string {
-  return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
-}
 
 function SectionTitle({ eyebrow, title, text }: { eyebrow: string; title: ReactNode; text?: string }) {
   return (
@@ -139,7 +132,7 @@ export default function Home() {
               Dari absensi di gerbang, data siswa dan guru, sampai jadwal, laporan, dan pembelajaran. Satu sistem untuk admin, guru, wali kelas, kepala sekolah, dan siswa.
             </p>
             <div className="mt-8 flex animate-rise flex-wrap items-center justify-center gap-3 lg:justify-start [animation-delay:200ms]">
-              <HeroCta />
+              {DEMO_ENABLED ? <DemoCta /> : <HeroCta />}
               <a
                 href={waLink("Halo, saya tertarik dengan Sentra Sekolah dan ingin bertanya.")}
                 target="_blank"
@@ -298,6 +291,7 @@ export default function Home() {
                   <IconMail width={18} height={18} /> {CONTACT_EMAIL}
                 </a>
               ) : null}
+              {DEMO_ENABLED ? <DemoCta onDark /> : null}
               <Link
                 href="/login"
                 className="inline-flex items-center justify-center rounded-2xl border border-white/40 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"

@@ -25,15 +25,16 @@ final class EntitlementCalculator
     /**
      * @param  list<string>  $planFeatures  kode fitur pada paket aktif sekolah
      * @param  array<string, string>  $overrides  kode fitur => 'grant' atau 'revoke'
+     * @param  bool  $demo  sekolah demo: fitur LMS dihitung sebagai sudah dirilis
      * @return array<string, array{enabled: bool, source: string, missing: list<string>}> menurut kode fitur
      */
-    public function resolve(array $planFeatures, array $overrides): array
+    public function resolve(array $planFeatures, array $overrides, bool $demo = false): array
     {
         $inPlan = array_flip($planFeatures);
         $result = [];
 
         foreach (Feature::cases() as $feature) {
-            $this->state($feature, $inPlan, $overrides, $result);
+            $this->state($feature, $inPlan, $overrides, $result, $demo);
         }
 
         return $result;
@@ -45,7 +46,7 @@ final class EntitlementCalculator
      * @param  array<string, array{enabled: bool, source: string, missing: list<string>}>  $result
      * @return array{enabled: bool, source: string, missing: list<string>}
      */
-    private function state(Feature $feature, array $inPlan, array $overrides, array &$result): array
+    private function state(Feature $feature, array $inPlan, array $overrides, array &$result, bool $demo): array
     {
         if (isset($result[$feature->value])) {
             return $result[$feature->value];
@@ -53,7 +54,7 @@ final class EntitlementCalculator
 
         $override = $overrides[$feature->value] ?? null;
 
-        if (! $feature->released()) {
+        if (! ($demo ? $feature->releasedInDemo() : $feature->released())) {
             return $result[$feature->value] = ['enabled' => false, 'source' => self::SOURCE_UNRELEASED, 'missing' => []];
         }
 
@@ -69,7 +70,7 @@ final class EntitlementCalculator
         $missing = [];
 
         foreach ($feature->prerequisites() as $prerequisite) {
-            if (! $this->state($prerequisite, $inPlan, $overrides, $result)['enabled']) {
+            if (! $this->state($prerequisite, $inPlan, $overrides, $result, $demo)['enabled']) {
                 $missing[] = $prerequisite->value;
             }
         }

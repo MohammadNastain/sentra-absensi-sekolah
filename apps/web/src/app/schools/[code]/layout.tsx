@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { use, useEffect, useMemo, useState } from "react";
 import { AppShell, type NavItem } from "@/components/AppShell";
+import { DemoBanner } from "@/components/DemoBanner";
 import { LogoutButton } from "@/components/LogoutButton";
 import { PlatformBanner } from "@/components/PlatformBanner";
 import { IconArrowLeft } from "@/components/icons";
@@ -123,7 +124,8 @@ export default function SchoolLayout(props: LayoutProps<"/schools/[code]">) {
 
   return (
     <SchoolProvider value={value}>
-      <AppShell context={value.profile.name} nav={nav} userLabel={me?.email} userName={me?.name}>
+      <AppShell context={value.profile.name} nav={nav} userLabel={me?.email} userName={me?.name} demo={me?.is_demo}>
+        {me?.is_demo ? <DemoBanner /> : null}
         {value.profile.acting_as_platform_admin ? <PlatformBanner code={code} /> : null}
         {unavailable ? (
           <EmptyState
