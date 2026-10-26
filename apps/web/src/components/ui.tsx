@@ -27,7 +27,7 @@ export function AuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <main className="relative grid min-h-dvh flex-1 lg:grid-cols-[1.05fr_1fr]">
+    <main className="relative grid min-h-dvh flex-1 lg:h-dvh lg:min-h-0 lg:flex-none lg:grid-cols-[1.05fr_1fr] lg:overflow-hidden">
       <div className="absolute right-4 top-4 z-20 sm:right-8 sm:top-6">
         <ThemeToggle />
       </div>
@@ -53,7 +53,7 @@ export function AuthShell({
           </span>
         </div>
 
-        <LogoStage className="relative -my-2 h-64 w-full max-w-md sm:h-80 lg:-my-6 lg:h-[min(36rem,56vh)] lg:max-w-none" />
+        <LogoStage className="relative -my-2 h-64 w-full max-w-md sm:h-80 lg:-my-6 lg:h-auto lg:min-h-0 lg:flex-1 lg:max-w-none" />
 
         <div className="relative max-w-md text-center lg:text-left">
           <h2 className="animate-rise text-2xl font-bold sm:text-3xl lg:text-4xl leading-[1.15] tracking-tight">
@@ -79,7 +79,7 @@ export function AuthShell({
         </p>
       </section>
 
-      <section className="relative z-10 -mt-16 flex items-start justify-center px-4 pb-10 sm:px-8 lg:mt-0 lg:items-center lg:py-12">
+      <section className="relative z-10 -mt-16 flex items-start justify-center px-4 pb-10 sm:px-8 lg:mt-0 lg:items-center lg:overflow-y-auto lg:py-12">
         <div className="w-full max-w-md animate-rise rounded-3xl border border-zinc-200/70 bg-white p-6 shadow-lift sm:p-10 dark:border-zinc-800 dark:bg-zinc-900">
                     <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{title}</h1>
           {description ? <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{description}</p> : null}
