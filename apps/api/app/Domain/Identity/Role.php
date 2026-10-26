@@ -15,6 +15,7 @@ enum Role: string
     case TerminalOperator = 'terminal_operator';
     case Teacher = 'teacher';
     case Student = 'student';
+    case Guardian = 'guardian';
 
     /**
      * @return list<Permission>
@@ -50,6 +51,7 @@ enum Role: string
                 Permission::SchoolLmsView,
                 Permission::SchoolLmsManage,
                 Permission::SchoolLmsGrade,
+                Permission::SchoolGuardiansManage,
             ],
             self::Principal => [
                 Permission::SchoolProfileView,
@@ -100,12 +102,18 @@ enum Role: string
                 Permission::SchoolLmsView,
                 Permission::SchoolLmsSubmit,
             ],
+            // Wali: hanya data anaknya sendiri lewat rute portal (GuardianScope); tanpa izin operasional apa pun (ADR 0011 §1).
+            self::Guardian => [
+                Permission::SchoolProfileView,
+                Permission::SchoolPortalView,
+                Permission::SchoolPortalLeave,
+            ],
         };
     }
 
     /**
      * Peran yang boleh diberikan lewat undangan, akun langsung, dan ubah peran. Siswa tidak termasuk: akunnya hanya
-     * dibuat dari data siswa (ADR 0010 §1).
+     * dibuat dari data siswa (ADR 0010 §1); wali juga tidak: ia diundang lewat alur wali yang menautkannya ke anak (ADR 0011 §1).
      *
      * @return list<string>
      */
@@ -113,7 +121,7 @@ enum Role: string
     {
         $codes = [];
         foreach (self::cases() as $role) {
-            if ($role !== self::Student) {
+            if ($role !== self::Student && $role !== self::Guardian) {
                 $codes[] = $role->value;
             }
         }

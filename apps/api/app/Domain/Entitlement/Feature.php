@@ -41,6 +41,9 @@ enum Feature: string
     case Finance = 'finance';
     case Admissions = 'admissions';
     case ParentPortal = 'parent_portal';
+    case ParentPortalAttendance = 'parent_portal.attendance';
+    case ParentPortalLeave = 'parent_portal.leave';
+    case ParentPortalLms = 'parent_portal.lms';
     case Notifications = 'notifications';
 
     /** Induk hirarki (null untuk fitur tingkat atas). */
@@ -53,6 +56,7 @@ enum Feature: string
             self::AcademicTeachingSchedule => self::Academic,
             self::LmsMaterials, self::LmsAttachments, self::LmsAssignments,
             self::LmsSubmissions, self::LmsGrading => self::Lms,
+            self::ParentPortalAttendance, self::ParentPortalLeave, self::ParentPortalLms => self::ParentPortal,
             default => null,
         };
     }
@@ -71,6 +75,9 @@ enum Feature: string
             self::LmsAttachments => [self::LmsMaterials],
             self::LmsSubmissions => [self::LmsAssignments],
             self::LmsGrading => [self::LmsSubmissions],
+            self::ParentPortalAttendance => [self::Attendance],
+            self::ParentPortalLeave => [self::AttendanceLeave],
+            self::ParentPortalLms => [self::LmsAssignments],
             default => [],
         };
     }
@@ -98,6 +105,9 @@ enum Feature: string
             self::AcademicTeachingSchedule => true,
             self::Lms, self::LmsMaterials, self::LmsAttachments, self::LmsAssignments,
             self::LmsSubmissions, self::LmsGrading => (bool) config('sentra.lms_released', false),
+            self::ParentPortal, self::ParentPortalAttendance, self::ParentPortalLeave => (bool) config('sentra.parent_portal_released', false),
+            // Nilai dan komentar anak tertahan sampai tinjauan D-26 (ADR 0011 §3): ikut bendera LMS juga.
+            self::ParentPortalLms => (bool) config('sentra.parent_portal_released', false) && (bool) config('sentra.lms_released', false),
             default => false,
         };
     }
@@ -107,7 +117,8 @@ enum Feature: string
     {
         return $this->released() || match ($this) {
             self::Lms, self::LmsMaterials, self::LmsAttachments, self::LmsAssignments,
-            self::LmsSubmissions, self::LmsGrading => true,
+            self::LmsSubmissions, self::LmsGrading,
+            self::ParentPortal, self::ParentPortalAttendance, self::ParentPortalLeave, self::ParentPortalLms => true,
             default => false,
         };
     }
@@ -140,6 +151,9 @@ enum Feature: string
             self::Finance => 'Keuangan/SPP',
             self::Admissions => 'PPDB',
             self::ParentPortal => 'Portal orang tua',
+            self::ParentPortalAttendance => 'Portal orang tua: kehadiran anak',
+            self::ParentPortalLeave => 'Portal orang tua: pengajuan izin',
+            self::ParentPortalLms => 'Portal orang tua: tugas dan nilai',
             self::Notifications => 'Notifikasi',
         };
     }

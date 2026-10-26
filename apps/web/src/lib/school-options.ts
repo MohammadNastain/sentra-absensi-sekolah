@@ -25,6 +25,7 @@ export const ROLE_LABELS: Record<Schemas["Role"], string> = {
   terminal_operator: "Operator Terminal",
   teacher: "Guru Mata Pelajaran",
   student: "Siswa",
+  guardian: "Orang Tua/Wali",
 };
 
 export function roleLabel(role: string): string {
