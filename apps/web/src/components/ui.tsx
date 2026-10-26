@@ -27,7 +27,7 @@ export function AuthShell({
   footer?: ReactNode;
 }) {
   return (
-    <main className="relative grid min-h-dvh flex-1 overflow-hidden bg-gradient-to-br from-brand-50 via-white to-brand-100/80 lg:h-dvh lg:min-h-0 lg:flex-none lg:grid-cols-[1.05fr_1fr] dark:from-brand-950 dark:via-zinc-950 dark:to-brand-900">
+    <main className="relative grid min-h-dvh flex-1 grid-cols-[minmax(0,1fr)] overflow-hidden bg-gradient-to-br from-brand-50 via-white to-brand-100/80 lg:h-dvh lg:min-h-0 lg:flex-none lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] dark:from-brand-950 dark:via-zinc-950 dark:to-brand-900">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute -right-24 -top-24 size-[30rem] animate-float rounded-full bg-brand-300/30 blur-3xl dark:bg-brand-500/15" />
         <div className="absolute -bottom-32 -left-20 size-[28rem] animate-float rounded-full bg-gold-400/15 blur-3xl [animation-delay:-3s] dark:bg-gold-400/10" />
@@ -45,7 +45,7 @@ export function AuthShell({
         <ThemeToggle />
       </div>
 
-      <section className="relative flex flex-col items-center px-6 pb-24 pt-5 sm:px-10 lg:items-stretch lg:justify-between lg:px-14 lg:py-8 lg:pb-8">
+      <section className="relative flex flex-col items-center px-6 pb-20 pt-5 sm:px-10 lg:items-stretch lg:justify-between lg:px-14 lg:py-8 lg:pb-8">
         <div className="relative flex items-center gap-3 self-start">
           <BrandMark size={46} />
           <span className="leading-tight">
@@ -54,13 +54,13 @@ export function AuthShell({
           </span>
         </div>
 
-        <LogoStage className="relative -my-2 h-64 w-full max-w-md sm:h-80 lg:-my-8 lg:h-[min(36rem,56vh)] lg:max-w-none" />
+        <LogoStage className="relative -mx-6 mt-1 h-52 w-[calc(100%+3rem)] max-w-none sm:mx-0 sm:my-0 sm:h-80 sm:w-full sm:max-w-md lg:-my-8 lg:h-[min(36rem,56vh)] lg:max-w-none" />
 
         <div className="relative max-w-md text-center lg:text-left">
           <h2 className="animate-rise text-2xl font-extrabold leading-[1.1] tracking-[-0.03em] text-zinc-900 sm:text-3xl lg:text-3xl xl:text-4xl dark:text-white">
             Satu platform untuk sekolah yang <span className="text-brand-600 dark:text-brand-400">rapi dan terpercaya.</span>
           </h2>
-          <p className="mt-3 animate-rise text-sm leading-relaxed text-zinc-600 sm:text-base lg:mt-2 lg:[@media(max-height:900px)]:hidden dark:text-zinc-300 [animation-delay:100ms]">
+          <p className="mt-3 hidden animate-rise text-sm leading-relaxed text-zinc-600 sm:block sm:text-base lg:mt-2 lg:[@media(max-height:900px)]:hidden dark:text-zinc-300 [animation-delay:100ms]">
             Dari absensi di gerbang, data siswa dan guru, sampai jadwal dan laporan. Satu sistem untuk admin, guru, wali kelas, dan pimpinan sekolah.
           </p>
           <ul className="mt-5 hidden space-y-2 lg:block lg:[@media(max-height:1100px)]:hidden">
